@@ -16,24 +16,56 @@
 */
 
 
-#ifndef RMF_SCHEDULE_VISUALIZER__SRC__VISUALIZERDATA.HPP
-#define RMF_SCHEDULE_VISUALIZER__SRC__VISUALIZERDATA.HPP
+#ifndef RMF_SCHEDULE_VISUALIZER__SRC__VISUALIZERDATA_HPP
+#define RMF_SCHEDULE_VISUALIZER__SRC__VISUALIZERDATA_HPP
 
 #include <rmf_traffic_ros2/schedule/MirrorManager.hpp>
+
 #include <rmf_traffic/Trajectory.hpp>
+
 #include <rclcpp/node.hpp>
 
 namespace rmf_schedule_visualizer {
 
-class VisualizerNode : public rclcpp::Node
+//==============================================================================
+class VisualizerDataNode : public rclcpp::Node
 {
 public:
-  
+  /// Builder function which returns a pointer to VisualizerNode when
+  /// the Mirror Manager is readied and websocket is started.
+  /// A nullptr is returned if initialization fails. 
+  static std::shared_ptr<VisualizerDataNode> make(
+      std::string node_name,
+      rmf_traffic::Duration wait_time = std::chrono::seconds(10));
+
 private:
-      
+  struct Data
+  {
+    rmf_traffic_ros2::schedule::MirrorManager mirror;
+
+    Data(
+        rmf_traffic_ros2::schedule::MirrorManager mirror_)
+    : mirror(std::move(mirror_))
+    {
+      // Do nothing
+    }
+  };
+
+  // Create a VisualizerData node with a specified name
+  VisualizerDataNode(std::string _node_name);
+
+  std::vector<rmf_traffic::Trajectory> _trajectories;
+  std::string _node_name;
+
+  // TODO(MXG): Replace this with a std::optional as soon as we can use C++17
+  std::unique_ptr<Data> data;
+
+  void start(Data data);
+
+  void callback_websocket();
+
 };
 
+} // namespace rmf_schedule_visualizer
 
-} //namespace rmf_schedule_visualizer
-
-#endif // RMF_SCHEDULE_VISUALIZER__SRC__VISUALIZERDATA.HPP
+#endif // RMF_SCHEDULE_VISUALIZER__SRC__VISUALIZERDATA_HPP
