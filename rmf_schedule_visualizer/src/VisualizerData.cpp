@@ -22,6 +22,7 @@
 #include <rmf_traffic_ros2/Trajectory.hpp>
 
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
 
 namespace rmf_schedule_visualizer {
 
@@ -86,6 +87,26 @@ void VisualizerDataNode::start(Data _data)
 {
   data = std::make_unique<Data>(std::move(_data));
   data->mirror.update();
+
+  //Create a subscriber to a /debug topic to print information from this node
+  debug_sub= create_subscription<std_msgs::msg::String>(
+      _node_name+"/debug",rclcpp::SystemDefaultsQoS(),
+      [&](std_msgs::msg::String::UniquePtr msg)
+  {
+    if (msg->data == "c")
+    {
+      size_t count = data->mirror.viewer().query
+        (rmf_traffic::schedule::query_everything()).size();
+      RCLCPP_INFO(this->get_logger(), "Trajectory Count: " +
+          count);
+
+    }
+    else if (msg->data == "e")
+    {
+      RCLCPP_INFO(this->get_logger(), msg->data.c_str());
+
+    }
+  });
 
 }
 

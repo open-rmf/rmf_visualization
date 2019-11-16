@@ -19,9 +19,6 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <rmf_traffic/geometry/Circle.hpp>
-
-
 bool get_arg(
     const std::vector<std::string>& args,
     const std::string& key,

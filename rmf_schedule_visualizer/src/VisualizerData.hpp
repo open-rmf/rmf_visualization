@@ -22,8 +22,10 @@
 #include <rmf_traffic_ros2/schedule/MirrorManager.hpp>
 
 #include <rmf_traffic/Trajectory.hpp>
+#include <rmf_traffic/schedule/Viewer.hpp>
 
 #include <rclcpp/node.hpp>
+#include <std_msgs/msg/string.hpp>
 
 namespace rmf_schedule_visualizer {
 
@@ -59,6 +61,9 @@ private:
 
   // TODO(MXG): Replace this with a std::optional as soon as we can use C++17
   std::unique_ptr<Data> data;
+
+  using DebugSub = rclcpp::Subscription<std_msgs::msg::String>;
+  DebugSub::SharedPtr debug_sub;
 
   void start(Data data);
 
