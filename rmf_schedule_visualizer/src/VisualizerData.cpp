@@ -99,7 +99,6 @@ void VisualizerDataNode::start(Data _data)
         (rmf_traffic::schedule::query_everything()).size();
       RCLCPP_INFO(this->get_logger(), "Trajectory Count: " +
           count);
-
     }
     else if (msg->data == "e")
     {
@@ -110,12 +109,40 @@ void VisualizerDataNode::start(Data _data)
 
 }
 
+
+  std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(std::string map_name, 
+      rmf_traffic::Time* start_time, rmf_traffic::Time* finish_time)
+  {
+   std::vector<rmf_traffic::Trajectory> trajectories; 
+   const std::vector<std::string> maps {map_name};
+   const auto query = rmf_traffic::schedule::query_everything();
+   //const auto query = rmf_traffic::schedule::make_query(maps, start_time, finish_time);
+   const auto view = data->mirror.viewer().query(query);
+   for ( auto trajectory : view)
+   {
+     trajectories.push_back(trajectory);
+   }
+
+   return trajectories;
+  }
+
 //==============================================================================
-void VisualizerDataNode::callback_websocket()
+void VisualizerDataNode::callback_websocket(std::string map_name, 
+      rmf_traffic::Time* start_time, rmf_traffic::Time* finish_time)
 {
 
+const auto trajectories = get_trajectories(map_name, start_time, finish_time);
 
+for (rmf_traffic::Trajectory trajectory : trajectories)
+{
+  for (auto it = trajectory.begin(); it!= trajectory.end(); it++)
+  {
+    auto finish_time = it->get_finish_time();
+    auto finish_position = it->get_finish_position();
+    auto profile = it->get_profile();  
+  }
+
+  }
 }
-
 
 } // namespace rmf_schedule_visualizer

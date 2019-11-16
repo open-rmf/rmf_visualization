@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 
   RCLCPP_INFO(
         visualizer_data_node->get_logger(),
-        "Visualizer Data Node started...");
+        "VisualizerDataNode /" + node_name + " started...");
 
 
   rclcpp::spin(visualizer_data_node);

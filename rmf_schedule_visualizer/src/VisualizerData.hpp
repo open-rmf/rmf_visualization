@@ -67,7 +67,11 @@ private:
 
   void start(Data data);
 
-  void callback_websocket();
+  std::vector<rmf_traffic::Trajectory> get_trajectories(std::string map_name, 
+      rmf_traffic::Time* initial_time, rmf_traffic::Time* final_time);
+
+  void callback_websocket(std::string map_name, 
+      rmf_traffic::Time* start_time, rmf_traffic::Time* finish_time);
 
 };
 
