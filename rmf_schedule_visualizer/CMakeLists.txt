@@ -18,6 +18,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rmf_traffic REQUIRED)
 find_package(rmf_traffic_ros2 REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(websocketpp REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system date_time regex random)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -33,6 +35,10 @@ target_link_libraries(schedule_visualizer
     rmf_traffic_ros2::rmf_traffic_ros2
     rmf_traffic::rmf_traffic
     ${rclcpp_LIBRARIES}
+    Boost::system
+    Boost::date_time
+    Boost::regex
+    Boost::random
 )
 
 target_include_directories(schedule_visualizer
@@ -40,6 +46,7 @@ target_include_directories(schedule_visualizer
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     ${rclcpp_INCLUDE_DIRS}
+    ${WEBSOCKETPP_INCLUDE_DIR}
 )
 
 install(
