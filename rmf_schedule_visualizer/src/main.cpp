@@ -60,6 +60,10 @@ int main(int argc, char* argv[])
   if(!get_arg(args, "-n", node_name, "node name"))
     return 1;
 
+  std::string port_string;
+  get_arg(args, "-p", port_string, "port",false);
+  const uint16_t port = port_string.empty()? 8006 : std::stoul(port_string, nullptr, 0);
+
   const auto visualizer_data_node =
     rmf_schedule_visualizer::VisualizerDataNode::make(node_name);
 
@@ -74,7 +78,7 @@ int main(int argc, char* argv[])
         "VisualizerDataNode /" + node_name + " started...");
 
 
-  const auto server_ptr = rmf_schedule_visualizer::Server::make(9002, *visualizer_data_node);
+  const auto server_ptr = rmf_schedule_visualizer::Server::make(port, *visualizer_data_node);
   
   if(!server_ptr)
   {

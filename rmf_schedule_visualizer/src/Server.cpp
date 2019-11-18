@@ -36,10 +36,13 @@ namespace rmf_schedule_visualizer {
   /// Run the server after initialization
   void Server::run()
   {
-    _server.set_reuse_addr(true);
-    _server.listen(_port);
-    _server.start_accept();
-    _server_thread = std::thread([&](){ this->_server.run(); });
+    if (_is_initialized)
+    {
+      _server.set_reuse_addr(true);
+      _server.listen(_port);
+      _server.start_accept();
+      _server_thread = std::thread([&](){ this->_server.run(); });
+    }
   }
 
   /// Constructor with port number
@@ -51,6 +54,7 @@ namespace rmf_schedule_visualizer {
     _server.set_open_handler(bind(&Server::on_open,this,_1));
     _server.set_close_handler(bind(&Server::on_close,this,_1));
     _server.set_message_handler(bind(&Server::on_message,this,_1,_2));
+    _is_initialized = true; 
   }
 
   void Server::on_open(connection_hdl hdl)
