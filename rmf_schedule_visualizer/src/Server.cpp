@@ -23,31 +23,84 @@ namespace rmf_schedule_visualizer {
   std::shared_ptr<Server> Server::make(
       uint16_t port,
       VisualizerDataNode& visualizer_data_node)
-  : _port(port),
-    _visualizer_data_node(visualizer_data_node)
   {
+    if (port<0)
+      return nullptr;
+    
+    std::shared_ptr<Server> server_ptr(new Server(port, visualizer_data_node));
 
+    return server_ptr;
     
   }
     
   /// Run the server after initialization
-  void run();
-
-private:
-  using con_list= std::set<connection_hdl,std::owner_less<connection_hdl>>;
+  void Server::run()
+  {
+    _server.set_reuse_addr(true);
+    _server.listen(_port);
+    _server.start_accept();
+    _server_thread = std::thread([&](){ this->_server.run(); });
+  }
 
   /// Constructor with port number
-  Server(uint16_t port = 8006);
+  Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node )
+  : _port(port),
+    _visualizer_data_node(visualizer_data_node)
+  {
+    _server.init_asio();
+    _server.set_open_handler(bind(&Server::on_open,this,_1));
+    _server.set_close_handler(bind(&Server::on_close,this,_1));
+    _server.set_message_handler(bind(&Server::on_message,this,_1,_2));
+  }
 
-  void on_open(connection_hdl hdl);
+  void Server::on_open(connection_hdl hdl)
+  {
+    _connections.insert(hdl);
+  }
 
-  void on_close(connection_hdl hdl);
+  void Server::on_close(connection_hdl hdl)
+  {
+    _connections.erase(hdl);
+  }
  
-  void on_message(connection_hdl hdl, server::message_ptr msg);
+  void Server::on_message(connection_hdl hdl, server::message_ptr msg)
+  {
+    if (msg->get_payload().compare("shutdown\n")==0)
+    {
+    std::string payload = "Shutting down...";
+    auto response_msg = msg;
+    response_msg->set_payload(payload);
+    _server.send(hdl, response_msg);
+    }
+    else
+    {
+     _server.send(hdl, msg);
+    }
+
+  }
 
   /// Set the interanal reference to the visualizer_data_node
-  void set_mirror(VisualizerDataNode& visualizer_data_node);
+  void Server::set_mirror(VisualizerDataNode& visualizer_data_node)
+  {
+    //_visualizer_data_node=visualizer_data_node;
 
-  ~Server();
+  }
+
+  Server::~Server()
+  {
+    //thread safe access to _connections
+    const auto connection_copies = _connections;
+    for (auto& connection : connection_copies)
+    {
+      _server.close(connection, websocketpp::close::status::normal, "shutdown");
+    }
+
+    if(_server_thread.joinable())
+    {
+      _server.stop();
+
+      _server_thread.join();
+    }
+  }
 
 } //namespace rmf_schedule_visualizer

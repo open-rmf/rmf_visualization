@@ -16,6 +16,7 @@
 */
 
 #include "VisualizerData.hpp"
+#include "Server.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -72,6 +73,16 @@ int main(int argc, char* argv[])
         visualizer_data_node->get_logger(),
         "VisualizerDataNode /" + node_name + " started...");
 
+
+  const auto server_ptr = rmf_schedule_visualizer::Server::make(9002, *visualizer_data_node);
+  
+  if(!server_ptr)
+  {
+    std::cerr << "Failed to initialize the Server" << std::endl;
+    return 1;
+  }
+  
+  server_ptr->run();
 
   rclcpp::spin(visualizer_data_node);
   

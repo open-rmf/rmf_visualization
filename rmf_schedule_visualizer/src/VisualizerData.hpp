@@ -27,6 +27,10 @@
 #include <rclcpp/node.hpp>
 #include <std_msgs/msg/string.hpp>
 
+#include <set>
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
+
 namespace rmf_schedule_visualizer {
 
 //==============================================================================

@@ -21,7 +21,6 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include "json.hpp"
 #include <iostream>
 #include <set>
 
@@ -49,11 +48,13 @@ public:
   /// Run the server after initialization
   void run();
 
+~Server();
+
 private:
   using con_list= std::set<connection_hdl,std::owner_less<connection_hdl>>;
 
   /// Constructor with port number
-  Server(uint16_t port = 8006);
+  Server(uint16_t port, VisualizerDataNode& visualizer_data_node);
 
   void on_open(connection_hdl hdl);
 
@@ -64,13 +65,11 @@ private:
   /// Set the interanal reference to the visualizer_data_node
   void set_mirror(VisualizerDataNode& visualizer_data_node);
 
-  ~Server();
-
   server _server;
   con_list _connections;
-  uint16_t _port;
+  uint16_t _port = 8006;
   std::thread _server_thread;
-  VisualizerDataNode* _visualizer_data_node = nullptr;
+  VisualizerDataNode& _visualizer_data_node;
   bool _is_initialized = false;
   std::string _data;
 };
