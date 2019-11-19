@@ -38,18 +38,32 @@ using websocketpp::lib::bind;
 class Server
 {
 public:
-  /// Builder function which returns a pointer to Server when
-  /// the websocket has started.
+  /// Builder function which returns a pointer to Server after
+  /// the websocket has successfully started.
   /// A nullptr is returned if initialization fails. 
   static std::shared_ptr<Server> make(
       uint16_t port,
       VisualizerDataNode& visualizer_data_node);
-      
+
 ~Server();
 
 private:
   using con_list= std::set<connection_hdl,std::owner_less<connection_hdl>>;
 
+  struct Data
+  {
+    std::string request;
+    std::string response;
+
+    Data(
+      std::string request_,
+      std::string response_)
+    : request(std::move(request_)),
+      response(std::move(response_))
+    {
+      // Do nothing
+    }
+  };
   /// Run the server after initialization
   void run();
 
@@ -65,13 +79,15 @@ private:
   /// Set the interanal reference to the visualizer_data_node
   void set_mirror(VisualizerDataNode& visualizer_data_node);
 
+  void parse_msg(server::message_ptr msg);
+
   server _server;
   con_list _connections;
   uint16_t _port = 8006;
   std::thread _server_thread;
   VisualizerDataNode& _visualizer_data_node;
   bool _is_initialized = false;
-  std::string _data;
+  std::unique_ptr<Data> data;
 };
 
 } // namespace rmf_schedule_visualizer

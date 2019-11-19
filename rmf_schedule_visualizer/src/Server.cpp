@@ -16,6 +16,7 @@
 */
 
 #include "Server.hpp"
+#include <json.hpp>
 
 namespace rmf_schedule_visualizer {
 
@@ -34,9 +35,7 @@ namespace rmf_schedule_visualizer {
       std::cerr << "Failed to start the Server: "<<e.what() << std::endl;
       return nullptr;
     }
-
     return server_ptr;
-    
   }
     
   /// Run the server after initialization
@@ -86,6 +85,14 @@ namespace rmf_schedule_visualizer {
     {
      _server.send(hdl, msg);
     }
+
+  }
+
+  void Server::parse_msg(server::message_ptr msg)
+  {
+    std::string msg_payload = msg->get_payload();
+
+
 
   }
 
