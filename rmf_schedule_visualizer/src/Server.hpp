@@ -83,7 +83,11 @@ private:
   /// Set the interanal reference to the visualizer_data_node
   void set_mirror(VisualizerDataNode& visualizer_data_node);
 
-  void parse_msg(server::message_ptr msg, std::string& response);
+  bool parse_msg(server::message_ptr msg, RequestParam& request_param);
+
+  void parse_trajectories(
+      std::vector<rmf_traffic::Trajectory>& trajectories,
+      std::string& response);
 
   server _server;
   con_list _connections;
@@ -92,7 +96,6 @@ private:
   VisualizerDataNode& _visualizer_data_node;
   bool _is_initialized = false;
   std::unique_ptr<Data> data;
-  RequestParam request_param;
 };
 
 } // namespace rmf_schedule_visualizer

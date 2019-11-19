@@ -3,6 +3,7 @@
 
 #include <rmf_traffic/Time.hpp>
 #include <string>
+#include <memory>
 
 namespace rmf_schedule_visualizer {
 
@@ -12,6 +13,8 @@ struct RequestParam
   rmf_traffic::Time start_time;
   rmf_traffic::Time finish_time;
 };
+
+using RequestParamPtr = std::shared_ptr<RequestParam>;
 
 } // namespace rmf_schedule_visualizer
 

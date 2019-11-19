@@ -19,128 +19,147 @@
 #include <json.hpp>
 
 namespace rmf_schedule_visualizer {
+using json = nlohmann::json;
 
-
-  std::shared_ptr<Server> Server::make(
-      uint16_t port,
-      VisualizerDataNode& visualizer_data_node)
-  {
-    std::shared_ptr<Server> server_ptr(new Server(port, visualizer_data_node));
-    try 
-    {
-      server_ptr->run();
-    }
-    catch (std::exception& e)
-    {
-      std::cerr << "Failed to start the Server: "<<e.what() << std::endl;
-      return nullptr;
-    }
-    return server_ptr;
+std::shared_ptr<Server> Server::make(
+    uint16_t port,
+    VisualizerDataNode& visualizer_data_node)
+{
+  std::shared_ptr<Server> server_ptr(new Server(port, visualizer_data_node));
+  try
+  { 
+    server_ptr->run();
   }
-    
-  /// Run the server after initialization
-  void Server::run()
+  catch (std::exception& e)
   {
-    if (_is_initialized)
-    {
-      _server.set_reuse_addr(true);
-      _server.listen(_port);
-      _server.start_accept();
-      _server_thread = std::thread([&](){ this->_server.run(); });
-    }
+    std::cerr << "Failed to start the Server: "<<e.what() << std::endl;
+    return nullptr;
   }
-
-  /// Constructor with port number
-  Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node )
-  : _port(port),
-    _visualizer_data_node(visualizer_data_node)
+  return server_ptr;
+}
+  
+/// Run the server after initialization
+void Server::run()
+{
+  if (_is_initialized)
   {
-    _server.init_asio();
-    _server.set_open_handler(bind(&Server::on_open,this,_1));
-    _server.set_close_handler(bind(&Server::on_close,this,_1));
-    _server.set_message_handler(bind(&Server::on_message,this,_1,_2));
-    _is_initialized = true; 
+    _server.set_reuse_addr(true);
+    _server.listen(_port);
+    _server.start_accept();
+    _server_thread = std::thread([&](){ this->_server.run(); });
   }
+}
 
-  void Server::on_open(connection_hdl hdl)
+/// Constructor with port number and reference to visualizer_data_node
+Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node )
+: _port(port),
+  _visualizer_data_node(visualizer_data_node)
+{
+  _server.init_asio();
+  _server.set_open_handler(bind(&Server::on_open,this,_1));
+  _server.set_close_handler(bind(&Server::on_close,this,_1));
+  _server.set_message_handler(bind(&Server::on_message,this,_1,_2));
+  _is_initialized = true; 
+}
+
+void Server::on_open(connection_hdl hdl)
+{
+  _connections.insert(hdl);
+}
+
+void Server::on_close(connection_hdl hdl)
+{
+  _connections.erase(hdl);
+}
+
+void Server::on_message(connection_hdl hdl, server::message_ptr msg)
+{
+  std::string response;
+  RequestParam request_param;
+  auto ok = parse_msg(msg,request_param);
+  std::cout<<"OK: "<<ok<<std::endl;
+  /*
+  if (msg->get_payload().compare("shutdown\n")==0)
   {
-    _connections.insert(hdl);
+  std::string payload = "Shutting down...";
+  auto response_msg = msg;
+  response_msg->set_payload(payload);
+  _server.send(hdl, response_msg);
   }
-
-  void Server::on_close(connection_hdl hdl)
+  else
   {
-    _connections.erase(hdl);
+    _server.send(hdl, msg);
   }
- 
-  void Server::on_message(connection_hdl hdl, server::message_ptr msg)
+  */
+  if(ok)
   {
-    std::string response;
-    parse_msg(msg,response);
-    /*
-    if (msg->get_payload().compare("shutdown\n")==0)
-    {
-    std::string payload = "Shutting down...";
-    auto response_msg = msg;
-    response_msg->set_payload(payload);
-    _server.send(hdl, response_msg);
-    }
-    else
-    {
-     _server.send(hdl, msg);
-    }
-    */
-
-    server::message_ptr response_msg =std::move(msg);
-    response_msg->set_payload(response);
-   _server.send(hdl, response_msg);
-  }
-
-  void Server::parse_msg(server::message_ptr msg, std::string& response)
-  {
-    using json = nlohmann::json;
-    std::string msg_payload = msg->get_payload();
-    try
-    {
-      json j = json::parse(msg_payload);
-      for (json::iterator it = j.begin(); it != j.end(); ++it)
-      {
-      std::cout << *it << '\n';
-       }
-    }
-    catch(const std::exception& e)
-    {
-      std::cerr << e.what() << '\n';
-    }
-    
-    json j;
-    j["response"] = "trajectory";
-    j["trajectory"] = {1 , 2};
-    response = j.dump();
-
+    auto trajectories = _visualizer_data_node.get_trajectories(request_param);
+    parse_trajectories(trajectories, response);
   }
 
-  /// Set the interanal reference to the visualizer_data_node
-  void Server::set_mirror(VisualizerDataNode& visualizer_data_node)
-  {
-    //_visualizer_data_node=visualizer_data_node;
+  server::message_ptr response_msg =std::move(msg);
+  response_msg->set_payload(response);
+  _server.send(hdl, response_msg);
 
+
+}
+
+bool Server::parse_msg(server::message_ptr msg, RequestParam& request_param)
+{
+  std::string msg_payload = msg->get_payload();
+  try
+  {
+    json j = json::parse(msg_payload);
+    for (json::iterator it = j.begin(); it != j.end(); ++it)
+    {
+    std::cout << *it << '\n';
+      }
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << e.what() << '\n';
+  }
+  
+  return true;
+
+}
+
+void Server::parse_trajectories(
+    std::vector<rmf_traffic::Trajectory>& trajectories,
+    std::string& response)
+{
+  for (rmf_traffic::Trajectory trajectory : trajectories)
+  {
+    for (auto it = trajectory.begin(); it!= trajectory.end(); it++)
+    {
+      auto finish_time = it->get_finish_time();
+      auto finish_position = it->get_finish_position();
+      auto profile = it->get_profile();  
+    }
+  } 
+}
+
+/// Set the interanal reference to the visualizer_data_node
+void Server::set_mirror(VisualizerDataNode& visualizer_data_node)
+{
+
+}
+
+Server::~Server()
+{
+  //thread safe access to _connections
+  const auto connection_copies = _connections;
+  for (auto& connection : connection_copies)
+  {
+    _server.close(connection, websocketpp::close::status::normal, "shutdown");
   }
 
-  Server::~Server()
+  if(_server_thread.joinable())
   {
-    //thread safe access to _connections
-    const auto connection_copies = _connections;
-    for (auto& connection : connection_copies)
-    {
-      _server.close(connection, websocketpp::close::status::normal, "shutdown");
-    }
+    _server.stop();
 
-    if(_server_thread.joinable())
-    {
-      _server.stop();
-
-      _server_thread.join();
-    }
+    _server_thread.join();
   }
+}
 
 } //namespace rmf_schedule_visualizer

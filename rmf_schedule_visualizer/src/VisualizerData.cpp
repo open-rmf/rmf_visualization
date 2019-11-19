@@ -116,7 +116,10 @@ void VisualizerDataNode::start(Data _data)
    const std::vector<std::string> maps {request_param.map_name};
    //const auto query = rmf_traffic::schedule::query_everything();
    const auto query = rmf_traffic::schedule::make_query(maps, &request_param.start_time, &request_param.finish_time);
+   
+   // TODO(YV) Use mutex to lock Mirror when accessing View
    const auto view = data->mirror.viewer().query(query);
+
    for (const auto trajectory : view)
    {
      trajectories.push_back(trajectory);

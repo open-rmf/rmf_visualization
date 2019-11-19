@@ -45,6 +45,9 @@ public:
       std::string node_name,
       rmf_traffic::Duration wait_time = std::chrono::seconds(10));
 
+  /// Function to query Mirror Manager for trajectories
+  std::vector<rmf_traffic::Trajectory> get_trajectories(RequestParam request_param);
+
 private:
   struct Data
   {
@@ -66,7 +69,6 @@ private:
 
   void start(Data data);
 
-  std::vector<rmf_traffic::Trajectory> get_trajectories(RequestParam request_param);
   
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::string _node_name;
