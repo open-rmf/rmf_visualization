@@ -76,27 +76,18 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 {
   std::string response;
   RequestParam request_param;
+
   auto ok = parse_request(msg,request_param);
   std::cout<<"OK: "<<ok<<std::endl;
-  /*
-  if (msg->get_payload().compare("shutdown\n")==0)
-  {
-  std::string payload = "Shutting down...";
-  auto response_msg = msg;
-  response_msg->set_payload(payload);
-  _server.send(hdl, response_msg);
-  }
-  else
-  {
-    _server.send(hdl, msg);
-  }
-  */
+
   if(ok)
   {
     auto trajectories = _visualizer_data_node.get_trajectories(request_param);
     parse_trajectories(trajectories, response);
   }
 
+  std::cout<<"Response: "<<response<<std::endl;
+ 
   server::message_ptr response_msg =std::move(msg);
   response_msg->set_payload(response);
   _server.send(hdl, response_msg);
@@ -106,38 +97,87 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 
 bool Server::parse_request(server::message_ptr msg, RequestParam& request_param)
 {
+
+  using namespace std::chrono_literals;
+
+  // TODO(YV) get names of the keys from config yaml file 
+
   std::string msg_payload = msg->get_payload();
   try
   {
     json j = json::parse(msg_payload);
-    for (json::iterator it = j.begin(); it != j.end(); ++it)
-    {
-    std::cout << *it << '\n';
-      }
+    if (j.size() != 2)
+      return false;
+    
+    if(j.count("request") != 1 || j.count("param") != 1)
+      return false;
+    
+    json j_param = j["param"];
+    if (j_param.size() != 3)
+      return false;
+    
+    if(
+        j_param.count("map_name") == 1 and 
+        j_param.count("start_time") == 1 and 
+        j_param.count("finish_time") == 1 and 
+        j_param["finish_time"] > j_param["start_time"])
+        {
+          request_param.map_name = j_param["map_name"];
+          std::chrono::nanoseconds start_time_nano(j_param["start_time"]);
+          std::chrono::nanoseconds finish_time_nano(j_param["finish_time"]);
+          // TODO(YV) fix this 
+          request_param.start_time = std::chrono::steady_clock::now() +
+              start_time_nano;
+          request_param.finish_time = std::chrono::steady_clock::now() +
+              finish_time_nano ;
+
+          return true;
+
+        }
+    else
+      return false;
   }
+
   catch(const std::exception& e)
   {
     std::cerr << e.what() << '\n';
     return false;
   }
-  
-  return true;
-
 }
 
 void Server::parse_trajectories(
     std::vector<rmf_traffic::Trajectory>& trajectories,
     std::string& response)
 {
+
+  json _j_res = { {"response", "trajectory"}, {"values", {}} };
+  json _j_traj ={ {"shape", {}}, {"segments", {} } };
+  json _j_seg = { {"x", {} }, {"v", {} }, {"t", {}} };
+
+  auto j_res = _j_res;
+
   for (rmf_traffic::Trajectory trajectory : trajectories)
   {
+    auto j_traj = _j_traj;
+    j_traj["shape"].push_back("box");
     for (auto it = trajectory.begin(); it!= trajectory.end(); it++)
     {
+      auto j_seg = _j_seg;
+
       auto finish_time = it->get_finish_time();
       auto finish_position = it->get_finish_position();
-      auto profile = it->get_profile();  
+      auto finish_velocity = it->get_finish_velocity();
+
+      j_seg["x"] = finish_position[0];
+      j_seg["v"] = finish_velocity[0];
+      j_seg["t"] = finish_time.time_since_epoch().count();
+      j_traj["segments"].push_back(j_seg);
     }
+    j_res["values"].push_back(j_traj);
+
   } 
+
+  response = j_res.dump();
 }
 
 /// Set the interanal reference to the visualizer_data_node
