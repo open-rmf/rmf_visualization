@@ -74,6 +74,9 @@ namespace rmf_schedule_visualizer {
  
   void Server::on_message(connection_hdl hdl, server::message_ptr msg)
   {
+    std::string response;
+    parse_msg(msg,response);
+    /*
     if (msg->get_payload().compare("shutdown\n")==0)
     {
     std::string payload = "Shutting down...";
@@ -85,14 +88,34 @@ namespace rmf_schedule_visualizer {
     {
      _server.send(hdl, msg);
     }
+    */
 
+    server::message_ptr response_msg =std::move(msg);
+    response_msg->set_payload(response);
+   _server.send(hdl, response_msg);
   }
 
-  void Server::parse_msg(server::message_ptr msg)
+  void Server::parse_msg(server::message_ptr msg, std::string& response)
   {
+    using json = nlohmann::json;
     std::string msg_payload = msg->get_payload();
-
-
+    try
+    {
+      json j = json::parse(msg_payload);
+      for (json::iterator it = j.begin(); it != j.end(); ++it)
+      {
+      std::cout << *it << '\n';
+       }
+    }
+    catch(const std::exception& e)
+    {
+      std::cerr << e.what() << '\n';
+    }
+    
+    json j;
+    j["response"] = "trajectory";
+    j["trajectory"] = {1 , 2};
+    response = j.dump();
 
   }
 

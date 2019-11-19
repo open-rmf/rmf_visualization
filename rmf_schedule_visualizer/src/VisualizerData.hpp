@@ -30,6 +30,7 @@
 #include <set>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include <rmf_schedule_visualizer/CommonData.hpp>
 
 namespace rmf_schedule_visualizer {
 
@@ -60,22 +61,16 @@ private:
   // Create a VisualizerData node with a specified name
   VisualizerDataNode(std::string _node_name);
 
-  std::vector<rmf_traffic::Trajectory> _trajectories;
-  std::string _node_name;
-
-  // TODO(MXG): Replace this with a std::optional as soon as we can use C++17
-  std::unique_ptr<Data> data;
-
   using DebugSub = rclcpp::Subscription<std_msgs::msg::String>;
   DebugSub::SharedPtr debug_sub;
 
   void start(Data data);
 
-  std::vector<rmf_traffic::Trajectory> get_trajectories(std::string map_name, 
-      rmf_traffic::Time* initial_time, rmf_traffic::Time* final_time);
-
-  void callback_websocket(std::string map_name, 
-      rmf_traffic::Time* start_time, rmf_traffic::Time* finish_time);
+  std::vector<rmf_traffic::Trajectory> get_trajectories(RequestParam request_param);
+  
+  std::vector<rmf_traffic::Trajectory> _trajectories;
+  std::string _node_name;
+  std::unique_ptr<Data> data;
 
 };
 

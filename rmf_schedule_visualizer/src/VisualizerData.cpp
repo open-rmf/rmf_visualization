@@ -110,11 +110,10 @@ void VisualizerDataNode::start(Data _data)
 }
 
 
-  std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(std::string map_name, 
-      rmf_traffic::Time* start_time, rmf_traffic::Time* finish_time)
+  std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(RequestParam request_param)
   {
    std::vector<rmf_traffic::Trajectory> trajectories; 
-   const std::vector<std::string> maps {map_name};
+   const std::vector<std::string> maps {request_param.map_name};
    const auto query = rmf_traffic::schedule::query_everything();
    //const auto query = rmf_traffic::schedule::make_query(maps, start_time, finish_time);
    const auto view = data->mirror.viewer().query(query);
@@ -127,7 +126,8 @@ void VisualizerDataNode::start(Data _data)
   }
 
 //==============================================================================
-void VisualizerDataNode::callback_websocket(std::string map_name, 
+
+/*void VisualizerDataNode::callback_websocket(std::string map_name, 
       rmf_traffic::Time* start_time, rmf_traffic::Time* finish_time)
 {
 
@@ -143,6 +143,6 @@ for (rmf_traffic::Trajectory trajectory : trajectories)
   }
 
   }
-}
+} */
 
 } // namespace rmf_schedule_visualizer
