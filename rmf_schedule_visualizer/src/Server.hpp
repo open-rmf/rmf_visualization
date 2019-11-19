@@ -44,14 +44,14 @@ public:
   static std::shared_ptr<Server> make(
       uint16_t port,
       VisualizerDataNode& visualizer_data_node);
-    
-  /// Run the server after initialization
-  void run();
-
+      
 ~Server();
 
 private:
   using con_list= std::set<connection_hdl,std::owner_less<connection_hdl>>;
+
+  /// Run the server after initialization
+  void run();
 
   /// Constructor with port number
   Server(uint16_t port, VisualizerDataNode& visualizer_data_node);

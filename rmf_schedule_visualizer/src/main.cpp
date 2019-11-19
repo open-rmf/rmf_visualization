@@ -86,7 +86,9 @@ int main(int argc, char* argv[])
     return 1;
   }
   
-  server_ptr->run();
+  RCLCPP_INFO(
+        visualizer_data_node->get_logger(),
+        "Websocket server started on port: " + std::to_string(port));
 
   rclcpp::spin(visualizer_data_node);
   

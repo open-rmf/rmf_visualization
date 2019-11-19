@@ -24,10 +24,16 @@ namespace rmf_schedule_visualizer {
       uint16_t port,
       VisualizerDataNode& visualizer_data_node)
   {
-    if (port<0)
-      return nullptr;
-    
     std::shared_ptr<Server> server_ptr(new Server(port, visualizer_data_node));
+    try 
+    {
+      server_ptr->run();
+    }
+    catch (std::exception& e)
+    {
+      std::cerr << "Failed to start the Server: "<<e.what() << std::endl;
+      return nullptr;
+    }
 
     return server_ptr;
     
