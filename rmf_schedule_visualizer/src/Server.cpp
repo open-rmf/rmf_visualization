@@ -76,7 +76,7 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 {
   std::string response;
   RequestParam request_param;
-  auto ok = parse_msg(msg,request_param);
+  auto ok = parse_request(msg,request_param);
   std::cout<<"OK: "<<ok<<std::endl;
   /*
   if (msg->get_payload().compare("shutdown\n")==0)
@@ -104,7 +104,7 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 
 }
 
-bool Server::parse_msg(server::message_ptr msg, RequestParam& request_param)
+bool Server::parse_request(server::message_ptr msg, RequestParam& request_param)
 {
   std::string msg_payload = msg->get_payload();
   try
@@ -118,6 +118,7 @@ bool Server::parse_msg(server::message_ptr msg, RequestParam& request_param)
   catch(const std::exception& e)
   {
     std::cerr << e.what() << '\n';
+    return false;
   }
   
   return true;

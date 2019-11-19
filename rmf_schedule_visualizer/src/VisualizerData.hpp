@@ -53,8 +53,7 @@ private:
   {
     rmf_traffic_ros2::schedule::MirrorManager mirror;
 
-    Data(
-        rmf_traffic_ros2::schedule::MirrorManager mirror_)
+    Data(rmf_traffic_ros2::schedule::MirrorManager mirror_)
     : mirror(std::move(mirror_))
     {
       // Do nothing
