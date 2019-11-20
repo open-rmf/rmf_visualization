@@ -4,6 +4,7 @@
 #include <rmf_traffic/Time.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
+#include <rmf_traffic_ros2/StandardNames.hpp>
 
 using SubmitTrajectory = rmf_traffic_msgs::srv::SubmitTrajectory;
 using SubmitTrajectoryClient = rclcpp::Client<SubmitTrajectory>;
@@ -15,7 +16,7 @@ class SubmitTrajectoryNode : public rclcpp::Node
 public:
 
   SubmitTrajectoryNode(
-      std::string node_name_ ="submit_trajectory",
+      std::string node_name_ ="test_submit_trajectory",
       std::string map_name = "level1",
       rmf_traffic::Duration duration_ = 400s,
       Eigen::Vector3d position_ = Eigen::Vector3d{0,0,0},
@@ -44,17 +45,29 @@ public:
         _position,
         _velocity);
 
-
     SubmitTrajectory::Request request_msg;
     request_msg.trajectories.emplace_back(rmf_traffic_ros2::convert(t));
 
-    SubmitTrajectoryHandle submit_trajectory;
-    submit_trajectory->async_send_request(
-        std::make_shared<SubmitTrajectory::Request>(std::move(request_msg)),
-        [&](const SubmitTrajectoryClient::SharedFuture response)
+    auto submit_trajectory = this->create_client<SubmitTrajectory>(
+        rmf_traffic_ros2::SubmitTrajectoryServiceName);
+
+    if (submit_trajectory->service_is_ready())
     {
-      this->parse_response(response);
-    });
+      submit_trajectory->async_send_request(
+          std::make_shared<SubmitTrajectory::Request>(std::move(request_msg)),
+          [&](const SubmitTrajectoryClient::SharedFuture response)
+      {
+        this->parse_response(response);
+      });
+    }
+    else
+    {
+      RCLCPP_ERROR(
+          this->get_logger(),
+          rmf_traffic_ros2::SubmitTrajectoryServiceName +" service is unavailable!"
+      );
+    }
+    
 
   }
 
