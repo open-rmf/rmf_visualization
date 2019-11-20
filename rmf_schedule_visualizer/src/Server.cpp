@@ -17,6 +17,9 @@
 
 #include "Server.hpp"
 #include <json.hpp>
+#include <rmf_traffic/geometry/Circle.hpp>
+#include <rmf_traffic/geometry/Box.hpp>
+
 
 namespace rmf_schedule_visualizer {
 using json = nlohmann::json;
@@ -156,34 +159,54 @@ void Server::parse_trajectories(
     std::string& response)
 {
 
-  json _j_res = { {"response", "trajectory"}, {"values", {}} };
-  json _j_traj ={ {"shape", {}}, {"segments", {} } };
-  json _j_seg = { {"x", {} }, {"v", {} }, {"t", {}} };
+  json _j_res = { {"response", "trajectory"}, {"values", {} } };
+  json _j_traj ={ {"shape", {} }, {"dimensions", {} }, {"segments", {} } };
+  json _j_seg = { {"x", {} }, {"v", {} }, {"t", {} } };
 
   auto j_res = _j_res;
 
-  for (rmf_traffic::Trajectory trajectory : trajectories)
+  try
   {
-    auto j_traj = _j_traj;
-    j_traj["shape"].push_back("box");
-    for (auto it = trajectory.begin(); it!= trajectory.end(); it++)
+    for (rmf_traffic::Trajectory trajectory : trajectories)
     {
-      auto j_seg = _j_seg;
+      auto j_traj = _j_traj;
 
-      auto finish_time = it->get_finish_time();
-      auto finish_position = it->get_finish_position();
-      auto finish_velocity = it->get_finish_velocity();
-      j_seg["x"].push_back(
-          {finish_position[0],finish_position[1],finish_position[2]});
-      j_seg["v"].push_back(
-          {finish_velocity[0],finish_velocity[1],finish_velocity[2]});
-      j_seg["t"] = finish_time.time_since_epoch().count();
-      j_traj["segments"].push_back(j_seg);
+      try
+      {
+        // TODO(YV) interpret the shape from profile 
+        // This will fail if shape is Box
+        j_traj["shape"].push_back("circle");
+  
+        const auto &circle = static_cast<const rmf_traffic::geometry::Circle&>(
+            trajectory.begin()->get_profile()->get_shape()->source());
+        j_traj["diemnsions"].push_back(circle.get_radius());
+      }
+      catch(const std::exception& e)
+      {
+        std::cerr << e.what() << '\n';
+      }
+      
+      for (auto it = trajectory.begin(); it!= trajectory.end(); it++)
+      {
+        auto j_seg = _j_seg;
+        auto finish_time = it->get_finish_time();
+        auto finish_position = it->get_finish_position();
+        auto finish_velocity = it->get_finish_velocity();
+        j_seg["x"].push_back(
+            {finish_position[0],finish_position[1],finish_position[2]});
+        j_seg["v"].push_back(
+            {finish_velocity[0],finish_velocity[1],finish_velocity[2]});
+        j_seg["t"] = finish_time.time_since_epoch().count();
+        j_traj["segments"].push_back(j_seg);
+      }
+      j_res["values"].push_back(j_traj);
+
     }
-    j_res["values"].push_back(j_traj);
-
-  } 
-
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << e.what() << '\n';
+  }
   response = j_res.dump();
 }
 

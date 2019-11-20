@@ -97,8 +97,27 @@ void VisualizerDataNode::start(Data _data)
     {
       size_t count = data->mirror.viewer().query
         (rmf_traffic::schedule::query_everything()).size();
-      RCLCPP_INFO(this->get_logger(), "Trajectory Count: " +
-          count);
+      RCLCPP_INFO(this->get_logger(), "Trajectory Count: "+
+           std::to_string(count));
+    }
+    if (msg->data == "t")
+    {
+      // get start_time of all trajectories in the mirror
+      try
+      {
+        auto view = data->mirror.viewer().query(
+            rmf_traffic::schedule::query_everything());
+        for (auto trajectory : view)
+        {
+          auto start_time = trajectory.begin()->get_finish_time();
+          RCLCPP_INFO(this->get_logger(), "start_time: " + 
+              std::to_string(start_time.time_since_epoch().count()));
+        }
+      }
+      catch (std::exception& e)
+      {
+        RCLCPP_ERROR(this->get_logger(), e.what());
+      }
     }
     else if (msg->data == "e")
     {
