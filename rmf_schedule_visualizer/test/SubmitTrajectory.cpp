@@ -90,8 +90,6 @@ private:
 
 int main(int argc, char* argv[])
 {
-  rclcpp::init(argc, argv);
-
   const std::vector<std::string> args =
       rclcpp::init_and_remove_ros_arguments(argc, argv);
 
