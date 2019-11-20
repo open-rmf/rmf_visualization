@@ -4,6 +4,7 @@
 #include <rmf_traffic/Time.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
+#include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 
 using SubmitTrajectory = rmf_traffic_msgs::srv::SubmitTrajectory;
@@ -30,7 +31,7 @@ public:
 
     auto profile = rmf_traffic::Trajectory::Profile::make_guided(
         rmf_traffic::geometry::make_final_convex<
-          rmf_traffic::geometry::Box>(1.0, 1.0));
+          rmf_traffic::geometry::Circle>(1.5));
     
     rmf_traffic::Trajectory t(map_name);
     t.insert(

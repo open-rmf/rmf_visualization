@@ -170,16 +170,14 @@ void Server::parse_trajectories(
     for (rmf_traffic::Trajectory trajectory : trajectories)
     {
       auto j_traj = _j_traj;
-
       try
       {
         // TODO(YV) interpret the shape from profile 
         // This will fail if shape is Box
         j_traj["shape"].push_back("circle");
-  
         const auto &circle = static_cast<const rmf_traffic::geometry::Circle&>(
             trajectory.begin()->get_profile()->get_shape()->source());
-        j_traj["diemnsions"].push_back(circle.get_radius());
+        j_traj["dimensions"].push_back(circle.get_radius());
       }
       catch(const std::exception& e)
       {
