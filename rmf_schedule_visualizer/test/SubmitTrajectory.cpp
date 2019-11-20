@@ -12,12 +12,42 @@ using SubmitTrajectoryClient = rclcpp::Client<SubmitTrajectory>;
 using SubmitTrajectoryHandle = SubmitTrajectoryClient::SharedPtr;
 using namespace std::chrono_literals;
 
+
+bool get_arg(
+    const std::vector<std::string>& args,
+    const std::string& key,
+    std::string& value,
+    const std::string& desc,
+    const bool mandatory = true)
+{
+  const auto key_arg = std::find(args.begin(), args.end(), key);
+  if(key_arg == args.end())
+  {
+    if(mandatory)
+    {
+      std::cerr << "You must specify a " << desc <<" using the " << key
+                << " argument!" << std::endl;
+    }
+    return false;
+  }
+  else if(key_arg+1 == args.end())
+  {
+    std::cerr << "The " << key << " argument must be followed by a " << desc
+              << "!" << std::endl;
+    return false;
+  }
+
+  value = *(key_arg+1);
+  return true;
+}
+
+
 class SubmitTrajectoryNode : public rclcpp::Node
 {
 public:
 
   SubmitTrajectoryNode(
-      std::string node_name_ ="test_submit_trajectory",
+      std::string node_name_ ="submit_trajectory_node",
       std::string map_name = "level1",
       rmf_traffic::Duration duration_ = 400s,
       Eigen::Vector3d position_ = Eigen::Vector3d{0,0,0},
@@ -113,11 +143,28 @@ int main(int argc, char* argv[])
   const std::vector<std::string> args =
       rclcpp::init_and_remove_ros_arguments(argc, argv);
 
-  std::string node_name = "test_submit_trajectory";
+  std::string node_name = "submit_trajectory_node";
+  
   std::string map_name = "level1";
+  get_arg(args, "-m", map_name, "map name", false);
+
+  std::string duration_string;
+  get_arg(args, "-d", duration_string, "duration(s)",false);
   rmf_traffic::Duration duration = 400s;
+
+
   Eigen::Vector3d position{0,0,0};
+
+  std::string x_string;
+  if(get_arg(args, "-x", x_string, "x-coordinate",false))
+    position[0]=std::stod(x_string);
+
+  std::string y_string;
+  if(get_arg(args, "-y", y_string, "x-coordinate",false))
+    position[1]=std::stod(y_string);
+
   Eigen::Vector3d velocity{0,0,0};
+
 
   rclcpp::spin_some(std::make_shared<SubmitTrajectoryNode>(
         node_name,

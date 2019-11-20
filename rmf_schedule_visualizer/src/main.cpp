@@ -30,9 +30,6 @@ bool get_arg(
   const auto key_arg = std::find(args.begin(), args.end(), key);
   if(key_arg == args.end())
   {
-    // TODO(MXG): See if there's a way to use RCLCPP_ERROR here without first
-    // constructing a node. If not, we could consider constructing the
-    // FleetAdapterNode in two parts.
     if(mandatory)
     {
       std::cerr << "You must specify a " << desc <<" using the " << key
