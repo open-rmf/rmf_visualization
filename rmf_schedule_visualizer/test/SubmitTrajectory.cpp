@@ -84,10 +84,13 @@ public:
 
     while (!submit_trajectory->wait_for_service(1s)) 
     {
-      if (!rclcpp::ok()) {
+      if (!rclcpp::ok()) 
+      {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-    }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
+        // TODO(YV) use correct error code
+        rclcpp::exceptions::throw_from_rcl_error(200, "Interrupted");
+      }
+      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
     }
 
     if (submit_trajectory->service_is_ready())
