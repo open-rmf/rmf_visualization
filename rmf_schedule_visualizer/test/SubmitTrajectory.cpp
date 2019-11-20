@@ -51,6 +51,14 @@ public:
     auto submit_trajectory = this->create_client<SubmitTrajectory>(
         rmf_traffic_ros2::SubmitTrajectoryServiceName);
 
+    while (!submit_trajectory->wait_for_service(1s)) 
+    {
+      if (!rclcpp::ok()) {
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+    }
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
+    }
+
     if (submit_trajectory->service_is_ready())
     {
       submit_trajectory->async_send_request(
@@ -67,13 +75,11 @@ public:
           rmf_traffic_ros2::SubmitTrajectoryServiceName +" service is unavailable!"
       );
     }
-    
 
   }
 
 
 private:
-
   void parse_response(
       const SubmitTrajectoryClient::SharedFuture& response)
   {
