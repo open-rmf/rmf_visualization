@@ -82,6 +82,11 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 
   if(ok)
   {
+    std::cout<<"start_time: "
+        <<request_param.start_time.time_since_epoch().count()<<std::endl;
+    std::cout<<"finish_time: "
+        <<request_param.finish_time.time_since_epoch().count()<<std::endl;
+        
     auto trajectories = _visualizer_data_node.get_trajectories(request_param);
     parse_trajectories(trajectories, response);
   }
@@ -123,13 +128,14 @@ bool Server::parse_request(server::message_ptr msg, RequestParam& request_param)
         j_param["finish_time"] > j_param["start_time"])
         {
           request_param.map_name = j_param["map_name"];
+          // Convert json fields to nanosecond durations
+          // to set rmf_traffic::Time fields
           std::chrono::nanoseconds start_time_nano(j_param["start_time"]);
           std::chrono::nanoseconds finish_time_nano(j_param["finish_time"]);
-          // TODO(YV) fix this 
-          request_param.start_time = std::chrono::steady_clock::now() +
-              start_time_nano;
-          request_param.finish_time = std::chrono::steady_clock::now() +
-              finish_time_nano ;
+          request_param.start_time = rmf_traffic::Time(
+              rmf_traffic::Duration(start_time_nano));
+          request_param.finish_time = rmf_traffic::Time(
+              rmf_traffic::Duration(finish_time_nano));
 
           return true;
 
