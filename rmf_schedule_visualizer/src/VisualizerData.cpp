@@ -109,6 +109,8 @@ void VisualizerDataNode::start(Data _data)
       {
         auto view = data->mirror.viewer().query(
             rmf_traffic::schedule::query_everything());
+        if (view.size()==0)
+          RCLCPP_INFO(this->get_logger(), "View is empty");
         for (auto trajectory : view)
         {
           auto start_time = trajectory.begin()->get_finish_time();
@@ -124,7 +126,6 @@ void VisualizerDataNode::start(Data _data)
     else if (msg->data == "e")
     {
       RCLCPP_INFO(this->get_logger(), msg->data.c_str());
-
     }
   });
 
