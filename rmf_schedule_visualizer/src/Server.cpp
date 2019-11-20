@@ -86,7 +86,7 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
         <<request_param.start_time.time_since_epoch().count()<<std::endl;
     std::cout<<"finish_time: "
         <<request_param.finish_time.time_since_epoch().count()<<std::endl;
-        
+
     auto trajectories = _visualizer_data_node.get_trajectories(request_param);
     parse_trajectories(trajectories, response);
   }
@@ -173,9 +173,10 @@ void Server::parse_trajectories(
       auto finish_time = it->get_finish_time();
       auto finish_position = it->get_finish_position();
       auto finish_velocity = it->get_finish_velocity();
-
-      j_seg["x"] = finish_position[0];
-      j_seg["v"] = finish_velocity[0];
+      j_seg["x"].push_back(
+          {finish_position[0],finish_position[1],finish_position[2]});
+      j_seg["v"].push_back(
+          {finish_velocity[0],finish_velocity[1],finish_velocity[2]});
       j_seg["t"] = finish_time.time_since_epoch().count();
       j_traj["segments"].push_back(j_seg);
     }

@@ -62,4 +62,6 @@ install(
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+add_subdirectory(test)
+
 ament_package()
