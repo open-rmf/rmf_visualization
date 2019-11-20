@@ -180,12 +180,6 @@ void Server::parse_trajectories(
   response = j_res.dump();
 }
 
-/// Set the interanal reference to the visualizer_data_node
-void Server::set_mirror(VisualizerDataNode& visualizer_data_node)
-{
-
-}
-
 Server::~Server()
 {
   //thread safe access to _connections

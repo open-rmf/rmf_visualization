@@ -80,9 +80,6 @@ private:
  
   void on_message(connection_hdl hdl, server::message_ptr msg);
 
-  /// Set the interanal reference to the visualizer_data_node
-  void set_mirror(VisualizerDataNode& visualizer_data_node);
-
   bool parse_request(server::message_ptr msg, RequestParam& request_param);
 
   void parse_trajectories(
