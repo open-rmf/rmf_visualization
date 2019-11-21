@@ -1,8 +1,8 @@
 # rmf_schedule_visualizer
 
-##Visualizer for trajectories in the rmf schedule database
+Visualizer for trajectories in the rmf schedule database
 
-This repository contains a backaend component that retrieves trajectories in the rmf schedule database and a front end component that renders the active trajectores into a UI. The user is able to apply time and location filters to the visualizer. 
+This repository allows for the visualization of trajectories in the rmf schedule. It contains a backend component that retrieves trajectories in the rmf schedule database and a frontend component that renders the active trajectores through a UI. The user is able to specify time and location filters to the visualizer. 
 
 ### Installation 
 ```
