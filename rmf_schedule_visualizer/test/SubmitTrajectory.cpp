@@ -1,13 +1,30 @@
+/*
+ * Copyright (C) 2019 Open Source Robotics Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+*/
+
 #include <rmf_traffic/Trajectory.hpp>
 #include <rmf_traffic_ros2/Trajectory.hpp>
-#include <rmf_traffic_msgs/srv/submit_trajectory.hpp>
+#include <rmf_traffic_msgs/srv/submit_trajectories.hpp>
 #include <rmf_traffic/Time.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 
-using SubmitTrajectory = rmf_traffic_msgs::srv::SubmitTrajectory;
+using SubmitTrajectory = rmf_traffic_msgs::srv::SubmitTrajectories;
 using SubmitTrajectoryClient = rclcpp::Client<SubmitTrajectory>;
 using SubmitTrajectoryHandle = SubmitTrajectoryClient::SharedPtr;
 using namespace std::chrono_literals;
@@ -80,14 +97,17 @@ public:
     request_msg.trajectories.emplace_back(rmf_traffic_ros2::convert(t));
 
     auto submit_trajectory = this->create_client<SubmitTrajectory>(
-        rmf_traffic_ros2::SubmitTrajectoryServiceName);
+        rmf_traffic_ros2::SubmitTrajectoriesSrvName);
 
     while (!submit_trajectory->wait_for_service(1s)) 
     {
-      if (!rclcpp::ok()) {
+      if (!rclcpp::ok()) 
+      {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-    }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
+        // TODO(YV) use correct error code
+        rclcpp::exceptions::throw_from_rcl_error(200, "Interrupted");
+      }
+      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
     }
 
     if (submit_trajectory->service_is_ready())
@@ -103,7 +123,7 @@ public:
     {
       RCLCPP_ERROR(
           this->get_logger(),
-          rmf_traffic_ros2::SubmitTrajectoryServiceName +" service is unavailable!"
+          rmf_traffic_ros2::SubmitTrajectoriesSrvName +" service is unavailable!"
       );
     }
 

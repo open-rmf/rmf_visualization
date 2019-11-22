@@ -31,6 +31,8 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 #include <rmf_schedule_visualizer/CommonData.hpp>
+#include <mutex>
+
 
 namespace rmf_schedule_visualizer {
 
@@ -72,6 +74,7 @@ private:
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::string _node_name;
   std::unique_ptr<Data> data;
+  std::mutex _mutex;
 
 };
 

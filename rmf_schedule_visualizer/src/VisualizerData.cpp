@@ -95,6 +95,7 @@ void VisualizerDataNode::start(Data _data)
   {
     if (msg->data == "c")
     {
+      std::lock_guard<std::mutex> guard(_mutex);
       size_t count = data->mirror.viewer().query
         (rmf_traffic::schedule::query_everything()).size();
       RCLCPP_INFO(this->get_logger(), "Trajectory Count: "+
@@ -103,10 +104,13 @@ void VisualizerDataNode::start(Data _data)
     if (msg->data == "t")
     {
       // get start_time of all trajectories in the mirror
+      std::lock_guard<std::mutex> guard(_mutex);
       try
       {
         auto view = data->mirror.viewer().query(
             rmf_traffic::schedule::query_everything());
+        if (view.size()==0)
+          RCLCPP_INFO(this->get_logger(), "View is empty");
         for (auto trajectory : view)
         {
           auto start_time = trajectory.begin()->get_finish_time();
@@ -122,7 +126,6 @@ void VisualizerDataNode::start(Data _data)
     else if (msg->data == "e")
     {
       RCLCPP_INFO(this->get_logger(), msg->data.c_str());
-
     }
   });
 
@@ -130,20 +133,21 @@ void VisualizerDataNode::start(Data _data)
 
   std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(RequestParam request_param)
   {
-   std::vector<rmf_traffic::Trajectory> trajectories; 
-   const std::vector<std::string> maps {request_param.map_name};
-   //const auto query = rmf_traffic::schedule::query_everything();
-   const auto query = rmf_traffic::schedule::make_query(maps, &request_param.start_time, &request_param.finish_time);
-   
-   // TODO(YV) Use mutex to lock Mirror when accessing View
-   const auto view = data->mirror.viewer().query(query);
 
-   for (const auto trajectory : view)
-   {
-     trajectories.push_back(trajectory);
-   }
+    std::vector<rmf_traffic::Trajectory> trajectories; 
+    const std::vector<std::string> maps {request_param.map_name};
+    const auto query = rmf_traffic::schedule::make_query(maps, &request_param.start_time, &request_param.finish_time);
+    
+    // TODO(YV) Use mutex to lock Mirror when accessing View
+    std::lock_guard<std::mutex> guard(_mutex);
+    const auto view = data->mirror.viewer().query(query);
 
-   return trajectories;
+    for (const auto trajectory : view)
+    {
+      trajectories.push_back(trajectory);
+    }
+
+    return trajectories;
   }
 
 //==============================================================================
