@@ -123,9 +123,56 @@ void VisualizerDataNode::start(Data _data)
         RCLCPP_ERROR(this->get_logger(), e.what());
       }
     }
-    else if (msg->data == "e")
+    else if (msg->data == "info")
     {
-      RCLCPP_INFO(this->get_logger(), msg->data.c_str());
+      std::lock_guard<std::mutex> guard(_mutex);
+      RCLCPP_INFO(this->get_logger(), "Schedule Info: ");
+
+      // here we will display the latest changes made to the mirror
+      // along with details of trajectories in the schedule 
+      try
+      {
+        std::cout<<"Latest Version: "<<
+            std::to_string(data->mirror.viewer().latest_version())<<std::endl;
+
+        // query since database was created
+        auto view = data->mirror.viewer().query(
+            rmf_traffic::schedule::make_query(0));
+        if (view.size()==0)
+          RCLCPP_INFO(this->get_logger(), "View is empty");
+        else if (view.size() <= 2)
+        {
+          // Do not want to iterate larger views
+          size_t t_count = 0;
+          for (auto t : view)
+          {
+            ++t_count;
+            std::cout<<"Trajectory: "<<t_count<<std::endl;
+            std::cout<<"Segment Count: "<<t.size()<<std::endl;
+            size_t s_count = 0;
+            for (auto it = t.begin(); it!= t.end(); it++)
+            {
+              ++s_count;
+              auto finish_time = it->get_finish_time();
+              auto finish_position = it->get_finish_position();
+              std::cout<<"Segment: "<<s_count<<std::endl;
+              std::cout<<"\tfinish_time: "<<
+                  std::to_string(
+                      finish_time.time_since_epoch().count())<<std::endl;
+                      
+              std::cout<<"\tfinish_position: "<<finish_position[0]
+                  <<" "<<finish_position[1]
+                  <<" "<<finish_position[2]<<std::endl;
+        
+            }
+          }
+        }
+      }
+      catch (std::exception& e)
+      {
+        RCLCPP_ERROR(this->get_logger(), e.what());
+      }
+
     }
   });
 
