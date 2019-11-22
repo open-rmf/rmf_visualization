@@ -17,14 +17,14 @@
 
 #include <rmf_traffic/Trajectory.hpp>
 #include <rmf_traffic_ros2/Trajectory.hpp>
-#include <rmf_traffic_msgs/srv/submit_trajectory.hpp>
+#include <rmf_traffic_msgs/srv/submit_trajectories.hpp>
 #include <rmf_traffic/Time.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 
-using SubmitTrajectory = rmf_traffic_msgs::srv::SubmitTrajectory;
+using SubmitTrajectory = rmf_traffic_msgs::srv::SubmitTrajectories;
 using SubmitTrajectoryClient = rclcpp::Client<SubmitTrajectory>;
 using SubmitTrajectoryHandle = SubmitTrajectoryClient::SharedPtr;
 using namespace std::chrono_literals;
@@ -97,7 +97,7 @@ public:
     request_msg.trajectories.emplace_back(rmf_traffic_ros2::convert(t));
 
     auto submit_trajectory = this->create_client<SubmitTrajectory>(
-        rmf_traffic_ros2::SubmitTrajectoryServiceName);
+        rmf_traffic_ros2::SubmitTrajectoriesSrvName);
 
     while (!submit_trajectory->wait_for_service(1s)) 
     {
@@ -123,7 +123,7 @@ public:
     {
       RCLCPP_ERROR(
           this->get_logger(),
-          rmf_traffic_ros2::SubmitTrajectoryServiceName +" service is unavailable!"
+          rmf_traffic_ros2::SubmitTrajectoriesSrvName +" service is unavailable!"
       );
     }
 
