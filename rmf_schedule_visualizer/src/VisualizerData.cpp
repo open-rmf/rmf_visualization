@@ -132,7 +132,6 @@ void VisualizerDataNode::start(Data _data)
       // along with details of trajectories in the schedule 
       try
       {
-
         std::cout<<"Latest Version: "<<
             std::to_string(data->mirror.viewer().latest_version())<<std::endl;
 
@@ -141,12 +140,32 @@ void VisualizerDataNode::start(Data _data)
             rmf_traffic::schedule::make_query(0));
         if (view.size()==0)
           RCLCPP_INFO(this->get_logger(), "View is empty");
-        
-        for (auto trajectory : view)
+        else if (view.size() <= 2)
         {
-          auto start_time = trajectory.begin()->get_finish_time();
-          RCLCPP_INFO(this->get_logger(), "start_time: " + 
-              std::to_string(start_time.time_since_epoch().count()));
+          // Do not want to iterate larger views
+          size_t t_count = 0;
+          for (auto t : view)
+          {
+            ++t_count;
+            std::cout<<"Trajectory: "<<t_count<<std::endl;
+            std::cout<<"Segment Count: "<<t.size()<<std::endl;
+            size_t s_count = 0;
+            for (auto it = t.begin(); it!= t.end(); it++)
+            {
+              ++s_count;
+              auto finish_time = it->get_finish_time();
+              auto finish_position = it->get_finish_position();
+              std::cout<<"Segment: "<<s_count<<std::endl;
+              std::cout<<"\tfinish_time: "<<
+                  std::to_string(
+                      finish_time.time_since_epoch().count())<<std::endl;
+                      
+              std::cout<<"\tfinish_position: "<<finish_position[0]
+                  <<" "<<finish_position[1]
+                  <<" "<<finish_position[2]<<std::endl;
+        
+            }
+          }
         }
       }
       catch (std::exception& e)
