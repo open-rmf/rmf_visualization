@@ -123,9 +123,37 @@ void VisualizerDataNode::start(Data _data)
         RCLCPP_ERROR(this->get_logger(), e.what());
       }
     }
-    else if (msg->data == "e")
+    else if (msg->data == "info")
     {
-      RCLCPP_INFO(this->get_logger(), msg->data.c_str());
+      std::lock_guard<std::mutex> guard(_mutex);
+      RCLCPP_INFO(this->get_logger(), "Schedule Info: ");
+
+      // here we will display the latest changes made to the mirror
+      // along with details of trajectories in the schedule 
+      try
+      {
+
+        std::cout<<"Latest Version: "<<
+            std::to_string(data->mirror.viewer().latest_version())<<std::endl;
+
+        // query since database was created
+        auto view = data->mirror.viewer().query(
+            rmf_traffic::schedule::make_query(0));
+        if (view.size()==0)
+          RCLCPP_INFO(this->get_logger(), "View is empty");
+        
+        for (auto trajectory : view)
+        {
+          auto start_time = trajectory.begin()->get_finish_time();
+          RCLCPP_INFO(this->get_logger(), "start_time: " + 
+              std::to_string(start_time.time_since_epoch().count()));
+        }
+      }
+      catch (std::exception& e)
+      {
+        RCLCPP_ERROR(this->get_logger(), e.what());
+      }
+
     }
   });
 
