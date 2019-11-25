@@ -55,7 +55,7 @@ install(
 )
 
 install(
-  TARGETS schedule_visualizer 
+  TARGETS schedule_visualizer
   EXPORT schedule_visualizer
   RUNTIME DESTINATION lib/${PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

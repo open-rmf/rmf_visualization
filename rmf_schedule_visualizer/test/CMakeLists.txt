@@ -18,7 +18,7 @@ target_include_directories(submit_trajectory
 )
 
 install(
-  TARGETS submit_trajectory 
+  TARGETS submit_trajectory
   EXPORT submit_trajectory
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
