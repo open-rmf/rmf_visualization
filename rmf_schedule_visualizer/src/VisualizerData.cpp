@@ -37,15 +37,13 @@ std::shared_ptr<VisualizerDataNode> VisualizerDataNode::make(
 
   // Creating a mirror manager that queries over all Spacetime in the database schedule 
   auto mirror_mgr_future = rmf_traffic_ros2::schedule::make_mirror(
-        *visualizer_data, rmf_traffic::schedule::Query::Spacetime());
+        *visualizer_data, rmf_traffic::schedule::query_everything().spacetime(),
+        &visualizer_data->_mutex);
 
   const auto stop_time = start_time + wait_time;
   while(rclcpp::ok() && std::chrono::steady_clock::now() < stop_time)
   {
-    // NOTE(MXG): We need to spin the node in order to get the mirror manager
-    // fully initialized.
     rclcpp::spin_some(visualizer_data);
-
     using namespace std::chrono_literals;
     bool ready = (mirror_mgr_future.wait_for(0s) == std::future_status::ready);
 
@@ -93,37 +91,8 @@ void VisualizerDataNode::start(Data _data)
       _node_name+"/debug",rclcpp::SystemDefaultsQoS(),
       [&](std_msgs::msg::String::UniquePtr msg)
   {
-    if (msg->data == "c")
-    {
-      std::lock_guard<std::mutex> guard(_mutex);
-      size_t count = data->mirror.viewer().query
-        (rmf_traffic::schedule::query_everything()).size();
-      RCLCPP_INFO(this->get_logger(), "Trajectory Count: "+
-           std::to_string(count));
-    }
-    if (msg->data == "t")
-    {
-      // get start_time of all trajectories in the mirror
-      std::lock_guard<std::mutex> guard(_mutex);
-      try
-      {
-        auto view = data->mirror.viewer().query(
-            rmf_traffic::schedule::query_everything());
-        if (view.size()==0)
-          RCLCPP_INFO(this->get_logger(), "View is empty");
-        for (auto trajectory : view)
-        {
-          auto start_time = trajectory.begin()->get_finish_time();
-          RCLCPP_INFO(this->get_logger(), "start_time: " + 
-              std::to_string(start_time.time_since_epoch().count()));
-        }
-      }
-      catch (std::exception& e)
-      {
-        RCLCPP_ERROR(this->get_logger(), e.what());
-      }
-    }
-    else if (msg->data == "info")
+
+    if (msg->data == "info")
     {
       std::lock_guard<std::mutex> guard(_mutex);
       RCLCPP_INFO(this->get_logger(), "Schedule Info: ");
@@ -143,12 +112,11 @@ void VisualizerDataNode::start(Data _data)
         else if (view.size() <= 2)
         {
           // Do not want to iterate larger views
-          size_t t_count = 0;
-          for (auto t : view)
+          for (const auto& element : view)
           {
-            ++t_count;
-            std::cout<<"Trajectory: "<<t_count<<std::endl;
-            std::cout<<"Segment Count: "<<t.size()<<std::endl;
+            auto t = element.trajectory;
+            std::cout<<"Trajectory ID: "<<element.id<<std::endl;
+            std::cout<<"Segment Number: "<<t.size()<<std::endl;
             size_t s_count = 0;
             for (auto it = t.begin(); it!= t.end(); it++)
             {
@@ -178,26 +146,47 @@ void VisualizerDataNode::start(Data _data)
 
 }
 
-  std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(RequestParam request_param)
-  {
+std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(RequestParam request_param)
+{
+  std::vector<rmf_traffic::Trajectory> trajectories; 
+  const std::vector<std::string> maps {request_param.map_name};
+  const auto query = rmf_traffic::schedule::make_query(
+      maps, &request_param.start_time,
+      &request_param.finish_time);
 
-    std::vector<rmf_traffic::Trajectory> trajectories; 
-    const std::vector<std::string> maps {request_param.map_name};
-    const auto query = rmf_traffic::schedule::make_query(maps, &request_param.start_time, &request_param.finish_time);
-    
-    // TODO(YV) Use mutex to lock Mirror when accessing View
-    std::lock_guard<std::mutex> guard(_mutex);
-    const auto view = data->mirror.viewer().query(query);
+  const auto view = data->mirror.viewer().query(query);
+  for (const auto& element : view)
+    trajectories.push_back(element.trajectory);
 
-    for (const auto trajectory : view)
-    {
-      trajectories.push_back(trajectory);
-    }
+  return trajectories;
+}
+using Element = rmf_traffic::schedule::Viewer::View::Element;
+std::vector<Element> VisualizerDataNode::get_elements(RequestParam request_param)
+{
+  std::vector<Element> elements; 
+  const std::vector<std::string> maps {request_param.map_name};
+  const auto query = rmf_traffic::schedule::make_query(
+      maps, &request_param.start_time,
+      &request_param.finish_time);
 
-    return trajectories;
-  }
+  const auto view = data->mirror.viewer().query(query);
+
+  for (const auto& element : view)
+    elements.push_back(element);
+
+  return elements;
+}
 
 //==============================================================================
+rmf_traffic::Time VisualizerDataNode::now()
+{
+  return rmf_traffic_ros2::convert(get_clock()->now());
+}
 
+//==============================================================================
+std::mutex& VisualizerDataNode::get_mutex()
+{
+  return _mutex;
+}
 
 } // namespace rmf_schedule_visualizer

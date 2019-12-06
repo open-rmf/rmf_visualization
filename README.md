@@ -15,10 +15,40 @@ source /opt/ros/dashing/setup.bash
 colcon build 
 ```
 
-### Demo
+### Rviz Demo 
+
+This package also allows for trajectories to be visualized in rviz2. 
+
+```
+git checkout rviz2
+cd ../
+source /opt/ros/dashing/setup.bash
+colcon build 
+```
+First launch rviz2 and load the configuration file located in config/
+```
+rviz2 rmf_schedule_visualizer/config/rmf.rviz
+```
+Run the rmf_schedule node
+```
+ros2 run rmf_traffic_ros2 rmf_traffic_schedule
 ```
 
-TODO
+Run the node that publishes trajectory markers to rviz2
+```
+ros2 run rmf_schedule_visualizer rviz2 -r 5
+The default rate(hz) is 1 and can be set using -r flag. For rates above 1, there is usually a 1s delay before markers are erased.
+```
+A test trajectory can be submitted by
+```
+ros2 run rmf_schedule_visualizer submit_trajectory -D 10
+Additional documentation for this is in the Testing Backend section.
+```
+
+The rmf_schedule_visualizer node queries for trajectories in the schedule over a window from the current instance in time until a duration of `query_duration`(s) into the future. The query also requires a`map_name`. The position of the robot (yellow cylinder) and its conflict-free path (green) are visualized in rviz. The schedule can be viewed `start_duration` seconds from the current instance.
+The default values of `map_name`, `query_duration` and `start_duration` are "level1", 60s and 0s respectively. These properties can be changed by publihsing an RvizParam msg to /rviz_node/param topic.
+```
+ros2 topic pub /rviz_node/param rmf_schedule_visualizer_msgs/msg/RvizParam "{map_name: "level2", query_duration: 600, start_duration: 10}" --once
 
 ```
 
@@ -35,9 +65,9 @@ The default <port_number> of the websocet server is `8006`.
 
 The repo also containts an executable to add trajectories into the schedule which may be useful for testing. 
 
-```ros2 run rmf_schedule_visualizer submit_trajectory -m <map_name> -x <x_posiiton> -y <y_position> -d <duration(s)>```
+```ros2 run rmf_schedule_visualizer submit_trajectory -m <map_name> -x <x_posiiton> -y <y_position> -D <delay> -d <duration>```
 
-The submits a 2 segment stationary trajectory which spans from `std::chrono::steady_clock::now()` till the `duration` has passed. The profile of the trajectory is circular. 
+The submits a trajectory which spans from `std::chrono::steady_clock::now()` till the `duration` has passed. The trajectory has an "L" shaped path. The profile of the trajectory is circular. The start_time of the trajectory can be pushed back by `delay` seconds. 
 
 #### Client Request Format
 ```

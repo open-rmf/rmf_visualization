@@ -17,6 +17,7 @@
 
 #include <rmf_traffic/Trajectory.hpp>
 #include <rmf_traffic_ros2/Trajectory.hpp>
+#include <rmf_traffic_ros2/Time.hpp>
 #include <rmf_traffic_msgs/srv/submit_trajectories.hpp>
 #include <rmf_traffic/Time.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -24,8 +25,8 @@
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 
-using SubmitTrajectory = rmf_traffic_msgs::srv::SubmitTrajectories;
-using SubmitTrajectoryClient = rclcpp::Client<SubmitTrajectory>;
+using SubmitTrajectories = rmf_traffic_msgs::srv::SubmitTrajectories;
+using SubmitTrajectoryClient = rclcpp::Client<SubmitTrajectories>;
 using SubmitTrajectoryHandle = SubmitTrajectoryClient::SharedPtr;
 using namespace std::chrono_literals;
 
@@ -66,19 +67,22 @@ public:
   SubmitTrajectoryNode(
       std::string node_name_ ="submit_trajectory_node",
       std::string map_name = "level1",
-      rmf_traffic::Duration duration_ = 400s,
+      rmf_traffic::Duration start_delay = 0s,
+      rmf_traffic::Duration duration_ = 60s,
       Eigen::Vector3d position_ = Eigen::Vector3d{0,0,0},
-      Eigen::Vector3d velocity_ = Eigen::Vector3d{0,0,0})
+      Eigen::Vector3d velocity_ = Eigen::Vector3d{0,0,0},
+      double radius = 1.0)
   : Node(node_name_),
     _position(position_),
     _velocity(velocity_)
   {
-    _start_time = std::chrono::steady_clock::now();
+//    _start_time = std::chrono::steady_clock::now() + start_delay;
+    _start_time = rmf_traffic_ros2::convert(get_clock()->now()) + start_delay;
     _finish_time = _start_time + duration_;
 
     auto profile = rmf_traffic::Trajectory::Profile::make_guided(
         rmf_traffic::geometry::make_final_convex<
-          rmf_traffic::geometry::Circle>(1.5));
+          rmf_traffic::geometry::Circle>(radius));
     
     rmf_traffic::Trajectory t(map_name);
     t.insert(
@@ -88,18 +92,32 @@ public:
         _velocity);
 
     t.insert(
+        _start_time + 10s,
+        profile,
+        _position + Eigen::Vector3d{10, 0, 0},
+        _velocity);
+    
+    t.insert(
+        _start_time + 15s,
+        profile,
+        _position + Eigen::Vector3d{10, 0, M_PI_2},
+        _velocity);
+    
+    t.insert(
         _finish_time,
         profile,
-        _position,
+        _position + Eigen::Vector3d{10, 10, M_PI_2},
         _velocity);
 
-    SubmitTrajectory::Request request_msg;
+    SubmitTrajectories::Request request_msg;
     request_msg.trajectories.emplace_back(rmf_traffic_ros2::convert(t));
+    request_msg.fleet.fleet_id = "test_fleet";
+    request_msg.fleet.type = rmf_traffic_msgs::msg::FleetProperties::TYPE_NO_CONTROL;
 
-    auto submit_trajectory = this->create_client<SubmitTrajectory>(
+    _submit_trajectory = this->create_client<SubmitTrajectories>(
         rmf_traffic_ros2::SubmitTrajectoriesSrvName);
 
-    while (!submit_trajectory->wait_for_service(1s)) 
+    while (!_submit_trajectory->wait_for_service(1s)) 
     {
       if (!rclcpp::ok()) 
       {
@@ -110,51 +128,47 @@ public:
       RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
     }
 
-    if (submit_trajectory->service_is_ready())
+    if (_submit_trajectory->service_is_ready())
     {
-      submit_trajectory->async_send_request(
-          std::make_shared<SubmitTrajectory::Request>(std::move(request_msg)),
-          [&](const SubmitTrajectoryClient::SharedFuture response)
+      _submit_trajectory->async_send_request(
+          std::make_shared<SubmitTrajectories::Request>(std::move(request_msg)),
+          [&](const SubmitTrajectoryClient::SharedFuture future)
       {
-        this->parse_response(response);
+        if (!future.valid() || std::future_status::ready != future.wait_for(0s))
+        {
+          RCLCPP_ERROR(
+                this->get_logger(),
+                "Failed to get response from schedule");
+          return;
+        }
+        const auto response = *future.get();
+
+        RCLCPP_INFO(this->get_logger(),"Accepted: " + response.accepted);
+        if (!response.error.empty())
+        {
+          RCLCPP_ERROR(
+                this->get_logger(),
+                "Error response from schedule: " + response.error);
+          return;
+        }
       });
     }
     else
     {
       RCLCPP_ERROR(
           this->get_logger(),
-          rmf_traffic_ros2::SubmitTrajectoriesSrvName +" service is unavailable!"
-      );
+          rmf_traffic_ros2::SubmitTrajectoriesSrvName +
+          " service is unavailable!");
     }
-
   }
 
 
 private:
-  void parse_response(
-      const SubmitTrajectoryClient::SharedFuture& response)
-  {
-    const auto response_msg = response.get();
-    if(response_msg->accepted)
-    {
-      RCLCPP_INFO(get_logger(), "Response: accepted");
-    }
-    else
-    {
-      std::string error_msg = "Response: " + response_msg->error + ". Conflicts:";
-      for(const auto& conflict : response_msg->conflicts)
-      {
-        error_msg += "\n -- " + std::to_string(conflict.index) + " @ "
-            + std::to_string(conflict.time);
-      }
-      RCLCPP_INFO(get_logger(), error_msg);
-    }
-  }
   rmf_traffic::Time _start_time;
   rmf_traffic::Time _finish_time;
   Eigen::Vector3d _position;
   Eigen::Vector3d _velocity;
-
+  SubmitTrajectoryHandle _submit_trajectory;
 };
 
 
@@ -170,8 +184,17 @@ int main(int argc, char* argv[])
 
   std::string duration_string;
   get_arg(args, "-d", duration_string, "duration(s)",false);
-  rmf_traffic::Duration duration = 400s;
+  rmf_traffic::Duration duration = duration_string.empty() ?
+      60s : std::chrono::seconds(std::stoi(duration_string));
 
+  std::string delay_string;
+  get_arg(args, "-D", delay_string, "start delay(s)",false);
+  rmf_traffic::Duration delay = delay_string.empty() ?
+      0s : std::chrono::seconds(std::stoi(delay_string));
+
+  std::string radius_string;
+  get_arg(args, "-r", radius_string, "radius",false);
+  double radius = radius_string.empty() ? 1.0 : std::stod(radius_string);
 
   Eigen::Vector3d position{0,0,0};
 
@@ -186,12 +209,14 @@ int main(int argc, char* argv[])
   Eigen::Vector3d velocity{0,0,0};
 
 
-  rclcpp::spin_some(std::make_shared<SubmitTrajectoryNode>(
+  rclcpp::spin(std::make_shared<SubmitTrajectoryNode>(
         node_name,
         map_name,
+        delay,
         duration,
         position,
-        velocity));
+        velocity,
+        radius));
 
   rclcpp::shutdown();
   return 0;

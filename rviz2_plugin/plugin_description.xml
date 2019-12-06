@@ -1,0 +1,9 @@
+<library path="/librviz2_plugin">
+  <class name="rviz2_plugin/SchedulePanel"
+         type="rviz2_plugin::SchedulePanel"
+         base_class_type="rviz_common::Panel">
+    <description>
+      A panel widget allowing users to adjust parameters in the schedule visualizaer.
+    </description>
+  </class>
+</library>

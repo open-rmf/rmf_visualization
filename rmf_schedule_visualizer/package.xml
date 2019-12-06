@@ -3,22 +3,25 @@
 <package format="3">
   <name>rmf_schedule_visualizer</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>A visualizer for trajectories in rmf schedule</description>
   <maintainer email="yadunund@openrobotics.org">Yadunund Vijay</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <buildtool_depend>rosidl_default_generators</buildtool_depend>
-
 
   <depend>rmf_traffic</depend>
   <depend>rmf_traffic_ros2</depend>
   <depend>rclcpp</depend>
   <depend>websocketpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>rmf_schedule_visualizer_msgs</depend>
 
-
+  
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
     <build_type>ament_cmake</build_type>

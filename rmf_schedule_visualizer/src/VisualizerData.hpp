@@ -40,6 +40,7 @@ namespace rmf_schedule_visualizer {
 class VisualizerDataNode : public rclcpp::Node
 {
 public:
+  using Element = rmf_traffic::schedule::Viewer::View::Element;
   /// Builder function which returns a pointer to VisualizerNode when
   /// the Mirror Manager is readied and websocket is started.
   /// A nullptr is returned if initialization fails. 
@@ -47,8 +48,16 @@ public:
       std::string node_name,
       rmf_traffic::Duration wait_time = std::chrono::seconds(10));
 
-  /// Function to query Mirror Manager for trajectories
+  /// Function to query Mirror Manager for trajectories.
   std::vector<rmf_traffic::Trajectory> get_trajectories(RequestParam request_param);
+
+  /// Function to query Mirror Manager for elements containing
+  /// trajectory and ID pairs.
+  std::vector<Element> get_elements(RequestParam request_param);
+
+  rmf_traffic::Time now();
+
+  std::mutex& get_mutex();
 
 private:
   struct Data
