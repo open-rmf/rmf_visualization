@@ -82,16 +82,16 @@ public:
     auto sub_conflict_opt = rclcpp::SubscriptionOptions();
     sub_conflict_opt.callback_group = _cb_group_conflict_sub;
     _conflcit_sub = this->create_subscription<ScheduleConflict>(
-          "/rmf_traffic/schedule_conflict",
-          rclcpp::QoS(10),
-          [&](ScheduleConflict::SharedPtr msg)
-          {
-            std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
-            _conflict_id.clear();
-            for (const auto& i : msg->indices)
-              _conflict_id.push_back(i);
-          },
-          sub_conflict_opt);
+        "/rmf_traffic/schedule_conflict",
+        rclcpp::QoS(10),
+        [&](ScheduleConflict::SharedPtr msg)
+        {
+          std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+          _conflict_id.clear();
+          for (const auto& i : msg->indices)
+            _conflict_id.push_back(i);
+        },
+        sub_conflict_opt);
 
     // Creating subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
@@ -99,21 +99,21 @@ public:
     auto sub_param_opt = rclcpp::SubscriptionOptions();
     sub_param_opt.callback_group = _cb_group_param_sub;
     _param_sub = this->create_subscription<RvizParamMsg>(
-          node_name + "/param",
-          rclcpp::QoS(10),
-          [&](RvizParamMsg::SharedPtr msg)
-          {
-            std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+        node_name + "/param",
+        rclcpp::QoS(10),
+        [&](RvizParamMsg::SharedPtr msg)
+        {
+          std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
 
-            if (!msg->map_name.empty())
-              _rviz_param.map_name = msg->map_name;
-            if (msg->query_duration > 0)
-              _rviz_param.query_duration = std::chrono::seconds(msg->query_duration);
-            if (msg->start_duration >= 0)
-              _rviz_param.start_duration = std::chrono::seconds(msg->start_duration);
-            RCLCPP_INFO(this->get_logger(),"Rviz parameters updated");
-          },
-          sub_param_opt);
+          if (!msg->map_name.empty())
+            _rviz_param.map_name = msg->map_name;
+          if (msg->query_duration > 0)
+            _rviz_param.query_duration = std::chrono::seconds(msg->query_duration);
+          if (msg->start_duration >= 0)
+            _rviz_param.start_duration = std::chrono::seconds(msg->start_duration);
+          RCLCPP_INFO(this->get_logger(),"Rviz parameters updated");
+        },
+        sub_param_opt);
     
     // Creating subcscriber for building_map in separate thread.
     // The subscriber requies QoS profile with transient local durability
@@ -124,14 +124,18 @@ public:
     auto qos_profile = rclcpp::QoS(10);
     qos_profile.transient_local();
     _map_sub = this->create_subscription<BuildingMap>(
-          "/map",
-          qos_profile,
-          [&](BuildingMap::SharedPtr msg)
-          {
-            std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
-            RCLCPP_INFO(this->get_logger(),"Received map with name: "+ msg->name);
-          },
-          sub_map_opt);
+        "/map",
+        qos_profile,
+        [&](BuildingMap::SharedPtr msg)
+        {
+          std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+          RCLCPP_INFO(this->get_logger(),"Received map  \""
+              + msg->name + "\" containing "
+              + std::to_string(msg->levels.size()) + " level(s)");
+          // Storing building map message 
+          _map_msg = *msg;
+        },
+        sub_map_opt);
   }
 
 private:
@@ -424,6 +428,8 @@ private:
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;
   std::chrono::nanoseconds _timer_period;
+  BuildingMap _map_msg;
+
   rclcpp::TimerBase::SharedPtr _timer;
   rclcpp::Publisher<MarkerArray>::SharedPtr _marker_array_pub;
   rclcpp::Subscription<ScheduleConflict>::SharedPtr _conflcit_sub;
@@ -432,6 +438,7 @@ private:
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_param_sub;
   rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_map_sub;
+
   rmf_schedule_visualizer::VisualizerDataNode& _visualizer_data_node;
 
   RvizParam _rviz_param;
