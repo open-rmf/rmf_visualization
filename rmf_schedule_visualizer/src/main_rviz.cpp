@@ -29,6 +29,7 @@
 #include <rmf_traffic_msgs/msg/schedule_conflict.hpp>
 #include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
 #include <building_map_msgs/msg/building_map.hpp>
+#include <building_map_msgs/msg/level.hpp>
 
 #include <mutex>
 
@@ -45,6 +46,7 @@ public:
   using Element = rmf_traffic::schedule::Viewer::View::Element;
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
   using BuildingMap = building_map_msgs::msg::BuildingMap;
+  using Level = building_map_msgs::msg::Level;
 
   RvizNode(
       std::string node_name,
@@ -105,8 +107,10 @@ public:
         {
           std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
 
-          if (!msg->map_name.empty())
-            _rviz_param.map_name = msg->map_name;
+          if (!msg->map_name.empty() && _rviz_param.map_name != msg->map_name)
+            {
+              _rviz_param.map_name = msg->map_name;
+            }
           if (msg->query_duration > 0)
             _rviz_param.query_duration = std::chrono::seconds(msg->query_duration);
           if (msg->start_duration >= 0)
@@ -129,7 +133,7 @@ public:
         [&](BuildingMap::SharedPtr msg)
         {
           std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
-          RCLCPP_INFO(this->get_logger(),"Received map  \""
+          RCLCPP_INFO(this->get_logger(),"Received map \""
               + msg->name + "\" containing "
               + std::to_string(msg->levels.size()) + " level(s)");
           // Storing building map message 
@@ -210,11 +214,60 @@ private:
 
   }
 
+  void add_map_markers(MarkerArray& marker_array)
+  {
+    if (_map_msg.levels.size() < 1)
+      return;
+
+    bool found_map = false;
+    for (auto it = _map_msg.levels.begin(); it != _map_msg.levels.end(); it++)
+    {
+      if (it->name == _rviz_param.map_name)
+        found_map = true;
+    }
+
+    if (!found_map)
+      return; 
+    
+    // Markers for node locations 
+    Marker node_marker;
+    node_marker.header.frame_id = _frame_id; // map
+    node_marker.header.stamp = rmf_traffic_ros2::convert(
+        _visualizer_data_node.now());
+    node_marker.ns = "map";
+    node_marker.id = 1;
+    node_marker.type = node_marker.POINTS;
+    node_marker.action = node_marker.ADD;
+
+    node_marker.pose.orientation.w = 1;
+
+    // Set the scale of the marker
+    node_marker.scale.x = 10;
+    node_marker.scale.y = 10;
+    node_marker.scale.z = 1.0;
+
+    // Set the color
+    node_marker.color.r = 0.5f;
+    node_marker.color.g = 1.0f;
+    node_marker.color.b = 0.0f;
+    node_marker.color.a = 1.0;
+
+    // Find the desired level
+
+    // Add node locations to point list 
+    
+
+    // Markers for lanes 
+
+    // Markers for lane directionality 
+  }
+
   void delete_marker(const uint64_t id, MarkerArray& marker_array)
   {
     Marker marker_msg;
     marker_msg.header.frame_id = _frame_id; // map
-    marker_msg.header.stamp = rmf_traffic_ros2::convert(_visualizer_data_node.now());
+    marker_msg.header.stamp = rmf_traffic_ros2::convert(
+        _visualizer_data_node.now());
     marker_msg.ns = "trajectory";
     marker_msg.id = id;
     marker_msg.type = marker_msg.CYLINDER;
@@ -246,7 +299,7 @@ private:
     marker_msg.type = marker_msg.CYLINDER;
     marker_msg.action = marker_msg.ADD;
 
-    // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
+    // Set the pose of the marker
     auto motion = trajectory.find(param.start_time)->compute_motion();
     Eigen::Vector3d position =  motion->compute_position(param.start_time);
     marker_msg.pose.position.x = position[0];
@@ -259,12 +312,12 @@ private:
     marker_msg.pose.orientation.z = quat.z;
     marker_msg.pose.orientation.w = quat.w;
 
-    // Set the scale of the marker -- 1x1x1 here means 1m on a side
+    // Set the scale of the marker
     marker_msg.scale.x = radius / 1.0;
     marker_msg.scale.y = radius / 1.0;
     marker_msg.scale.z = 1.0;
 
-    // Set the color -- be sure to set alpha to something non-zero!
+    // Set the color
     marker_msg.color.r = 1.0f;
     marker_msg.color.g = 1.0f;
     marker_msg.color.b = 0.0f;
@@ -300,21 +353,14 @@ private:
     marker_msg.type = marker_msg.LINE_STRIP;
     marker_msg.action = marker_msg.ADD;
 
-    marker_msg.pose.position.x = 0;
-    marker_msg.pose.position.y = 0;
-    marker_msg.pose.position.z = 0;
-
-    marker_msg.pose.orientation.x = 0;
-    marker_msg.pose.orientation.y = 0;
-    marker_msg.pose.orientation.z = 0;
     marker_msg.pose.orientation.w = 1;
 
-    // Set the scale of the marker -- 1x1x1 here means 1m on a side
+    // Set the scale of the marker
     marker_msg.scale.x =  0.5;
     marker_msg.scale.y =  1.0;
     marker_msg.scale.z = 1.0;
 
-    // Set the color -- be sure to set alpha to something non-zero!
+    // Set the color
     if (conflict)
     {
       marker_msg.color.r = 1.0f;
