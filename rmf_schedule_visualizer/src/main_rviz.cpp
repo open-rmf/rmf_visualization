@@ -44,6 +44,7 @@ public:
   using ScheduleConflict = rmf_traffic_msgs::msg::ScheduleConflict;
   using Element = rmf_traffic::schedule::Viewer::View::Element;
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
+  using BuildingMap = building_map_msgs::msg::BuildingMap;
 
   RvizNode(
       std::string node_name,
@@ -62,13 +63,20 @@ public:
     _rviz_param.query_duration = std::chrono::seconds(60);
     _rviz_param.start_duration = std::chrono::seconds(0);
 
+    // creating a timer with specified rate. This timer runs on the main thread.
     int64_t s = 1/ _rate ;
-    // std::cout<<"Timer seconds: "<<s<<std::endl;
     auto sec = std::chrono::seconds(s);
     _timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(sec);
-    _marker_array_pub = this->create_publisher<MarkerArray>("dp2_marker_array", rclcpp::SystemDefaultsQoS());
-    _timer = this->create_wall_timer(_timer_period, std::bind(&RvizNode::timer_callback, this));
+    _timer = this->create_wall_timer(
+        _timer_period,
+        std::bind(&RvizNode::timer_callback, this));
+
+    // creating publisher for marker_array
+    _marker_array_pub = this->create_publisher<MarkerArray>(
+        "dp2_marker_array",
+        rclcpp::SystemDefaultsQoS());
     
+    // creating subscriber for schedule_conflict in separate threead
     _cb_group_conflict_sub = this->create_callback_group(
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_conflict_opt = rclcpp::SubscriptionOptions();
@@ -85,6 +93,7 @@ public:
           },
           sub_conflict_opt);
 
+    // creating subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_param_opt = rclcpp::SubscriptionOptions();
@@ -102,11 +111,27 @@ public:
               _rviz_param.query_duration = std::chrono::seconds(msg->query_duration);
             if (msg->start_duration >= 0)
               _rviz_param.start_duration = std::chrono::seconds(msg->start_duration);
-
-            RCLCPP_INFO(this->get_logger(),"Rviz Parameters Updated");
-
+            RCLCPP_INFO(this->get_logger(),"Rviz parameters updated");
           },
           sub_param_opt);
+    
+    // creating subcscriber for building_map in separate thread
+    _cb_group_map_sub = this->create_callback_group(
+    rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
+    auto sub_map_opt = rclcpp::SubscriptionOptions();
+    sub_map_opt.callback_group = _cb_group_map_sub;
+    // /map topic requies QoS profile with transient local durability
+    auto qos_profile = rclcpp::QoS(10);
+    qos_profile.transient_local();
+    _map_sub = this->create_subscription<BuildingMap>(
+          "/map",
+          qos_profile,
+          [&](BuildingMap::SharedPtr msg)
+          {
+            std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+            RCLCPP_INFO(this->get_logger(),"Received map with name: "+ msg->name);
+          },
+          sub_map_opt);
   }
 
 private:
@@ -406,6 +431,8 @@ private:
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_conflict_sub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_param_sub;
+  rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
+  rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_map_sub;
   rmf_schedule_visualizer::VisualizerDataNode& _visualizer_data_node;
 
   RvizParam _rviz_param;
