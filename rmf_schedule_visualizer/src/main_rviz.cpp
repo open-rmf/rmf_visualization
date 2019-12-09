@@ -63,7 +63,7 @@ public:
     _rviz_param.query_duration = std::chrono::seconds(60);
     _rviz_param.start_duration = std::chrono::seconds(0);
 
-    // creating a timer with specified rate. This timer runs on the main thread.
+    // Creating a timer with specified rate. This timer runs on the main thread.
     int64_t s = 1/ _rate ;
     auto sec = std::chrono::seconds(s);
     _timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(sec);
@@ -71,12 +71,12 @@ public:
         _timer_period,
         std::bind(&RvizNode::timer_callback, this));
 
-    // creating publisher for marker_array
+    // Creating publisher for marker_array
     _marker_array_pub = this->create_publisher<MarkerArray>(
         "dp2_marker_array",
         rclcpp::SystemDefaultsQoS());
     
-    // creating subscriber for schedule_conflict in separate threead
+    // Creating subscriber for schedule_conflict in separate threead
     _cb_group_conflict_sub = this->create_callback_group(
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_conflict_opt = rclcpp::SubscriptionOptions();
@@ -93,7 +93,7 @@ public:
           },
           sub_conflict_opt);
 
-    // creating subscriber for rviz_param in separate thread
+    // Creating subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_param_opt = rclcpp::SubscriptionOptions();
@@ -115,12 +115,12 @@ public:
           },
           sub_param_opt);
     
-    // creating subcscriber for building_map in separate thread
+    // Creating subcscriber for building_map in separate thread.
+    // The subscriber requies QoS profile with transient local durability
     _cb_group_map_sub = this->create_callback_group(
     rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_map_opt = rclcpp::SubscriptionOptions();
     sub_map_opt.callback_group = _cb_group_map_sub;
-    // /map topic requies QoS profile with transient local durability
     auto qos_profile = rclcpp::QoS(10);
     qos_profile.transient_local();
     _map_sub = this->create_subscription<BuildingMap>(
@@ -150,7 +150,6 @@ private:
     query_param.finish_time = query_param.start_time + _rviz_param.query_duration;
 
     _elements = _visualizer_data_node.get_elements(query_param);
-    // std::cout<<"Element size: "<<_elements.size()<<std::endl;
 
     RequestParam traj_param;
     traj_param.map_name = query_param.map_name;
@@ -160,12 +159,12 @@ private:
     // store the ids of active trajectories
     std::vector<uint64_t> active_id;
 
-    // for each trajectory create two markers
+    // For each trajectory create two markers
     // 1) Current position 
     // 2) Path until param.finish_time
     for (const auto& element : _elements)
     {
-      // create markers for trajectories that are active within time range
+      // Create markers for trajectories that are active within time range
       if (element.trajectory.find(traj_param.start_time) != element.trajectory.end())
       {
         active_id.push_back(element.id);
@@ -176,13 +175,13 @@ private:
         auto path_marker = make_path_marker(element, traj_param);
         marker_array.markers.push_back(path_marker);
 
-        // adding to id to _marker_tracker 
+        // Adding to id to _marker_tracker 
         if (_marker_tracker.find(element.id) == _marker_tracker.end())
           _marker_tracker.insert(element.id);
       }
     }
     
-    // add deletion markers for trajectories no longer active 
+    // Add deletion markers for trajectories no longer active 
     std::unordered_set<uint64_t> removed_markers;
     for (const auto marker : _marker_tracker)
     {
