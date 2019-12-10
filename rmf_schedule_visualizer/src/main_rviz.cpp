@@ -52,19 +52,19 @@ public:
       std::string node_name,
       rmf_schedule_visualizer::VisualizerDataNode& visualizer_data_node,
       std::string map_name,
-      double rate = 1,
+      double rate = 1.0,
       std::string frame_id = "/map")
   : Node(node_name),
     _visualizer_data_node(visualizer_data_node),
     _rate(rate),
     _frame_id(frame_id)
   {
-    // Initializing level 
+    // Initializing boolean to indicate whether level cache is relevant 
     _has_level = false;
 
     // TODO add a constructor for RvizParam
     _rviz_param.map_name = map_name;
-    _rviz_param.query_duration = std::chrono::seconds(60);
+    _rviz_param.query_duration = std::chrono::seconds(600);
     _rviz_param.start_duration = std::chrono::seconds(0);
 
     // Creating a timer with specified rate. This timer runs on the main thread.
@@ -266,8 +266,8 @@ private:
       node_marker.pose.orientation.w = 1;
 
       // Set the scale of the marker
-      node_marker.scale.x = 100;
-      node_marker.scale.y = 100;
+      node_marker.scale.x = 1.0;
+      node_marker.scale.y = 1.0;
       node_marker.scale.z = 1.0;
 
       // Set the color
@@ -280,7 +280,7 @@ private:
       Marker lane_marker = node_marker;
       lane_marker.type = lane_marker.LINE_STRIP;
       lane_marker.scale.x = 2;
-
+      lane_marker.color.b = 0.5f;
 
       // Add node locations to point list 
       std::cout<<"Level name: "<<_level.name<<std::endl;
@@ -528,7 +528,6 @@ private:
   };
 
   double _rate;
-  int _count;
   std::string _frame_id;
   std::vector<int64_t> _conflict_id;
   std::unordered_set<uint64_t> _marker_tracker; 
