@@ -261,8 +261,8 @@ private:
       node_marker.pose.orientation.w = 1;
 
       // Set the scale of the marker
-      node_marker.scale.x = 1.0;
-      node_marker.scale.y = 1.0;
+      node_marker.scale.x = 0.1;
+      node_marker.scale.y = 0.1;
       node_marker.scale.z = 1.0;
 
       // Set the color
@@ -282,6 +282,7 @@ private:
       }
       // Marker for lanes
       Marker lane_marker = node_marker;
+      node_marker.id = 2;
       lane_marker.type = lane_marker.LINE_STRIP;
       lane_marker.scale.x = 0.1;
       lane_marker.color.r = 1.0f;
@@ -296,11 +297,11 @@ private:
 
       for (const auto nav_graph : _level.nav_graphs)
       {
-        // for (const auto vertex : nav_graph.vertices)
-        // {
-        //   node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
-        //   std::cout<<"Added X: "<<vertex.x<<" Y: "<<vertex.y<<std::endl;
-        // }
+        for (const auto vertex : nav_graph.vertices)
+        {
+          node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
+          std::cout<<"Added X: "<<vertex.x<<" Y: "<<vertex.y<<std::endl;
+        }
 
         // Adding lane markers
 
@@ -308,6 +309,8 @@ private:
         {
           auto n1 = nav_graph.vertices[edge.v1_idx];
           auto n2 = nav_graph.vertices[edge.v2_idx];
+          std::cout<<"Node 1 X: "<<n1.x<<" Y: "<<n1.y<<std::endl;
+          std::cout<<"Node 2 X: "<<n2.x<<" Y: "<<n2.y<<std::endl;
           lane_marker.points.push_back(make_point({n1.x, n1.y, 0}));
           lane_marker.points.push_back(make_point({n2.x, n2.y, 0}));
         }
