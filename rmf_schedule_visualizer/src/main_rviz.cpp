@@ -163,6 +163,9 @@ public:
               + std::to_string(msg->levels.size()) + " level(s)");
           // Storing building map message 
           _map_msg = *msg;
+          std::cout<<"Level name: "<<msg->levels[0].name<<std::endl;
+          std::cout<<"Nav Graph size: "<<msg->levels[0].nav_graphs.size()<<std::endl;
+          std::cout<<"Wall Graph vertices size: "<<msg->levels[0].wall_graph.vertices.size()<<std::endl;
         },
         sub_map_opt);
   }
@@ -213,7 +216,11 @@ private:
           _marker_tracker.insert(element.id);
       }
     }
-    
+    std::cout<<"Marker Array size before map: "<<marker_array.markers.size()<<std::endl;
+    // Add map markers
+    add_map_markers(marker_array);
+    std::cout<<"Marker Array size after map: "<<marker_array.markers.size()<<std::endl;
+
     // Add deletion markers for trajectories no longer active 
     std::unordered_set<uint64_t> removed_markers;
     for (const auto marker : _marker_tracker)
@@ -246,7 +253,7 @@ private:
 
     if (_has_level)
     {    
-      // Markers for node locations 
+      // Marker for node locations 
       Marker node_marker;
       node_marker.header.frame_id = _frame_id; // map
       node_marker.header.stamp = rmf_traffic_ros2::convert(
@@ -259,8 +266,8 @@ private:
       node_marker.pose.orientation.w = 1;
 
       // Set the scale of the marker
-      node_marker.scale.x = 10;
-      node_marker.scale.y = 10;
+      node_marker.scale.x = 100;
+      node_marker.scale.y = 100;
       node_marker.scale.z = 1.0;
 
       // Set the color
@@ -269,22 +276,43 @@ private:
       node_marker.color.b = 0.0f;
       node_marker.color.a = 1.0;
 
+      // Marker for lanes
+      Marker lane_marker = node_marker;
+      lane_marker.type = lane_marker.LINE_STRIP;
+      lane_marker.scale.x = 2;
+
+
       // Add node locations to point list 
-      for (auto nav_graph : _level.nav_graphs)
+      std::cout<<"Level name: "<<_level.name<<std::endl;
+      std::cout<<"Nav Graph size: "<<_level.nav_graphs.size()<<std::endl;
+      std::cout<<"Wall Graph vertices size: "<<_level.wall_graph.vertices.size()<<std::endl;
+
+      for (const auto nav_graph : _level.nav_graphs)
       {
-        for (auto node : nav_graph.vertices)
+        for (const auto vertex : nav_graph.vertices)
         {
-          node_marker.points.push_back(make_point({node.x, node.y, 0}));
+          node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
+          std::cout<<"Added X: "<<vertex.x<<" Y: "<<vertex.y<<std::endl;
+        }
+
+        // Adding lane markers
+
+        for (const auto edge : nav_graph.edges)
+        {
+          auto n1 = nav_graph.vertices[edge.v1_idx];
+          auto n2 = nav_graph.vertices[edge.v2_idx];
+          lane_marker.points.push_back(make_point({n1.x, n1.y, 0}));
+          lane_marker.points.push_back(make_point({n2.x, n2.y, 0}));
         }
       }
-
-      // Markers for lanes 
-
       // Markers for lane directionality 
 
       marker_array.markers.push_back(node_marker);
+      // marker_array.markers.push_back(lane_marker);
+      std::cout<<"Added map marker"<<std::endl;
     }
   }
+
 
   void delete_marker(const uint64_t id, MarkerArray& marker_array)
   {
@@ -444,7 +472,7 @@ private:
     Point p;
     p.x = tp[0];
     p.y = tp[1];
-    p.z = tp[2];
+    p.z = 0;
     return p;
   }
 
