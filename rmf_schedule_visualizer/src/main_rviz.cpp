@@ -317,7 +317,7 @@ private:
       }
       // Markers for lane directionality 
 
-      // marker_array.markers.push_back(node_marker);
+      marker_array.markers.push_back(node_marker);
       marker_array.markers.push_back(lane_marker);
       std::cout<<"Added map marker"<<std::endl;
     }
