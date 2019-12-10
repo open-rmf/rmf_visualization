@@ -163,9 +163,6 @@ public:
               + std::to_string(msg->levels.size()) + " level(s)");
           // Storing building map message 
           _map_msg = *msg;
-          std::cout<<"Level name: "<<msg->levels[0].name<<std::endl;
-          std::cout<<"Nav Graph size: "<<msg->levels[0].nav_graphs.size()<<std::endl;
-          std::cout<<"Wall Graph vertices size: "<<msg->levels[0].wall_graph.vertices.size()<<std::endl;
         },
         sub_map_opt);
   }
@@ -216,10 +213,8 @@ private:
           _marker_tracker.insert(element.id);
       }
     }
-    std::cout<<"Marker Array size before map: "<<marker_array.markers.size()<<std::endl;
     // Add map markers
     add_map_markers(marker_array);
-    std::cout<<"Marker Array size after map: "<<marker_array.markers.size()<<std::endl;
 
     // Add deletion markers for trajectories no longer active 
     std::unordered_set<uint64_t> removed_markers;
@@ -276,11 +271,23 @@ private:
       node_marker.color.b = 0.0f;
       node_marker.color.a = 1.0;
 
+      if (_rate <= 1)
+        node_marker.lifetime = convert(_timer_period);
+      else
+      {
+        builtin_interfaces::msg::Duration duration;
+        duration.sec = 1;
+        duration.nanosec = 0;
+        node_marker.lifetime = duration;
+      }
       // Marker for lanes
       Marker lane_marker = node_marker;
       lane_marker.type = lane_marker.LINE_STRIP;
-      lane_marker.scale.x = 2;
-      lane_marker.color.b = 0.5f;
+      lane_marker.scale.x = 0.1;
+      lane_marker.color.r = 1.0f;
+      lane_marker.color.g = 1.0f;
+      lane_marker.color.b = 0.0f;
+      lane_marker.color.a = 0.5;
 
       // Add node locations to point list 
       std::cout<<"Level name: "<<_level.name<<std::endl;
@@ -289,11 +296,11 @@ private:
 
       for (const auto nav_graph : _level.nav_graphs)
       {
-        for (const auto vertex : nav_graph.vertices)
-        {
-          node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
-          std::cout<<"Added X: "<<vertex.x<<" Y: "<<vertex.y<<std::endl;
-        }
+        // for (const auto vertex : nav_graph.vertices)
+        // {
+        //   node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
+        //   std::cout<<"Added X: "<<vertex.x<<" Y: "<<vertex.y<<std::endl;
+        // }
 
         // Adding lane markers
 
@@ -307,8 +314,8 @@ private:
       }
       // Markers for lane directionality 
 
-      marker_array.markers.push_back(node_marker);
-      // marker_array.markers.push_back(lane_marker);
+      // marker_array.markers.push_back(node_marker);
+      marker_array.markers.push_back(lane_marker);
       std::cout<<"Added map marker"<<std::endl;
     }
   }
