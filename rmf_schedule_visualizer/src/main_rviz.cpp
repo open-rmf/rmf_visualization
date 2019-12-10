@@ -59,7 +59,9 @@ public:
     _rate(rate),
     _frame_id(frame_id)
   {
-    _count = 0;
+    // Initializing level 
+    _has_level = false;
+
     // TODO add a constructor for RvizParam
     _rviz_param.map_name = map_name;
     _rviz_param.query_duration = std::chrono::seconds(60);
@@ -110,9 +112,32 @@ public:
           if (!msg->map_name.empty() && _rviz_param.map_name != msg->map_name)
             {
               _rviz_param.map_name = msg->map_name;
+              // When the map_name is updated, we update the local cache of level
+              if (_map_msg.levels.size() > 0)
+              {
+                bool found = false;
+                for (auto level : _map_msg.levels)
+                {
+                  if (level.name == _rviz_param.map_name)
+                  {
+                    found = true;
+                    _has_level = true;
+                    _level = level;
+                      RCLCPP_INFO(this->get_logger(),"Level cache updated");
+                    break;
+                  }
+                }
+                if (!found)
+                {
+                  _has_level = false;
+                  RCLCPP_INFO(this->get_logger(),"Level cache not updated");
+                }
+              }
             }
+
           if (msg->query_duration > 0)
             _rviz_param.query_duration = std::chrono::seconds(msg->query_duration);
+
           if (msg->start_duration >= 0)
             _rviz_param.start_duration = std::chrono::seconds(msg->start_duration);
           RCLCPP_INFO(this->get_logger(),"Rviz parameters updated");
@@ -219,47 +244,46 @@ private:
     if (_map_msg.levels.size() < 1)
       return;
 
-    bool found_map = false;
-    for (auto it = _map_msg.levels.begin(); it != _map_msg.levels.end(); it++)
-    {
-      if (it->name == _rviz_param.map_name)
-        found_map = true;
+    if (_has_level)
+    {    
+      // Markers for node locations 
+      Marker node_marker;
+      node_marker.header.frame_id = _frame_id; // map
+      node_marker.header.stamp = rmf_traffic_ros2::convert(
+          _visualizer_data_node.now());
+      node_marker.ns = "map";
+      node_marker.id = 1;
+      node_marker.type = node_marker.POINTS;
+      node_marker.action = node_marker.ADD;
+
+      node_marker.pose.orientation.w = 1;
+
+      // Set the scale of the marker
+      node_marker.scale.x = 10;
+      node_marker.scale.y = 10;
+      node_marker.scale.z = 1.0;
+
+      // Set the color
+      node_marker.color.r = 0.5f;
+      node_marker.color.g = 1.0f;
+      node_marker.color.b = 0.0f;
+      node_marker.color.a = 1.0;
+
+      // Add node locations to point list 
+      for (auto nav_graph : _level.nav_graphs)
+      {
+        for (auto node : nav_graph.vertices)
+        {
+          node_marker.points.push_back(make_point({node.x, node.y, 0}));
+        }
+      }
+
+      // Markers for lanes 
+
+      // Markers for lane directionality 
+
+      marker_array.markers.push_back(node_marker);
     }
-
-    if (!found_map)
-      return; 
-    
-    // Markers for node locations 
-    Marker node_marker;
-    node_marker.header.frame_id = _frame_id; // map
-    node_marker.header.stamp = rmf_traffic_ros2::convert(
-        _visualizer_data_node.now());
-    node_marker.ns = "map";
-    node_marker.id = 1;
-    node_marker.type = node_marker.POINTS;
-    node_marker.action = node_marker.ADD;
-
-    node_marker.pose.orientation.w = 1;
-
-    // Set the scale of the marker
-    node_marker.scale.x = 10;
-    node_marker.scale.y = 10;
-    node_marker.scale.z = 1.0;
-
-    // Set the color
-    node_marker.color.r = 0.5f;
-    node_marker.color.g = 1.0f;
-    node_marker.color.b = 0.0f;
-    node_marker.color.a = 1.0;
-
-    // Find the desired level
-
-    // Add node locations to point list 
-    
-
-    // Markers for lanes 
-
-    // Markers for lane directionality 
   }
 
   void delete_marker(const uint64_t id, MarkerArray& marker_array)
@@ -389,14 +413,14 @@ private:
     const auto t_finish_time = *trajectory.finish_time();
     const auto end_time = std::min(t_finish_time, param.finish_time);
  
-    auto make_point = [](const Eigen::Vector3d& tp) -> Point
-    {
-      Point p;
-      p.x = tp[0];
-      p.y = tp[1];
-      p.z = 0;
-      return p;
-    };
+    // auto make_point = [](const Eigen::Vector3d& tp) -> Point
+    // {
+    //   Point p;
+    //   p.x = tp[0];
+    //   p.y = tp[1];
+    //   p.z = 0;
+    //   return p;
+    // };
 
     auto it = trajectory.find(start_time);
     assert(it != trajectory.end());
@@ -413,6 +437,15 @@ private:
     }
 
     return marker_msg;
+  }
+
+  Point make_point(const Eigen::Vector3d tp)
+  {
+    Point p;
+    p.x = tp[0];
+    p.y = tp[1];
+    p.z = tp[2];
+    return p;
   }
 
   builtin_interfaces::msg::Duration convert(rmf_traffic::Duration duration)
@@ -475,6 +508,8 @@ private:
   std::vector<Element> _elements;
   std::chrono::nanoseconds _timer_period;
   BuildingMap _map_msg;
+  bool _has_level;
+  Level _level;
 
   rclcpp::TimerBase::SharedPtr _timer;
   rclcpp::Publisher<MarkerArray>::SharedPtr _marker_array_pub;
