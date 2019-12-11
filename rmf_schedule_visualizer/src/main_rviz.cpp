@@ -469,7 +469,7 @@ private:
     Point p;
     p.x = tp[0];
     p.y = tp[1];
-    p.z = 0;
+    p.z = tp[2];
     return p;
   }
 
