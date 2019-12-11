@@ -51,9 +51,9 @@ public:
       double rate = 1,
       std::string frame_id = "/map")
   : Node(node_name),
-    _visualizer_data_node(visualizer_data_node),
     _rate(rate),
-    _frame_id(frame_id)
+    _frame_id(frame_id),
+    _visualizer_data_node(visualizer_data_node)
   {
     _count = 0;
     // TODO add a constructor for RvizParam
@@ -61,11 +61,10 @@ public:
     _rviz_param.query_duration = std::chrono::seconds(60);
     _rviz_param.start_duration = std::chrono::seconds(0);
 
-    int64_t s = 1/ _rate ;
-    // std::cout<<"Timer seconds: "<<s<<std::endl;
-    auto sec = std::chrono::seconds(s);
-    _timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(sec);
-    _marker_array_pub = this->create_publisher<MarkerArray>("dp2_marker_array", rclcpp::SystemDefaultsQoS());
+    const double period = 1.0/_rate;
+    _timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::duration<double, std::ratio<1>>(period));
+    _marker_array_pub = this->create_publisher<MarkerArray>("dp2_marker_array", rclcpp::ServicesQoS());
     _timer = this->create_wall_timer(_timer_period, std::bind(&RvizNode::timer_callback, this));
     
     _cb_group_conflict_sub = this->create_callback_group(
@@ -115,7 +114,7 @@ private:
     MarkerArray marker_array;
 
     // TODO store a cache of trajectories to prevent frequent access
-    // update chache whenever mirror manager updates 
+    // update chache whenever mirror manager updates
     std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
 
     RequestParam query_param;
@@ -135,7 +134,7 @@ private:
     std::vector<uint64_t> active_id;
 
     // for each trajectory create two markers
-    // 1) Current position 
+    // 1) Current position
     // 2) Path until param.finish_time
     for (const auto& element : _elements)
     {
@@ -150,13 +149,13 @@ private:
         auto path_marker = make_path_marker(element, traj_param);
         marker_array.markers.push_back(path_marker);
 
-        // adding to id to _marker_tracker 
+        // adding to id to _marker_tracker
         if (_marker_tracker.find(element.id) == _marker_tracker.end())
           _marker_tracker.insert(element.id);
       }
     }
     
-    // add deletion markers for trajectories no longer active 
+    // add deletion markers for trajectories no longer active
     std::unordered_set<uint64_t> removed_markers;
     for (const auto marker : _marker_tracker)
     {
@@ -178,7 +177,6 @@ private:
         "Publishing marker array of size: " + std::to_string(marker_array.markers.size()));
       _marker_array_pub->publish(marker_array);
     }
-
   }
 
   void delete_marker(const uint64_t id, MarkerArray& marker_array)
@@ -473,7 +471,10 @@ int main(int argc, char* argv[])
       std::move(map_name),
       rate);
 
-  rclcpp::executors::MultiThreadedExecutor executor;
+  rclcpp::executors::MultiThreadedExecutor executor{
+    rclcpp::executor::ExecutorArgs(), 2
+  };
+
   executor.add_node(visualizer_data_node);
   executor.add_node(rviz_node);
 
