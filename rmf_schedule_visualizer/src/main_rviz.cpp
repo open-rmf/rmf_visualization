@@ -261,8 +261,8 @@ private:
       node_marker.pose.orientation.w = 1;
 
       // Set the scale of the marker
-      node_marker.scale.x = 0.1;
-      node_marker.scale.y = 0.1;
+      node_marker.scale.x = 0.2;
+      node_marker.scale.y = 0.2;
       node_marker.scale.z = 1.0;
 
       // Set the color
@@ -283,18 +283,14 @@ private:
       // Marker for lanes
       Marker lane_marker = node_marker;
       node_marker.id = 2;
-      lane_marker.type = lane_marker.LINE_STRIP;
-      lane_marker.scale.x = 0.1;
+      lane_marker.type = lane_marker.LINE_LIST;
+      lane_marker.scale.x = 0.2;
       lane_marker.color.r = 1.0f;
       lane_marker.color.g = 1.0f;
       lane_marker.color.b = 0.0f;
       lane_marker.color.a = 0.5;
 
       // Add node locations to point list 
-      std::cout<<"Level name: "<<_level.name<<std::endl;
-      std::cout<<"Nav Graph size: "<<_level.nav_graphs.size()<<std::endl;
-      std::cout<<"Wall Graph vertices size: "<<_level.wall_graph.vertices.size()<<std::endl;
-
       for (const auto nav_graph : _level.nav_graphs)
       {
         for (const auto vertex : nav_graph.vertices)
@@ -302,7 +298,6 @@ private:
           node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
           std::cout<<"Added X: "<<vertex.x<<" Y: "<<vertex.y<<std::endl;
         }
-
         // Adding lane markers
 
         for (const auto edge : nav_graph.edges)
@@ -315,11 +310,13 @@ private:
           lane_marker.points.push_back(make_point({n2.x, n2.y, 0}));
         }
       }
+
+      // debugging graph lane 
+
       // Markers for lane directionality 
 
       marker_array.markers.push_back(node_marker);
       marker_array.markers.push_back(lane_marker);
-      std::cout<<"Added map marker"<<std::endl;
     }
   }
 
@@ -418,7 +415,7 @@ private:
     marker_msg.pose.orientation.w = 1;
 
     // Set the scale of the marker
-    marker_msg.scale.x =  0.5;
+    marker_msg.scale.x =  0.2;
     marker_msg.scale.y =  1.0;
     marker_msg.scale.z = 1.0;
 
