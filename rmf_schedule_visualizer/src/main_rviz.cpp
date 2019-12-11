@@ -173,7 +173,7 @@ public:
         sub_map_opt);
     
     // set the color list used to assign colors to graphs and robots
-    set_color_list();
+    set_color_list(0.3);
   }
 
 private:
@@ -270,12 +270,12 @@ private:
       node_marker.pose.orientation.w = 1;
 
       // Set the scale of the marker
-      node_marker.scale.x = 0.2;
-      node_marker.scale.y = 0.2;
+      node_marker.scale.x = 0.1;
+      node_marker.scale.y = 0.1;
       node_marker.scale.z = 1.0;
 
       // Set the color
-      node_marker.color = make_color(0.8, 1.0, 0.2);
+      node_marker.color = make_color(1, 1, 1);
 
       if (_rate <= 1)
         node_marker.lifetime = convert(_timer_period);
@@ -290,7 +290,7 @@ private:
       Marker lane_marker = node_marker;
       lane_marker.id = 2;
       lane_marker.type = lane_marker.LINE_LIST;
-      lane_marker.scale.x = 0.2;
+      lane_marker.scale.x = 0.5;
 
       // Add markers for nodes and lanes in each graph
       uint64_t graph_count = 0;
@@ -309,8 +309,8 @@ private:
         {
           auto n1 = nav_graph.vertices[edge.v1_idx];
           auto n2 = nav_graph.vertices[edge.v2_idx];
-          lane_marker.points.push_back(make_point({n1.x, n1.y, 0}));
-          lane_marker.points.push_back(make_point({n2.x, n2.y, 0}));
+          lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}));
+          lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}));
         }
         graph_count++;
         // Insert lane marker to marker_array
@@ -526,18 +526,18 @@ private:
     return color;
   }
 
-  void set_color_list()
+  void set_color_list(float alpha = 1)
   { 
     // List of colors that will be paired with graph ids.
     // Add additional colors here.
     // orange
-    _color_list.push_back(make_color(0.99, 0.5, 0.19, 0.5));
+    _color_list.push_back(make_color(0.99, 0.5, 0.19, alpha));
     // blue
-    _color_list.push_back(make_color(0, 0.5, 0.8, 0.5));     
+    _color_list.push_back(make_color(0, 0.5, 0.8, alpha));     
     // purple 
-    _color_list.push_back(make_color(0.57, 0.12, 0.7, 0.5));
+    _color_list.push_back(make_color(0.57, 0.12, 0.7, alpha));
     // cyan    
-    _color_list.push_back(make_color(0.27, 0.94, 0.94, 0.5));
+    _color_list.push_back(make_color(0.27, 0.94, 0.94, alpha));
   }
 
   Color get_color(uint64_t id)
