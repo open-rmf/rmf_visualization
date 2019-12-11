@@ -62,11 +62,8 @@ public:
     _rviz_param.start_duration = std::chrono::seconds(0);
 
     const double period = 1.0/_rate;
-    std::cout << "Period " << period << std::endl;
-    // std::cout<<"Timer seconds: "<<s<<std::endl;
     _timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::duration<double, std::ratio<1>>(period));
-    std::cout << "nano period: " << _timer_period.count() << std::endl;
     _marker_array_pub = this->create_publisher<MarkerArray>("dp2_marker_array", rclcpp::ServicesQoS());
     _timer = this->create_wall_timer(_timer_period, std::bind(&RvizNode::timer_callback, this));
     
