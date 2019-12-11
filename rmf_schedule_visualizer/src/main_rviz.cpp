@@ -30,6 +30,7 @@
 #include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
 #include <building_map_msgs/msg/building_map.hpp>
 #include <building_map_msgs/msg/level.hpp>
+#include <std_msgs/msg/color_rgba.hpp>
 
 #include <mutex>
 
@@ -47,6 +48,7 @@ public:
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
   using BuildingMap = building_map_msgs::msg::BuildingMap;
   using Level = building_map_msgs::msg::Level;
+  using Color = std_msgs::msg::ColorRGBA;
 
   RvizNode(
       std::string node_name,
@@ -165,6 +167,9 @@ public:
           _map_msg = *msg;
         },
         sub_map_opt);
+    
+    // set the color list used to assign colors to graphs and robots
+    set_color_list();
   }
 
 private:
@@ -266,9 +271,9 @@ private:
       node_marker.scale.z = 1.0;
 
       // Set the color
-      node_marker.color.r = 0.5f;
-      node_marker.color.g = 1.0f;
-      node_marker.color.b = 0.0f;
+      node_marker.color.r = 0.5;
+      node_marker.color.g = 1.0;
+      node_marker.color.b = 0.0;
       node_marker.color.a = 1.0;
 
       if (_rate <= 1)
@@ -285,9 +290,9 @@ private:
       node_marker.id = 2;
       lane_marker.type = lane_marker.LINE_LIST;
       lane_marker.scale.x = 0.2;
-      lane_marker.color.r = 1.0f;
-      lane_marker.color.g = 1.0f;
-      lane_marker.color.b = 0.0f;
+      lane_marker.color.r = 1.0;
+      lane_marker.color.g = 1.0;
+      lane_marker.color.b = 0.0;
       lane_marker.color.a = 0.5;
 
       // Add node locations to point list 
@@ -296,7 +301,6 @@ private:
         for (const auto vertex : nav_graph.vertices)
         {
           node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
-          std::cout<<"Added X: "<<vertex.x<<" Y: "<<vertex.y<<std::endl;
         }
         // Adding lane markers
 
@@ -319,7 +323,6 @@ private:
       marker_array.markers.push_back(lane_marker);
     }
   }
-
 
   void delete_marker(const uint64_t id, MarkerArray& marker_array)
   {
@@ -377,9 +380,9 @@ private:
     marker_msg.scale.z = 1.0;
 
     // Set the color
-    marker_msg.color.r = 1.0f;
-    marker_msg.color.g = 1.0f;
-    marker_msg.color.b = 0.0f;
+    marker_msg.color.r = 1.0;
+    marker_msg.color.g = 1.0;
+    marker_msg.color.b = 0.0;
     marker_msg.color.a = 1.0;
     
     if (_rate <= 1)
@@ -422,15 +425,15 @@ private:
     // Set the color
     if (conflict)
     {
-      marker_msg.color.r = 1.0f;
-      marker_msg.color.g = 0.0f;
+      marker_msg.color.r = 1.0;
+      marker_msg.color.g = 0.0;
     }
     else
     {
-      marker_msg.color.r = 0.0f;
-      marker_msg.color.g = 1.0f;
+      marker_msg.color.r = 0.0;
+      marker_msg.color.g = 1.0;
     }
-    marker_msg.color.b = 0.0f;
+    marker_msg.color.b = 0.0;
     marker_msg.color.a = 0.5;
     
     if (_rate <= 1)
@@ -448,16 +451,7 @@ private:
     const auto t_finish_time = *trajectory.finish_time();
     const auto end_time = std::min(t_finish_time, param.finish_time);
  
-    // auto make_point = [](const Eigen::Vector3d& tp) -> Point
-    // {
-    //   Point p;
-    //   p.x = tp[0];
-    //   p.y = tp[1];
-    //   p.z = 0;
-    //   return p;
-    // };
-
-    auto it = trajectory.find(start_time);
+     auto it = trajectory.find(start_time);
     assert(it != trajectory.end());
     assert(trajectory.find(end_time) != trajectory.end());
     const auto motion = it->compute_motion();
@@ -526,6 +520,47 @@ private:
       return false;
   }
 
+  Color make_color(float r, float g, float b, float a = 1.0)
+  {
+    Color color;
+    color.r = r;
+    color.g = g;
+    color.b = b;
+    color.a = a;
+    return color;
+  }
+
+  void set_color_list()
+  { 
+    // blue
+    _color_list.push_back(make_color(0, 130/255, 200/255)); 
+    // orange
+    _color_list.push_back(make_color(245/255, 130/255, 48/255));    
+    // purple 
+    _color_list.push_back(make_color(145/255, 30/255, 180/255));
+    // cyan    
+    _color_list.push_back(make_color(70/255, 240/255, 240/255));
+  }
+
+  Color get_color(uint64_t id)
+  {
+    if (_color_map.find(id) != _color_map.end())
+        return _color_map[id];
+    else
+    {
+      Color color;
+      if (id < _color_list.size())
+      {
+        color = _color_list[id];
+      }
+      else
+      {
+        color = make_color(1, 1, 0);
+      }
+      _color_map.insert(std::make_pair(id, color));
+      return color;
+    }
+  }
 
   struct RvizParam
   {
@@ -541,9 +576,13 @@ private:
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;
   std::chrono::nanoseconds _timer_period;
+
   BuildingMap _map_msg;
   bool _has_level;
   Level _level;
+  std::unordered_map<uint64_t, std_msgs::msg::ColorRGBA> _color_map;
+  // cache of predefined colors for use
+  std::vector<Color> _color_list;
 
   rclcpp::TimerBase::SharedPtr _timer;
   rclcpp::Publisher<MarkerArray>::SharedPtr _marker_array_pub;
