@@ -259,7 +259,7 @@ private:
       node_marker.header.stamp = rmf_traffic_ros2::convert(
           _visualizer_data_node.now());
       node_marker.ns = "map";
-      node_marker.id = 1;
+      node_marker.id = 0;
       node_marker.type = node_marker.POINTS;
       node_marker.action = node_marker.ADD;
 
@@ -271,10 +271,7 @@ private:
       node_marker.scale.z = 1.0;
 
       // Set the color
-      node_marker.color.r = 0.5;
-      node_marker.color.g = 1.0;
-      node_marker.color.b = 0.0;
-      node_marker.color.a = 1.0;
+      node_marker.color = make_color(0.8, 1.0, 0.2);
 
       if (_rate <= 1)
         node_marker.lifetime = convert(_timer_period);
@@ -287,40 +284,40 @@ private:
       }
       // Marker for lanes
       Marker lane_marker = node_marker;
-      node_marker.id = 2;
+      lane_marker.id = 2;
       lane_marker.type = lane_marker.LINE_LIST;
       lane_marker.scale.x = 0.2;
-      lane_marker.color.r = 1.0;
-      lane_marker.color.g = 1.0;
-      lane_marker.color.b = 0.0;
-      lane_marker.color.a = 0.5;
+      // lane_marker.color.r = 1.0;
+      // lane_marker.color.g = 1.0;
+      // lane_marker.color.b = 0.0;
+      // lane_marker.color.a = 0.5;
 
-      // Add node locations to point list 
+      // Add markers for nodes and lanes in each graph
+      uint64_t graph_count = 0;
       for (const auto nav_graph : _level.nav_graphs)
       {
+        std::cout<<"Graph name: "<<nav_graph.name<<std::endl;
         for (const auto vertex : nav_graph.vertices)
         {
           node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
         }
-        // Adding lane markers
-
+        // Unique lane marker for each graph
+        lane_marker.id = graph_count + 2;
+        lane_marker.points.clear();
+        // TODO use graph id or graph name to lookup color
+        lane_marker.color = get_color(graph_count);
         for (const auto edge : nav_graph.edges)
         {
           auto n1 = nav_graph.vertices[edge.v1_idx];
           auto n2 = nav_graph.vertices[edge.v2_idx];
-          std::cout<<"Node 1 X: "<<n1.x<<" Y: "<<n1.y<<std::endl;
-          std::cout<<"Node 2 X: "<<n2.x<<" Y: "<<n2.y<<std::endl;
           lane_marker.points.push_back(make_point({n1.x, n1.y, 0}));
           lane_marker.points.push_back(make_point({n2.x, n2.y, 0}));
         }
+        graph_count++;
+        // Insert lane marker to marker_array
+         marker_array.markers.push_back(lane_marker);
       }
-
-      // debugging graph lane 
-
-      // Markers for lane directionality 
-
       marker_array.markers.push_back(node_marker);
-      marker_array.markers.push_back(lane_marker);
     }
   }
 
@@ -380,10 +377,7 @@ private:
     marker_msg.scale.z = 1.0;
 
     // Set the color
-    marker_msg.color.r = 1.0;
-    marker_msg.color.g = 1.0;
-    marker_msg.color.b = 0.0;
-    marker_msg.color.a = 1.0;
+    marker_msg.color = make_color(1.0, 1.0, 0, 1.0);
     
     if (_rate <= 1)
       marker_msg.lifetime = convert(_timer_period);
@@ -425,16 +419,12 @@ private:
     // Set the color
     if (conflict)
     {
-      marker_msg.color.r = 1.0;
-      marker_msg.color.g = 0.0;
+      marker_msg.color = make_color(1.0, 0, 0, 0.5);
     }
     else
     {
-      marker_msg.color.r = 0.0;
-      marker_msg.color.g = 1.0;
+      marker_msg.color = make_color(0.0, 1.0, 0, 0.5);
     }
-    marker_msg.color.b = 0.0;
-    marker_msg.color.a = 0.5;
     
     if (_rate <= 1)
       marker_msg.lifetime = convert(_timer_period);
@@ -532,14 +522,14 @@ private:
 
   void set_color_list()
   { 
-    // blue
-    _color_list.push_back(make_color(0, 130/255, 200/255)); 
     // orange
-    _color_list.push_back(make_color(245/255, 130/255, 48/255));    
+    _color_list.push_back(make_color(0.99, 0.5, 0.19, 0.5));
+    // blue
+    _color_list.push_back(make_color(0, 0.5, 0.8, 0.5));     
     // purple 
-    _color_list.push_back(make_color(145/255, 30/255, 180/255));
+    _color_list.push_back(make_color(0.57, 0.12, 0.7, 0.5));
     // cyan    
-    _color_list.push_back(make_color(70/255, 240/255, 240/255));
+    _color_list.push_back(make_color(0.27, 0.94, 0.94, 0.5));
   }
 
   Color get_color(uint64_t id)
@@ -555,7 +545,7 @@ private:
       }
       else
       {
-        color = make_color(1, 1, 0);
+        color = make_color(1, 1, 0, 0.5);
       }
       _color_map.insert(std::make_pair(id, color));
       return color;
