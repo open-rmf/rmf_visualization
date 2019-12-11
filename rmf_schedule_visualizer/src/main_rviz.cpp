@@ -309,8 +309,8 @@ private:
         {
           auto n1 = nav_graph.vertices[edge.v1_idx];
           auto n2 = nav_graph.vertices[edge.v2_idx];
-          lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}));
-          lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}));
+          lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}, true));
+          lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}, true));
         }
         graph_count++;
         // Insert lane marker to marker_array
@@ -412,17 +412,15 @@ private:
 
     // Set the scale of the marker
     marker_msg.scale.x =  0.2;
-    marker_msg.scale.y =  1.0;
-    marker_msg.scale.z = 1.0;
 
     // Set the color
     if (conflict)
     {
-      marker_msg.color = make_color(1.0, 0, 0, 0.5);
+      marker_msg.color = make_color(1.0, 0, 0, 0.7);
     }
     else
     {
-      marker_msg.color = make_color(0.0, 1.0, 0, 0.5);
+      marker_msg.color = make_color(0.0, 1.0, 0, 0.7);
     }
     
     if (_rate <= 1)
@@ -464,12 +462,12 @@ private:
     return marker_msg;
   }
 
-  Point make_point(const Eigen::Vector3d tp)
+  Point make_point(const Eigen::Vector3d tp, bool z = false)
   {
     Point p;
     p.x = tp[0];
     p.y = tp[1];
-    p.z = tp[2];
+    p.z = z ? tp[2] : 0;
     return p;
   }
 
@@ -536,8 +534,18 @@ private:
     _color_list.push_back(make_color(0, 0.5, 0.8, alpha));     
     // purple 
     _color_list.push_back(make_color(0.57, 0.12, 0.7, alpha));
+    // teal
+    _color_list.push_back(make_color(0, 0.5, 0.5, alpha));
+    // lavender 
+    _color_list.push_back(make_color(0.9, 0.74, 1.0, alpha));
+    // olive
+    _color_list.push_back(make_color(0.5, 0.5, 0, alpha));
     // cyan    
     _color_list.push_back(make_color(0.27, 0.94, 0.94, alpha));
+    // grey
+    _color_list.push_back(make_color(0.5, 0.5, 0.5, alpha));
+    // maroon
+    _color_list.push_back(make_color(0.5, 0, 0, alpha));
   }
 
   Color get_color(uint64_t id)
