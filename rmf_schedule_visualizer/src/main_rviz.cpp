@@ -111,7 +111,6 @@ private:
 
   void timer_callback()
   {
-    std::cout << "triggering" << std::endl;
     MarkerArray marker_array;
 
     // TODO store a cache of trajectories to prevent frequent access
