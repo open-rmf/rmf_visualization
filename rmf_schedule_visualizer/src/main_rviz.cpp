@@ -138,10 +138,14 @@ public:
             }
 
           if (msg->query_duration > 0)
-            _rviz_param.query_duration = std::chrono::seconds(msg->query_duration);
+            {
+              _rviz_param.query_duration = std::chrono::seconds(msg->query_duration);
+            }
 
           if (msg->start_duration >= 0)
+          {
             _rviz_param.start_duration = std::chrono::seconds(msg->start_duration);
+          }
           RCLCPP_INFO(this->get_logger(),"Rviz parameters updated");
         },
         sub_param_opt);
@@ -287,16 +291,11 @@ private:
       lane_marker.id = 2;
       lane_marker.type = lane_marker.LINE_LIST;
       lane_marker.scale.x = 0.2;
-      // lane_marker.color.r = 1.0;
-      // lane_marker.color.g = 1.0;
-      // lane_marker.color.b = 0.0;
-      // lane_marker.color.a = 0.5;
 
       // Add markers for nodes and lanes in each graph
       uint64_t graph_count = 0;
       for (const auto nav_graph : _level.nav_graphs)
       {
-        std::cout<<"Graph name: "<<nav_graph.name<<std::endl;
         for (const auto vertex : nav_graph.vertices)
         {
           node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
@@ -448,12 +447,19 @@ private:
     marker_msg.points.push_back(
           make_point(motion->compute_position(start_time)));
 
-    for (; it <= trajectory.find(end_time); it++)
+    // add segment points untill the last segment
+    for (; it < trajectory.find(end_time); it++)
     {
       assert(it != trajectory.end());
       const Eigen::Vector3d p = it->get_finish_position();
       marker_msg.points.push_back(make_point(p));
     }
+
+    // add either last segment point or position at end_time
+    const Eigen::Vector3d p = t_finish_time < param.finish_time ?
+        it->get_finish_position()
+        : it->compute_motion()->compute_position(end_time);
+    marker_msg.points.push_back(make_point(p));
 
     return marker_msg;
   }
@@ -522,6 +528,8 @@ private:
 
   void set_color_list()
   { 
+    // List of colors that will be paired with graph ids.
+    // Add additional colors here.
     // orange
     _color_list.push_back(make_color(0.99, 0.5, 0.19, 0.5));
     // blue
@@ -545,6 +553,7 @@ private:
       }
       else
       {
+        // we assign a default color
         color = make_color(1, 1, 0, 0.5);
       }
       _color_map.insert(std::make_pair(id, color));
