@@ -70,15 +70,14 @@ public:
     const double period = 1.0/_rate;
     _timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::duration<double, std::ratio<1>>(period));
-    _marker_array_pub = this->create_publisher<MarkerArray>("dp2_marker_array", rclcpp::ServicesQoS());
     _timer = this->create_wall_timer(_timer_period, std::bind(&RvizNode::timer_callback, this));
     
     // Create publisher for marker_array
     _marker_array_pub = this->create_publisher<MarkerArray>(
         "dp2_marker_array",
-        rclcpp::SystemDefaultsQoS());
+        rclcpp::ServicesQoS());
     
-    // Create subscriber for schedule_conflict in separate threead
+    // Create subscriber for schedule_conflict in separate thread
     _cb_group_conflict_sub = this->create_callback_group(
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_conflict_opt = rclcpp::SubscriptionOptions();
@@ -167,12 +166,12 @@ public:
           RCLCPP_INFO(this->get_logger(),"Received map \""
               + msg->name + "\" containing "
               + std::to_string(msg->levels.size()) + " level(s)");
-          // Cache building map message 
+          // Cache building map message
           _map_msg = *msg;
         },
         sub_map_opt);
     
-    // Initialize boolean to indicate whether level cache is relevant 
+    // Initialize boolean to indicate whether level cache is relevant
     _has_level = false;
 
     // Populate _color_list used to assign colors to graphs and robots
@@ -185,8 +184,8 @@ private:
   {
     MarkerArray marker_array;
 
-    // TODO store a cache of trajectories to prevent frequent access
-    // update chache whenever mirror manager updates
+    // TODO store a cache of trajectories to prevent frequent access.
+    // Update cache whenever mirror manager updates
     std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
 
     RequestParam query_param;
@@ -221,7 +220,7 @@ private:
         auto path_marker = make_path_marker(element, traj_param);
         marker_array.markers.push_back(path_marker);
 
-        // adding to id to _marker_tracker
+        // Add id to _marker_tracker
         if (_marker_tracker.find(element.id) == _marker_tracker.end())
           _marker_tracker.insert(element.id);
       }
@@ -229,7 +228,7 @@ private:
     // Add map markers
     add_map_markers(marker_array);
 
-    // Add deletion markers for trajectories no longer active 
+    // Add deletion markers for trajectories no longer active
     std::unordered_set<uint64_t> removed_markers;
     for (const auto marker : _marker_tracker)
     {
@@ -260,7 +259,7 @@ private:
 
     if (_has_level)
     {    
-      // Marker for node locations 
+      // Marker for node locations
       Marker node_marker;
       node_marker.header.frame_id = _frame_id; // map
       node_marker.header.stamp = rmf_traffic_ros2::convert(
@@ -336,7 +335,7 @@ private:
     marker_msg.action = marker_msg.DELETE;
     marker_array.markers.push_back(marker_msg);
 
-    // Add a delete marker for the path 
+    // Add a delete marker for the path
     marker_msg.id = -1 * id;
     marker_msg.type = marker_msg.LINE_STRIP;
     marker_array.markers.push_back(marker_msg);
