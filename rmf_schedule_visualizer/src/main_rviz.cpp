@@ -138,14 +138,15 @@ private:
     // 2) Path until param.finish_time
     for (const auto& element : _elements)
     {
-      // create markers for trajectories that are active within time range
+      active_id.push_back(element.id);
+
       if (element.trajectory.find(traj_param.start_time) != element.trajectory.end())
       {
-        active_id.push_back(element.id);
-
         auto location_marker = make_location_marker(element, traj_param);
         marker_array.markers.push_back(location_marker);
-
+      }
+      if (traj_param.start_time < *element.trajectory.finish_time())
+      {
         auto path_marker = make_path_marker(element, traj_param);
         marker_array.markers.push_back(path_marker);
 
