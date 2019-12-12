@@ -140,18 +140,20 @@ private:
     {
       active_id.push_back(element.id);
 
-      if (*element.trajectory.start_time() <= query_param.start_time)
+      if (element.trajectory.find(traj_param.start_time) != element.trajectory.end())
       {
         auto location_marker = make_location_marker(element, traj_param);
         marker_array.markers.push_back(location_marker);
       }
+      if (traj_param.start_time < *element.trajectory.finish_time())
+      {
+        auto path_marker = make_path_marker(element, traj_param);
+        marker_array.markers.push_back(path_marker);
 
-      auto path_marker = make_path_marker(element, traj_param);
-      marker_array.markers.push_back(path_marker);
-
-      // adding to id to _marker_tracker
-      if (_marker_tracker.find(element.id) == _marker_tracker.end())
-        _marker_tracker.insert(element.id);
+        // adding to id to _marker_tracker
+        if (_marker_tracker.find(element.id) == _marker_tracker.end())
+          _marker_tracker.insert(element.id);
+      }
     }
     
     // add deletion markers for trajectories no longer active
