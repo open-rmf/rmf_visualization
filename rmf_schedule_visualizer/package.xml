@@ -16,6 +16,7 @@
   <depend>geometry_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>rmf_schedule_visualizer_msgs</depend>
+  <depend>building_map_msgs</depend>
 
   
   <test_depend>ament_lint_auto</test_depend>

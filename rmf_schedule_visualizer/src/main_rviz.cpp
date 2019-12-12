@@ -28,6 +28,9 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <rmf_traffic_msgs/msg/schedule_conflict.hpp>
 #include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
+#include <building_map_msgs/msg/building_map.hpp>
+#include <building_map_msgs/msg/level.hpp>
+#include <std_msgs/msg/color_rgba.hpp>
 
 #include <mutex>
 
@@ -43,30 +46,39 @@ public:
   using ScheduleConflict = rmf_traffic_msgs::msg::ScheduleConflict;
   using Element = rmf_traffic::schedule::Viewer::View::Element;
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
+  using BuildingMap = building_map_msgs::msg::BuildingMap;
+  using Level = building_map_msgs::msg::Level;
+  using Color = std_msgs::msg::ColorRGBA;
 
   RvizNode(
       std::string node_name,
       rmf_schedule_visualizer::VisualizerDataNode& visualizer_data_node,
       std::string map_name,
-      double rate = 1,
+      double rate = 1.0,
       std::string frame_id = "/map")
   : Node(node_name),
     _rate(rate),
     _frame_id(frame_id),
     _visualizer_data_node(visualizer_data_node)
   {
-    _count = 0;
     // TODO add a constructor for RvizParam
     _rviz_param.map_name = map_name;
-    _rviz_param.query_duration = std::chrono::seconds(60);
+    _rviz_param.query_duration = std::chrono::seconds(600);
     _rviz_param.start_duration = std::chrono::seconds(0);
 
+    // Create a timer with specified rate. This timer runs on the main thread.
     const double period = 1.0/_rate;
     _timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::duration<double, std::ratio<1>>(period));
     _marker_array_pub = this->create_publisher<MarkerArray>("dp2_marker_array", rclcpp::ServicesQoS());
     _timer = this->create_wall_timer(_timer_period, std::bind(&RvizNode::timer_callback, this));
     
+    // Create publisher for marker_array
+    _marker_array_pub = this->create_publisher<MarkerArray>(
+        "dp2_marker_array",
+        rclcpp::SystemDefaultsQoS());
+    
+    // Create subscriber for schedule_conflict in separate threead
     _cb_group_conflict_sub = this->create_callback_group(
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_conflict_opt = rclcpp::SubscriptionOptions();
@@ -83,28 +95,88 @@ public:
           },
           sub_conflict_opt);
 
+    // Create subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_param_opt = rclcpp::SubscriptionOptions();
     sub_param_opt.callback_group = _cb_group_param_sub;
     _param_sub = this->create_subscription<RvizParamMsg>(
-          node_name + "/param",
-          rclcpp::QoS(10),
-          [&](RvizParamMsg::SharedPtr msg)
-          {
-            std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+        node_name + "/param",
+        rclcpp::QoS(10),
+        [&](RvizParamMsg::SharedPtr msg)
+        {
+          std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
 
-            if (!msg->map_name.empty())
+          if (!msg->map_name.empty() && _rviz_param.map_name != msg->map_name)
+            {
               _rviz_param.map_name = msg->map_name;
-            if (msg->query_duration > 0)
-              _rviz_param.query_duration = std::chrono::seconds(msg->query_duration);
-            if (msg->start_duration >= 0)
-              _rviz_param.start_duration = std::chrono::seconds(msg->start_duration);
+              // Update Level cahce when map is updated
+              if (_map_msg.levels.size() > 0)
+              {
+                bool found = false;
+                for (auto level : _map_msg.levels)
+                {
+                  if (level.name == _rviz_param.map_name)
+                  {
+                    found = true;
+                    _has_level = true;
+                    _level = level;
+                      RCLCPP_INFO(this->get_logger(),"Level cache updated");
+                    break;
+                  }
+                }
+                if (!found)
+                {
+                  _has_level = false;
+                  RCLCPP_INFO(this->get_logger(),"Level cache not updated");
+                }
+              }
+            }
 
-            RCLCPP_INFO(this->get_logger(),"Rviz Parameters Updated");
+          if (msg->query_duration > 0)
+            {
+              _rviz_param.query_duration =
+                  std::chrono::seconds(msg->query_duration);
+            }
 
-          },
-          sub_param_opt);
+          if (msg->start_duration >= 0 &&
+              std::chrono::seconds(msg->start_duration)
+              < _rviz_param.query_duration)
+          {
+            _rviz_param.start_duration =
+                std::chrono::seconds(msg->start_duration);
+          }
+          RCLCPP_INFO(this->get_logger(),"Rviz parameters updated");
+        },
+        sub_param_opt);
+    
+    // Create subcscriber for building_map in separate thread.
+    // The subscriber requies QoS profile with transient local durability
+    _cb_group_map_sub = this->create_callback_group(
+    rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
+    auto sub_map_opt = rclcpp::SubscriptionOptions();
+    sub_map_opt.callback_group = _cb_group_map_sub;
+    auto qos_profile = rclcpp::QoS(10);
+    qos_profile.transient_local();
+    _map_sub = this->create_subscription<BuildingMap>(
+        "/map",
+        qos_profile,
+        [&](BuildingMap::SharedPtr msg)
+        {
+          std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+          RCLCPP_INFO(this->get_logger(),"Received map \""
+              + msg->name + "\" containing "
+              + std::to_string(msg->levels.size()) + " level(s)");
+          // Cache building map message 
+          _map_msg = *msg;
+        },
+        sub_map_opt);
+    
+    // Initialize boolean to indicate whether level cache is relevant 
+    _has_level = false;
+
+    // Populate _color_list used to assign colors to graphs and robots
+    set_color_list(0.3);
   }
 
 private:
@@ -123,17 +195,16 @@ private:
     query_param.finish_time = query_param.start_time + _rviz_param.query_duration;
 
     _elements = _visualizer_data_node.get_elements(query_param);
-    // std::cout<<"Element size: "<<_elements.size()<<std::endl;
 
     RequestParam traj_param;
     traj_param.map_name = query_param.map_name;
     traj_param.start_time = query_param.start_time + _rviz_param.start_duration;
     traj_param.finish_time = query_param.finish_time;
 
-    // store the ids of active trajectories
+    // Store the ids of active trajectories
     std::vector<uint64_t> active_id;
 
-    // for each trajectory create two markers
+    // For each trajectory create two markers
     // 1) Current position
     // 2) Path until param.finish_time
     for (const auto& element : _elements)
@@ -155,8 +226,10 @@ private:
           _marker_tracker.insert(element.id);
       }
     }
-    
-    // add deletion markers for trajectories no longer active
+    // Add map markers
+    add_map_markers(marker_array);
+
+    // Add deletion markers for trajectories no longer active 
     std::unordered_set<uint64_t> removed_markers;
     for (const auto marker : _marker_tracker)
     {
@@ -171,7 +244,7 @@ private:
     for (const auto r : removed_markers)
       _marker_tracker.erase(r);
 
-    // publish marker_array
+    // Publish marker_array
     if (!marker_array.markers.empty())
     {
       RCLCPP_DEBUG(this->get_logger(),
@@ -180,18 +253,90 @@ private:
     }
   }
 
+  void add_map_markers(MarkerArray& marker_array)
+  {
+    if (_map_msg.levels.size() < 1)
+      return;
+
+    if (_has_level)
+    {    
+      // Marker for node locations 
+      Marker node_marker;
+      node_marker.header.frame_id = _frame_id; // map
+      node_marker.header.stamp = rmf_traffic_ros2::convert(
+          _visualizer_data_node.now());
+      node_marker.ns = "map";
+      node_marker.id = 0;
+      node_marker.type = node_marker.POINTS;
+      node_marker.action = node_marker.ADD;
+
+      node_marker.pose.orientation.w = 1;
+
+      // Set the scale of the marker
+      node_marker.scale.x = 0.1;
+      node_marker.scale.y = 0.1;
+      node_marker.scale.z = 1.0;
+
+      // Set the color of the marker
+      node_marker.color = make_color(1, 1, 1);
+
+      // Set the lifetime of the marker
+      if (_rate <= 1)
+        node_marker.lifetime = convert(_timer_period);
+      else
+      {
+        builtin_interfaces::msg::Duration duration;
+        duration.sec = 1;
+        duration.nanosec = 0;
+        node_marker.lifetime = duration;
+      }
+      // Marker for lanes
+      Marker lane_marker = node_marker;
+      lane_marker.id = 2;
+      lane_marker.type = lane_marker.LINE_LIST;
+      lane_marker.scale.x = 0.5;
+
+      // Add markers for nodes and lanes in each graph
+      uint64_t graph_count = 0;
+      for (const auto nav_graph : _level.nav_graphs)
+      {
+        for (const auto vertex : nav_graph.vertices)
+        {
+          node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
+        }
+        // Unique lane marker for each graph
+        lane_marker.id = graph_count + 2;
+        lane_marker.points.clear();
+        // TODO use graph id or graph name to lookup color
+        lane_marker.color = get_color(graph_count);
+        for (const auto edge : nav_graph.edges)
+        {
+          auto n1 = nav_graph.vertices[edge.v1_idx];
+          auto n2 = nav_graph.vertices[edge.v2_idx];
+          lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}, true));
+          lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}, true));
+        }
+        graph_count++;
+        // Insert lane marker to marker_array
+         marker_array.markers.push_back(lane_marker);
+      }
+      marker_array.markers.push_back(node_marker);
+    }
+  }
+
   void delete_marker(const uint64_t id, MarkerArray& marker_array)
   {
     Marker marker_msg;
     marker_msg.header.frame_id = _frame_id; // map
-    marker_msg.header.stamp = rmf_traffic_ros2::convert(_visualizer_data_node.now());
+    marker_msg.header.stamp = rmf_traffic_ros2::convert(
+        _visualizer_data_node.now());
     marker_msg.ns = "trajectory";
     marker_msg.id = id;
     marker_msg.type = marker_msg.CYLINDER;
     marker_msg.action = marker_msg.DELETE;
     marker_array.markers.push_back(marker_msg);
 
-    //deleting the path marker 
+    // Add a delete marker for the path 
     marker_msg.id = -1 * id;
     marker_msg.type = marker_msg.LINE_STRIP;
     marker_array.markers.push_back(marker_msg);
@@ -216,7 +361,7 @@ private:
     marker_msg.type = marker_msg.CYLINDER;
     marker_msg.action = marker_msg.ADD;
 
-    // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
+    // Set the pose of the marker
     auto motion = trajectory.find(param.start_time)->compute_motion();
     Eigen::Vector3d position =  motion->compute_position(param.start_time);
     marker_msg.pose.position.x = position[0];
@@ -229,17 +374,15 @@ private:
     marker_msg.pose.orientation.z = quat.z;
     marker_msg.pose.orientation.w = quat.w;
 
-    // Set the scale of the marker -- 1x1x1 here means 1m on a side
+    // Set the scale of the marker
     marker_msg.scale.x = radius / 1.0;
     marker_msg.scale.y = radius / 1.0;
     marker_msg.scale.z = 1.0;
 
-    // Set the color -- be sure to set alpha to something non-zero!
-    marker_msg.color.r = 1.0f;
-    marker_msg.color.g = 1.0f;
-    marker_msg.color.b = 0.0f;
-    marker_msg.color.a = 1.0;
+    // Set the color of the marker
+    marker_msg.color = make_color(1.0, 1.0, 0, 1.0);
     
+    // Set the lifetime of the marker
     if (_rate <= 1)
       marker_msg.lifetime = convert(_timer_period);
     else
@@ -270,33 +413,20 @@ private:
     marker_msg.type = marker_msg.LINE_STRIP;
     marker_msg.action = marker_msg.ADD;
 
-    marker_msg.pose.position.x = 0;
-    marker_msg.pose.position.y = 0;
-    marker_msg.pose.position.z = 0;
-
-    marker_msg.pose.orientation.x = 0;
-    marker_msg.pose.orientation.y = 0;
-    marker_msg.pose.orientation.z = 0;
     marker_msg.pose.orientation.w = 1;
 
-    // Set the scale of the marker -- 1x1x1 here means 1m on a side
-    marker_msg.scale.x =  0.5;
-    marker_msg.scale.y =  1.0;
-    marker_msg.scale.z = 1.0;
+    // Set the scale of the marker
+    marker_msg.scale.x =  0.2;
 
-    // Set the color -- be sure to set alpha to something non-zero!
+    // Set the color
     if (conflict)
     {
-      marker_msg.color.r = 1.0f;
-      marker_msg.color.g = 0.0f;
+      marker_msg.color = make_color(1.0, 0, 0, 0.7);
     }
     else
     {
-      marker_msg.color.r = 0.0f;
-      marker_msg.color.g = 1.0f;
+      marker_msg.color = make_color(0.0, 1.0, 0, 0.7);
     }
-    marker_msg.color.b = 0.0f;
-    marker_msg.color.a = 0.5;
     
     if (_rate <= 1)
       marker_msg.lifetime = convert(_timer_period);
@@ -313,15 +443,6 @@ private:
     const auto t_finish_time = *trajectory.finish_time();
     const auto end_time = std::min(t_finish_time, param.finish_time);
  
-    auto make_point = [](const Eigen::Vector3d& tp) -> Point
-    {
-      Point p;
-      p.x = tp[0];
-      p.y = tp[1];
-      p.z = 0;
-      return p;
-    };
-
     auto it = trajectory.find(start_time);
     assert(it != trajectory.end());
     assert(trajectory.find(end_time) != trajectory.end());
@@ -329,14 +450,30 @@ private:
     marker_msg.points.push_back(
           make_point(motion->compute_position(start_time)));
 
-    for (; it <= trajectory.find(end_time); it++)
+    // Add segment points untill the last segment
+    for (; it < trajectory.find(end_time); it++)
     {
       assert(it != trajectory.end());
       const Eigen::Vector3d p = it->get_finish_position();
       marker_msg.points.push_back(make_point(p));
     }
 
+    // Add either last segment point or position at end_time
+    const Eigen::Vector3d p = t_finish_time < param.finish_time ?
+        it->get_finish_position()
+        : it->compute_motion()->compute_position(end_time);
+    marker_msg.points.push_back(make_point(p));
+
     return marker_msg;
+  }
+
+  Point make_point(const Eigen::Vector3d tp, bool z = false)
+  {
+    Point p;
+    p.x = tp[0];
+    p.y = tp[1];
+    p.z = z ? tp[2] : 0;
+    return p;
   }
 
   builtin_interfaces::msg::Duration convert(rmf_traffic::Duration duration)
@@ -382,6 +519,60 @@ private:
       return false;
   }
 
+  Color make_color(float r, float g, float b, float a = 1.0)
+  {
+    Color color;
+    color.r = r;
+    color.g = g;
+    color.b = b;
+    color.a = a;
+    return color;
+  }
+
+  void set_color_list(float alpha = 1)
+  { 
+    // List of colors that will be paired with graph ids.
+    // Add additional colors here.
+    // Orange
+    _color_list.push_back(make_color(0.99, 0.5, 0.19, alpha));
+    // Blue
+    _color_list.push_back(make_color(0, 0.5, 0.8, alpha));     
+    // Purple 
+    _color_list.push_back(make_color(0.57, 0.12, 0.7, alpha));
+    // Teal
+    _color_list.push_back(make_color(0, 0.5, 0.5, alpha));
+    // Lavender 
+    _color_list.push_back(make_color(0.9, 0.74, 1.0, alpha));
+    // Olive
+    _color_list.push_back(make_color(0.5, 0.5, 0, alpha));
+    // Cyan    
+    _color_list.push_back(make_color(0.27, 0.94, 0.94, alpha));
+    // Grey
+    _color_list.push_back(make_color(0.5, 0.5, 0.5, alpha));
+    // Maroon
+    _color_list.push_back(make_color(0.5, 0, 0, alpha));
+  }
+
+  Color get_color(uint64_t id)
+  {
+    if (_color_map.find(id) != _color_map.end())
+        return _color_map[id];
+    else
+    {
+      Color color;
+      if (id < _color_list.size())
+      {
+        color = _color_list[id];
+      }
+      else
+      {
+        // We assign a default color
+        color = make_color(1, 1, 0, 0.5);
+      }
+      _color_map.insert(std::make_pair(id, color));
+      return color;
+    }
+  }
 
   struct RvizParam
   {
@@ -391,19 +582,29 @@ private:
   };
 
   double _rate;
-  int _count;
   std::string _frame_id;
   std::vector<int64_t> _conflict_id;
   std::unordered_set<uint64_t> _marker_tracker; 
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;
   std::chrono::nanoseconds _timer_period;
+
+  BuildingMap _map_msg;
+  bool _has_level;
+  Level _level;
+  std::unordered_map<uint64_t, std_msgs::msg::ColorRGBA> _color_map;
+  // Cache of predefined colors for use
+  std::vector<Color> _color_list;
+
   rclcpp::TimerBase::SharedPtr _timer;
   rclcpp::Publisher<MarkerArray>::SharedPtr _marker_array_pub;
   rclcpp::Subscription<ScheduleConflict>::SharedPtr _conflcit_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_conflict_sub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_param_sub;
+  rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
+  rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_map_sub;
+
   rmf_schedule_visualizer::VisualizerDataNode& _visualizer_data_node;
 
   RvizParam _rviz_param;
