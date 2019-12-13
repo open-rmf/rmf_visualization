@@ -65,6 +65,7 @@ public:
     _rviz_param.map_name = map_name;
     _rviz_param.query_duration = std::chrono::seconds(600);
     _rviz_param.start_duration = std::chrono::seconds(0);
+    update_level_cache();
 
     // Create a timer with specified rate. This timer runs on the main thread.
     const double period = 1.0/_rate;
@@ -109,27 +110,7 @@ public:
           if (!msg->map_name.empty() && _rviz_param.map_name != msg->map_name)
             {
               _rviz_param.map_name = msg->map_name;
-              // Update Level cahce when map is updated
-              if (_map_msg.levels.size() > 0)
-              {
-                bool found = false;
-                for (auto level : _map_msg.levels)
-                {
-                  if (level.name == _rviz_param.map_name)
-                  {
-                    found = true;
-                    _has_level = true;
-                    _level = level;
-                      RCLCPP_INFO(this->get_logger(),"Level cache updated");
-                    break;
-                  }
-                }
-                if (!found)
-                {
-                  _has_level = false;
-                  RCLCPP_INFO(this->get_logger(),"Level cache not updated");
-                }
-              }
+              update_level_cache();
             }
 
           if (msg->query_duration > 0)
@@ -168,6 +149,7 @@ public:
               + std::to_string(msg->levels.size()) + " level(s)");
           // Cache building map message
           _map_msg = *msg;
+          update_level_cache();
         },
         sub_map_opt);
     
@@ -573,6 +555,31 @@ private:
     }
   }
 
+  void update_level_cache()
+  {
+    // Update Level cahce when map is updated
+    if (_map_msg.levels.size() > 0)
+    {
+      bool found = false;
+      for (auto level : _map_msg.levels)
+      {
+        if (level.name == _rviz_param.map_name)
+        {
+          found = true;
+          _has_level = true;
+          _level = level;
+            RCLCPP_INFO(this->get_logger(),"Level cache updated");
+          break;
+        }
+      }
+      if (!found)
+      {
+        _has_level = false;
+        RCLCPP_INFO(this->get_logger(),"Level cache not updated");
+      }
+    }
+  }
+
   struct RvizParam
   {
     std::string map_name;
@@ -650,7 +657,7 @@ int main(int argc, char* argv[])
   get_arg(args, "-r", rate_string, "rate",false);
   double rate = rate_string.empty()? 1.0 : std::stod(rate_string);
 
-  std::string map_name = "level1";
+  std::string map_name = "B1";
   get_arg(args, "-m", map_name, "map name", false);
 
   const auto visualizer_data_node =

@@ -29,7 +29,7 @@ SchedulePanel::SchedulePanel(QWidget* parent)
     : rviz_common::Panel(parent),
       Node("rviz_plugin_node"),
       _param_topic("/rviz_node/param"),
-      _map_name("level1"),
+      _map_name("B1"),
       _finish_duration("600"),
       _start_duration_value(0)
 {
