@@ -47,6 +47,7 @@ public Q_SLOTS:
   void set_topic(const QString& topic);
   void set_map_name(const QString& map_name);
   void set_finish_duration(const QString& map_name);
+  void set_start_duration_max(const QString& max);
 
   // Here we declare some internal slots.
 protected Q_SLOTS:
@@ -55,11 +56,12 @@ protected Q_SLOTS:
   void send_param();
 
   // update_topic() reads the topic name from the QLineEdit and calls
-  // setTopic() with the result.
+  // set_topic() with the result.
   void update_topic();
   void update_map_name();
   void update_start_duration();
   void update_finish_duration();
+  void update_start_duration_max();
 
   // Then we finish up with protected member variables.
 protected:
@@ -80,6 +82,7 @@ protected:
   QString _map_name;
   QString _finish_duration;
   QString _start_duration;
+  QString _start_duration_max;
 
   // The latest start_duration values from the drive widget.
   int _start_duration_value;

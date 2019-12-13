@@ -107,13 +107,21 @@ SchedulePanel::SchedulePanel(QWidget* parent)
       SIGNAL(editingFinished()), this, SLOT(update_finish_duration()));
   connect(_start_duration_slider,
       SIGNAL(valueChanged(int)), this, SLOT(update_start_duration()));
+  connect(_start_duration_max_editor,
+      SIGNAL(editingFinished()), this, SLOT(update_start_duration_max()));
 
   //updating text fields with default
   _topic_editor->setText(_param_topic);
   _map_name_editor->setText(_map_name);
   _finish_duration_editor->setText(_finish_duration);
   _start_duration_editor->setText("0");
+  _start_duration_max_editor->setText("600");
 
+}
+
+void SchedulePanel::update_start_duration_max()
+{
+  set_start_duration_max(_start_duration_max_editor->text());
 }
 
 void SchedulePanel::update_start_duration()
@@ -136,18 +144,31 @@ void SchedulePanel::update_finish_duration()
   set_finish_duration(_finish_duration_editor->text());
 }
 
+void SchedulePanel::set_start_duration_max(const QString& new_max)
+{
+  int finish_duration_value = std::stoi(_finish_duration.toStdString());
+  int max_value = std::min(
+        std::stoi(new_max.toStdString()),finish_duration_value);
+  if (max_value > 0)
+  {
+    // Update the upper bound of the slider
+    _start_duration_slider->setMaximum(max_value);
+    _start_duration_max_editor->setText(QString::number(max_value));
+    Q_EMIT configChanged();
+  }
+}
+
 void SchedulePanel::set_start_duration(const int new_value)
 {
   if (new_value != _start_duration_value && new_value >= 0)
   {
     _start_duration_value = new_value;
-    // update text box
+    // Update text box
     _start_duration_editor->setText(QString::number(_start_duration_value));
     send_param();
   }
-
-
 }
+
 void SchedulePanel::set_topic(const QString& new_topic)
 {
   // Only take action if the name has changed.
@@ -157,10 +178,10 @@ void SchedulePanel::set_topic(const QString& new_topic)
     // If the topic is the empty string, don't publish anything.
     if (_param_topic != "")
     {
-      // update publisher 
+      // Update publisher 
       _param_pub = this->create_publisher<RvizParamMsg>(
           _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
-      // send new message 
+      // Send new message 
       send_param();
     }
     Q_EMIT configChanged();
