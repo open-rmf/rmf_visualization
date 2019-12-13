@@ -42,33 +42,51 @@ SchedulePanel::SchedulePanel(QWidget* parent)
   QHBoxLayout* topic_layout = new QHBoxLayout;
   topic_layout->addWidget(new QLabel("Output Topic:"));
   _topic_editor = new QLineEdit;
+  _topic_editor->setFixedWidth(400);
   topic_layout->addWidget(_topic_editor);
+  topic_layout->addStretch();
 
   // Create layout for map_name box
   QHBoxLayout* map_name_layout = new QHBoxLayout;
   map_name_layout->addWidget(new QLabel("Map Name:"));
   _map_name_editor = new QLineEdit;
+  _map_name_editor->setFixedWidth(400);
   map_name_layout->addWidget(_map_name_editor);
+  map_name_layout->addStretch();
 
   // Create layout for finish_duration box
   QHBoxLayout* finish_duration_layout = new QHBoxLayout;
   finish_duration_layout->addWidget(new QLabel("Query Duration(s):"));
   _finish_duration_editor = new QLineEdit;
+  _finish_duration_editor->setFixedWidth(200);
   finish_duration_layout->addWidget(_finish_duration_editor);
+  finish_duration_layout->addStretch();
 
   // Create layout for start_duration slider box
+
   QVBoxLayout* start_duration_layout = new QVBoxLayout;
-  start_duration_layout->addWidget(new QLabel("Start Duration(s):"));
+  QHBoxLayout* label_layout = new QHBoxLayout;
+  label_layout->addWidget(new QLabel("Start Duration(s):"));
+  _start_duration_editor = new QLineEdit;
+  _start_duration_editor->setFixedWidth(100);
+  label_layout->addWidget(_start_duration_editor);
+  label_layout->addStretch();
+  label_layout->addWidget(new QLabel("Max(s)"));
+  start_duration_layout->addLayout(label_layout);
+
+  QHBoxLayout* slider_layout = new QHBoxLayout;
   _start_duration_slider = new QSlider(Qt::Horizontal);
   _start_duration_slider->setMinimum(0);
   // set maximum to 1 hr
   // TODO read max value from text box
   _start_duration_slider->setMaximum(600);
   _start_duration_slider->setSingleStep(5);
-  start_duration_layout->addWidget(_start_duration_slider);
-  _start_duration_editor = new QLineEdit;
-  start_duration_layout->addWidget(_start_duration_editor);
-
+  slider_layout->addWidget(_start_duration_slider);
+  // slider_layout->addStretch();
+  _start_duration_max_editor = new QLineEdit;
+  _start_duration_max_editor->setFixedWidth(100);
+  slider_layout->addWidget(_start_duration_max_editor);
+  start_duration_layout->addLayout(slider_layout);
 
   // Combine all layouts in vertival layput
   QVBoxLayout* layout = new QVBoxLayout;
@@ -76,6 +94,7 @@ SchedulePanel::SchedulePanel(QWidget* parent)
   layout->addLayout(map_name_layout);
   layout->addLayout(start_duration_layout);
   layout->addLayout(finish_duration_layout);
+  layout->addStretch();
   setLayout(layout);
 
   // _output_timer = new QTimer(this);

@@ -73,6 +73,7 @@ protected:
   QLineEdit* _map_name_editor;
   QLineEdit* _finish_duration_editor;
   QLineEdit* _start_duration_editor;
+  QLineEdit* _start_duration_max_editor;
 
   // The current name of the output topic.
   QString _param_topic;
