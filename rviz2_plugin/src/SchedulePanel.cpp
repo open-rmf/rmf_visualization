@@ -109,6 +109,8 @@ SchedulePanel::SchedulePanel(QWidget* parent)
       SIGNAL(valueChanged(int)), this, SLOT(update_start_duration()));
   connect(_start_duration_max_editor,
       SIGNAL(editingFinished()), this, SLOT(update_start_duration_max()));
+  connect(_start_duration_editor,
+      SIGNAL(editingFinished()), this, SLOT(update_start_duration_editor()));
 
   //updating text fields with default
   _topic_editor->setText(_param_topic);
@@ -144,6 +146,11 @@ void SchedulePanel::update_finish_duration()
   set_finish_duration(_finish_duration_editor->text());
 }
 
+void SchedulePanel::update_start_duration_editor()
+{
+  set_start_duration(_start_duration_editor->text());
+}
+
 void SchedulePanel::set_start_duration_max(const QString& new_max)
 {
   int finish_duration_value = std::stoi(_finish_duration.toStdString());
@@ -158,6 +165,21 @@ void SchedulePanel::set_start_duration_max(const QString& new_max)
   }
 }
 
+void SchedulePanel::set_start_duration(const QString& new_value)
+{
+  int value = std::stoi(new_value.toStdString());
+
+  if (value < 0 or value == _start_duration_value)
+    return;
+  
+  value = std::min(value, _start_duration_slider->maximum());
+  _start_duration_value = value;
+  _start_duration_slider->setValue(value);
+  _start_duration_editor->setText(QString::number(value));
+  send_param();
+  Q_EMIT configChanged();
+}
+
 void SchedulePanel::set_start_duration(const int new_value)
 {
   if (new_value != _start_duration_value && new_value >= 0)
@@ -166,6 +188,7 @@ void SchedulePanel::set_start_duration(const int new_value)
     // Update text box
     _start_duration_editor->setText(QString::number(_start_duration_value));
     send_param();
+    Q_EMIT configChanged();
   }
 }
 

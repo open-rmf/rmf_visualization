@@ -44,6 +44,7 @@ public:
   // Next come a couple of public Qt slots.
 public Q_SLOTS:
   void set_start_duration(int seconds);
+  void set_start_duration(const QString& max);
   void set_topic(const QString& topic);
   void set_map_name(const QString& map_name);
   void set_finish_duration(const QString& map_name);
@@ -62,6 +63,7 @@ protected Q_SLOTS:
   void update_start_duration();
   void update_finish_duration();
   void update_start_duration_max();
+  void update_start_duration_editor();
 
   // Then we finish up with protected member variables.
 protected:
