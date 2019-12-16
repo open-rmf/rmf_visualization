@@ -42,33 +42,51 @@ SchedulePanel::SchedulePanel(QWidget* parent)
   QHBoxLayout* topic_layout = new QHBoxLayout;
   topic_layout->addWidget(new QLabel("Output Topic:"));
   _topic_editor = new QLineEdit;
+  _topic_editor->setFixedWidth(400);
   topic_layout->addWidget(_topic_editor);
+  topic_layout->addStretch();
 
   // Create layout for map_name box
   QHBoxLayout* map_name_layout = new QHBoxLayout;
   map_name_layout->addWidget(new QLabel("Map Name:"));
   _map_name_editor = new QLineEdit;
+  _map_name_editor->setFixedWidth(400);
   map_name_layout->addWidget(_map_name_editor);
+  map_name_layout->addStretch();
 
   // Create layout for finish_duration box
   QHBoxLayout* finish_duration_layout = new QHBoxLayout;
   finish_duration_layout->addWidget(new QLabel("Query Duration(s):"));
   _finish_duration_editor = new QLineEdit;
+  _finish_duration_editor->setFixedWidth(200);
   finish_duration_layout->addWidget(_finish_duration_editor);
+  finish_duration_layout->addStretch();
 
   // Create layout for start_duration slider box
+
   QVBoxLayout* start_duration_layout = new QVBoxLayout;
-  start_duration_layout->addWidget(new QLabel("Start Duration(s):"));
+  QHBoxLayout* label_layout = new QHBoxLayout;
+  label_layout->addWidget(new QLabel("Start Duration(s):"));
+  _start_duration_editor = new QLineEdit;
+  _start_duration_editor->setFixedWidth(100);
+  label_layout->addWidget(_start_duration_editor);
+  label_layout->addStretch();
+  label_layout->addWidget(new QLabel("Max(s)"));
+  start_duration_layout->addLayout(label_layout);
+
+  QHBoxLayout* slider_layout = new QHBoxLayout;
   _start_duration_slider = new QSlider(Qt::Horizontal);
   _start_duration_slider->setMinimum(0);
   // set maximum to 1 hr
   // TODO read max value from text box
   _start_duration_slider->setMaximum(600);
   _start_duration_slider->setSingleStep(5);
-  start_duration_layout->addWidget(_start_duration_slider);
-  _start_duration_editor = new QLineEdit;
-  start_duration_layout->addWidget(_start_duration_editor);
-
+  slider_layout->addWidget(_start_duration_slider);
+  // slider_layout->addStretch();
+  _start_duration_max_editor = new QLineEdit;
+  _start_duration_max_editor->setFixedWidth(100);
+  slider_layout->addWidget(_start_duration_max_editor);
+  start_duration_layout->addLayout(slider_layout);
 
   // Combine all layouts in vertival layput
   QVBoxLayout* layout = new QVBoxLayout;
@@ -76,6 +94,7 @@ SchedulePanel::SchedulePanel(QWidget* parent)
   layout->addLayout(map_name_layout);
   layout->addLayout(start_duration_layout);
   layout->addLayout(finish_duration_layout);
+  layout->addStretch();
   setLayout(layout);
 
   // _output_timer = new QTimer(this);
@@ -88,13 +107,23 @@ SchedulePanel::SchedulePanel(QWidget* parent)
       SIGNAL(editingFinished()), this, SLOT(update_finish_duration()));
   connect(_start_duration_slider,
       SIGNAL(valueChanged(int)), this, SLOT(update_start_duration()));
+  connect(_start_duration_max_editor,
+      SIGNAL(editingFinished()), this, SLOT(update_start_duration_max()));
+  connect(_start_duration_editor,
+      SIGNAL(editingFinished()), this, SLOT(update_start_duration_editor()));
 
   //updating text fields with default
   _topic_editor->setText(_param_topic);
   _map_name_editor->setText(_map_name);
   _finish_duration_editor->setText(_finish_duration);
   _start_duration_editor->setText("0");
+  _start_duration_max_editor->setText("600");
 
+}
+
+void SchedulePanel::update_start_duration_max()
+{
+  set_start_duration_max(_start_duration_max_editor->text());
 }
 
 void SchedulePanel::update_start_duration()
@@ -117,18 +146,52 @@ void SchedulePanel::update_finish_duration()
   set_finish_duration(_finish_duration_editor->text());
 }
 
+void SchedulePanel::update_start_duration_editor()
+{
+  set_start_duration(_start_duration_editor->text());
+}
+
+void SchedulePanel::set_start_duration_max(const QString& new_max)
+{
+  int finish_duration_value = std::stoi(_finish_duration.toStdString());
+  int max_value = std::min(
+        std::stoi(new_max.toStdString()),finish_duration_value);
+  if (max_value > 0)
+  {
+    // Update the upper bound of the slider
+    _start_duration_slider->setMaximum(max_value);
+    _start_duration_max_editor->setText(QString::number(max_value));
+    Q_EMIT configChanged();
+  }
+}
+
+void SchedulePanel::set_start_duration(const QString& new_value)
+{
+  int value = std::stoi(new_value.toStdString());
+
+  if (value < 0 or value == _start_duration_value)
+    return;
+  
+  value = std::min(value, _start_duration_slider->maximum());
+  _start_duration_value = value;
+  _start_duration_slider->setValue(value);
+  _start_duration_editor->setText(QString::number(value));
+  send_param();
+  Q_EMIT configChanged();
+}
+
 void SchedulePanel::set_start_duration(const int new_value)
 {
   if (new_value != _start_duration_value && new_value >= 0)
   {
     _start_duration_value = new_value;
-    // update text box
+    // Update text box
     _start_duration_editor->setText(QString::number(_start_duration_value));
     send_param();
+    Q_EMIT configChanged();
   }
-
-
 }
+
 void SchedulePanel::set_topic(const QString& new_topic)
 {
   // Only take action if the name has changed.
@@ -138,10 +201,10 @@ void SchedulePanel::set_topic(const QString& new_topic)
     // If the topic is the empty string, don't publish anything.
     if (_param_topic != "")
     {
-      // update publisher 
+      // Update publisher 
       _param_pub = this->create_publisher<RvizParamMsg>(
           _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
-      // send new message 
+      // Send new message 
       send_param();
     }
     Q_EMIT configChanged();
