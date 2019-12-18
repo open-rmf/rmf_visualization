@@ -157,7 +157,7 @@ public:
     _has_level = false;
 
     // Populate _color_list used to assign colors to graphs and robots
-    set_color_list(0.5);
+    set_color_list(0.4);
   }
 
 private:

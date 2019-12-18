@@ -56,8 +56,8 @@ class FleetStateVisualizer(Node):
                 m.scale.x = 0.3
                 m.scale.y = 0.3
             elif rs.name.split('_')[0] == 'Bed001':
-                m.scale.x = 1.0
-                m.scale.y = 1.0
+                m.scale.x = 2.05
+                m.scale.y = 2.05
             else:
                 m.scale.x = 0.5
                 m.scale.y = 0.5
