@@ -83,7 +83,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /RMF/map
+        Value: /floor_plan
       Use Timestamp: false
       Value: true
   Enabled: true
