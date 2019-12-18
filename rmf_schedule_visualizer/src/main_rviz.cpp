@@ -157,7 +157,7 @@ public:
     _has_level = false;
 
     // Populate _color_list used to assign colors to graphs and robots
-    set_color_list(0.3);
+    set_color_list(0.4);
   }
 
 private:
@@ -361,7 +361,7 @@ private:
     marker_msg.scale.z = 1.0;
 
     // Set the color of the marker
-    marker_msg.color = make_color(1.0, 1.0, 0, 1.0);
+    marker_msg.color = make_color(1.0, 1.0, 0, 0.7);
     
     // Set the lifetime of the marker
     if (_rate <= 1)

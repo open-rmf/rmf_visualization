@@ -22,12 +22,21 @@ class FleetStateVisualizer(Node):
             MarkerArray,
             'fleet_markers',
             qos_profile=qos_profile_system_default)
+        
+        self.robot_states = {}
 
     def fleet_state_callback(self, msg):
-        print(msg)
+        # print(msg)
+        # store the RobotState msgs
+        for robot in msg.robots:
+            key = robot.name + "_" + robot.model
+            self.robot_states[key] = robot
+
         ma = MarkerArray()
         marker_id = 0
-        for rs in msg.robots:
+
+        for key in self.robot_states.keys():
+            rs = self.robot_states[key]
             m = Marker()
             m.header.frame_id = 'map'
             m.header.stamp = rs.location.t
@@ -40,13 +49,23 @@ class FleetStateVisualizer(Node):
             m.pose.position.y = rs.location.y
             m.pose.position.z = 0.0
             m.pose.orientation.w = 1.0  # unit quaternion...
-            m.scale.x = 1.0
-            m.scale.y = 1.0
+            if rs.name.split('_')[0] == 'mir':
+                m.scale.x = 0.6
+                m.scale.y = 0.6
+            elif rs.name.split('_')[0] == 'Magni':
+                m.scale.x = 0.3
+                m.scale.y = 0.3
+            elif rs.name.split('_')[0] == 'Bed001':
+                m.scale.x = 2.05
+                m.scale.y = 2.05
+            else:
+                m.scale.x = 0.5
+                m.scale.y = 0.5
             m.scale.z = 1.0
             m.color.r = 1.0  # todo
             m.color.b = 1.0  # todo
             m.color.a = 1.0
-            print(m)
+            # print(m)
 
             # now make the nose
             n = Marker()
@@ -69,14 +88,13 @@ class FleetStateVisualizer(Node):
             n.color.r = 1.0  # todo
             n.color.b = 1.0  # todo
             n.color.a = 1.0
-            print(n)
+            # print(n)
 
             ma.markers.append(m)
             ma.markers.append(n)
         
         self.marker_pub.publish(ma)
         print(ma)
-
 
 def main():
     rclpy.init()
