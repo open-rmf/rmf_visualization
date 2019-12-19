@@ -49,7 +49,6 @@ class FleetStateVisualizer(Node):
             m.pose.position.y = rs.location.y
             m.pose.position.z = 0.0
             m.pose.orientation.w = 1.0  # unit quaternion...
-            print("Robot Name: " + rs.name.split('_')[0])
             if rs.name.split('_')[0] == 'MiR':
                 m.scale.x = 0.6
                 m.scale.y = 0.6
@@ -95,7 +94,7 @@ class FleetStateVisualizer(Node):
             ma.markers.append(n)
         
         self.marker_pub.publish(ma)
-        # print(ma)
+        print(ma)
 
 def main():
     rclpy.init()
