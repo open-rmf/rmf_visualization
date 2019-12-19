@@ -49,10 +49,10 @@ class FleetStateVisualizer(Node):
             m.pose.position.y = rs.location.y
             m.pose.position.z = 0.0
             m.pose.orientation.w = 1.0  # unit quaternion...
-            if rs.name.split('_')[0] == 'mir':
+            if rs.name.split('_')[0] == 'MiR':
                 m.scale.x = 0.6
                 m.scale.y = 0.6
-            elif rs.name.split('_')[0] == 'Magni':
+            elif rs.name.split('_')[0][:5] == 'magni':
                 m.scale.x = 0.3
                 m.scale.y = 0.3
             elif rs.name.split('_')[0] == 'Bed001':
