@@ -4,7 +4,7 @@
 
 This repository provides a visualization (using RViz2) of planned robot trajectories in the `rmf schedule database` along with a live rendering of robot locations if available. A custom RViz2 panel allows users to query different maps and look ahead into the schedule.
 
-![](https://github.com/osrf/rmf_schedule_visualizer/docs/media/visualizer.gif)
+![](docs/media/visualizer.gif)
 
 ## System Requirements
 
