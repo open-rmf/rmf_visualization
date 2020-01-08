@@ -2,7 +2,7 @@
 
 # rmf_schedule_visualizer
 
-This repository provides a visualization (using RViz2) of planned robot trajectories in the `rmf schedule database` along with a live rendering of robot locations if available. A custom RViz2 panel allows users to query different maps and look ahead into the schedule.
+A visualizer for robot trajectories in the `rmf schedule database` and live locations of robots, if available. Users may query trajectories in different maps and view the schedule at a future instance.
 
 ![](docs/media/visualizer.gif)
 
@@ -10,7 +10,7 @@ This repository provides a visualization (using RViz2) of planned robot trajecto
 
 The visualizer is developed and tested on
 [Ubuntu 18.04 LTS](http://releases.ubuntu.com/18.04/) with 
-[ROS2 Eloquent](https://index.ros.org/doc/ros2/Installation/#installationguide). It also works with the `dashing` distribution of ROS2.
+[ROS2 Eloquent](https://index.ros.org/doc/ros2/Installation/#installationguide). It can also be run on the `dashing` distribution of ROS2.
 
 ## Installation 
 ```
@@ -40,7 +40,7 @@ rviz2 -d ~/ws_rmf/install/rmf_schedule_visualizer/share/rmf_schedule_visualizer/
 The default refresh rate(hz) for the visualizer is 1hz and can be set using -r flag.
 ```
 
-If no active trajectories are present in the schedule, a test trajectory can be submitted for visualization
+If no active trajectories are present in the schedule, a test trajectory can be submitted for visualization.
 ```
 ros2 run rmf_schedule_visualizer submit_trajectory 
 
@@ -58,10 +58,10 @@ The visualizer will also render navigation graphs that are published by `buildin
 The live locations of robots as published over`/fleet_states` by various `fleet adapters` can be visualized by running
 ``` ros2 run fleet_state_visualizer fleet_state_visualizer ```
 
-The rmf_schedule_visualizer node queries for trajectories in the schedule over a window from the current instance in time until a duration of `query_duration`(s) into the future. The query also requires a`map_name`. The position of the robot (yellow cylinder) and its conflict-free path (green) are visualized in Rviz2. The schedule can be viewed `start_duration` seconds from the current instance. The default values of `map_name`, `query_duration` and `start_duration` are "B1", 600s and 0s respectively. These values can be modified through the cusom `SchedulePanel` panel GUI in Rviz2. 
+The visualizer node queries for trajectories in the schedule from the current instance in time until a duration of `query_duration`(s) into the future. The trajectories are also filtered based on a`map_name`. The position of the robot (yellow cylinder) and its conflict-free path (green) are then visualized in RViz2. The schedule can be viewed `start_duration` seconds from the current instance on time by adjusting the slider appropraitely. The default values of `map_name`, `query_duration` and `start_duration` are "B1", 600s and 0s respectively. These values can be modified through the cusom `SchedulePanel` panel GUI in Rviz2. 
 
 ## Websocket Backend for Custom UIs 
-For developers wanting to develop custom GUIs outside of the ROS2 environment, this repository provies a bridge-like node. Running this node starts a websocket server which can receive requests from clients and respond with desirable information of trajectoties in the `rmf schedule database`. The format of the request and response messages are described below.
+For developers wanting to develop custom UIs outside of the ROS2 environment, this repository provies a bridge-like node. Running this node starts a websocket server which can receive query requests from clients. The server then responds with information of trajectoties in the `rmf schedule database` that match the query requirements. The format of the request and response messages are described below.
 
 To start the websocket node,
 
