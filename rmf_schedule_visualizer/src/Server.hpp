@@ -20,18 +20,20 @@
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+
 #include <rclcpp/rclcpp.hpp>
+
 #include <iostream>
 #include <set>
 
 #include "VisualizerData.hpp"
+
 #include <rmf_traffic/Trajectory.hpp>
 #include <rmf_schedule_visualizer/CommonData.hpp>
 
 namespace rmf_schedule_visualizer {
 
 using server = websocketpp::server<websocketpp::config::asio>;
-
 using websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -47,7 +49,7 @@ public:
       uint16_t port,
       VisualizerDataNode& visualizer_data_node);
 
-~Server();
+  ~Server();
 
 private:
   using con_list= std::set<connection_hdl,std::owner_less<connection_hdl>>;
@@ -58,15 +60,14 @@ private:
     std::string response;
 
     Data(
-      std::string request_,
-      std::string response_)
+        std::string request_,
+        std::string response_)
     : request(std::move(request_)),
       response(std::move(response_))
     {
       // Do nothing
     }
   };
-
 
   /// Run the server after initialization
   void run();
@@ -88,7 +89,7 @@ private:
 
   server _server;
   con_list _connections;
-  uint16_t _port = 8006;
+  uint16_t _port;
   std::thread _server_thread;
   VisualizerDataNode& _visualizer_data_node;
   bool _is_initialized = false;

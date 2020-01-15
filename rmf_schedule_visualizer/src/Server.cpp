@@ -16,7 +16,9 @@
 */
 
 #include "Server.hpp"
+
 #include <json.hpp>
+
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
 
@@ -81,35 +83,37 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
   RequestParam request_param;
 
   auto ok = parse_request(msg,request_param);
-  std::cout<<"OK: "<<ok<<std::endl;
 
   if(ok)
   {
-    std::cout<<"start_time: "
-        <<request_param.start_time.time_since_epoch().count()<<std::endl;
+    std::cout << "Valid request received" << std::endl;
+    std::cout << "map_name: "
+        << request_param.map_name << std::endl;
+    std::cout << "start_time: "
+        << request_param.start_time.time_since_epoch().count() << std::endl;
     std::cout<<"finish_time: "
-        <<request_param.finish_time.time_since_epoch().count()<<std::endl;
+        << request_param.finish_time.time_since_epoch().count() << std::endl;
 
+    std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
     auto trajectories = _visualizer_data_node.get_trajectories(request_param);
     parse_trajectories(trajectories, response);
+    std::cout << "Response: " << response << std::endl;
   }
-
-  std::cout<<"Response: "<<response<<std::endl;
+  else
+  {
+    std::cout << "Invalid request received" << std::endl;
+  }
  
-  server::message_ptr response_msg =std::move(msg);
+  server::message_ptr response_msg = std::move(msg);
   response_msg->set_payload(response);
   _server.send(hdl, response_msg);
-
-
 }
 
 bool Server::parse_request(server::message_ptr msg, RequestParam& request_param)
 {
-
   using namespace std::chrono_literals;
 
   // TODO(YV) get names of the keys from config yaml file 
-
   std::string msg_payload = msg->get_payload();
   try
   {
@@ -131,17 +135,23 @@ bool Server::parse_request(server::message_ptr msg, RequestParam& request_param)
         j_param["finish_time"] > j_param["start_time"])
         {
           request_param.map_name = j_param["map_name"];
-          // Convert json fields to nanosecond durations
-          // to set rmf_traffic::Time fields
-          std::chrono::nanoseconds start_time_nano(j_param["start_time"]);
-          std::chrono::nanoseconds finish_time_nano(j_param["finish_time"]);
+          // We assume the time parameters are passed as strings and 
+          // require conversion to rmf_traffic::Time
+
+          std::string start_time_string = j_param["start_time"];
+          std::string finish_time_string = j_param["finish_time"];
+
+          std::chrono::nanoseconds start_time_nano(
+              std::stoull(start_time_string));
+          std::chrono::nanoseconds finish_time_nano(
+              std::stoull(finish_time_string));
+
           request_param.start_time = rmf_traffic::Time(
               rmf_traffic::Duration(start_time_nano));
           request_param.finish_time = rmf_traffic::Time(
               rmf_traffic::Duration(finish_time_nano));
 
           return true;
-
         }
     else
       return false;
@@ -158,7 +168,7 @@ void Server::parse_trajectories(
     std::vector<rmf_traffic::Trajectory>& trajectories,
     std::string& response)
 {
-
+  // Templates used for response generation
   json _j_res = { {"response", "trajectory"}, {"values", {} } };
   json _j_traj ={ {"shape", {} }, {"dimensions", {} }, {"segments", {} } };
   json _j_seg = { {"x", {} }, {"v", {} }, {"t", {} } };
@@ -170,20 +180,13 @@ void Server::parse_trajectories(
     for (rmf_traffic::Trajectory trajectory : trajectories)
     {
       auto j_traj = _j_traj;
-      try
-      {
-        // TODO(YV) interpret the shape from profile 
-        // This will fail if shape is Box
-        j_traj["shape"].push_back("circle");
-        const auto &circle = static_cast<const rmf_traffic::geometry::Circle&>(
-            trajectory.begin()->get_profile()->get_shape()->source());
-        j_traj["dimensions"].push_back(circle.get_radius());
-      }
-      catch(const std::exception& e)
-      {
-        std::cerr << e.what() << '\n';
-      }
-      
+      // TODO(YV) interpret the shape from profile 
+      // This will fail if shape is Box
+      j_traj["shape"].push_back("circle");
+      const auto &circle = static_cast<const rmf_traffic::geometry::Circle&>(
+          trajectory.begin()->get_profile()->get_shape()->source());
+      j_traj["dimensions"].push_back(circle.get_radius());
+
       for (auto it = trajectory.begin(); it!= trajectory.end(); it++)
       {
         auto j_seg = _j_seg;
@@ -194,7 +197,7 @@ void Server::parse_trajectories(
             {finish_position[0],finish_position[1],finish_position[2]});
         j_seg["v"].push_back(
             {finish_velocity[0],finish_velocity[1],finish_velocity[2]});
-        j_seg["t"] = finish_time.time_since_epoch().count();
+        j_seg["t"] = std::to_string(finish_time.time_since_epoch().count());
         j_traj["segments"].push_back(j_seg);
       }
       j_res["values"].push_back(j_traj);

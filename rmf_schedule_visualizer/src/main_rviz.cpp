@@ -665,7 +665,7 @@ int main(int argc, char* argv[])
 
   if(!visualizer_data_node)
   {
-    std::cerr << "Failed to initialize the fleet adapter node" << std::endl;
+    std::cerr << "Failed to initialize the visualizer node" << std::endl;
     return 1;
   }
 
