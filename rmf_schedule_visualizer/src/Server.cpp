@@ -80,36 +80,23 @@ void Server::on_close(connection_hdl hdl)
 void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 {
   std::string response;
-  RequestParam request_param;
 
-  auto ok = parse_request(msg,request_param);
+  auto ok = parse_request(msg,response);
 
   if(ok)
   {
-    std::cout << "Valid request received" << std::endl;
-    std::cout << "map_name: "
-        << request_param.map_name << std::endl;
-    std::cout << "start_time: "
-        << request_param.start_time.time_since_epoch().count() << std::endl;
-    std::cout<<"finish_time: "
-        << request_param.finish_time.time_since_epoch().count() << std::endl;
-
-    std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
-    auto trajectories = _visualizer_data_node.get_trajectories(request_param);
-    parse_trajectories(trajectories, response);
     std::cout << "Response: " << response << std::endl;
+    server::message_ptr response_msg = std::move(msg);
+    response_msg->set_payload(response);
+    _server.send(hdl, response_msg);
   }
   else
   {
     std::cout << "Invalid request received" << std::endl;
   }
- 
-  server::message_ptr response_msg = std::move(msg);
-  response_msg->set_payload(response);
-  _server.send(hdl, response_msg);
 }
 
-bool Server::parse_request(server::message_ptr msg, RequestParam& request_param)
+bool Server::parse_request(server::message_ptr msg, std::string& response)
 {
   using namespace std::chrono_literals;
 
@@ -121,45 +108,76 @@ bool Server::parse_request(server::message_ptr msg, RequestParam& request_param)
     if (j.size() != 2)
       return false;
     
-    if(j.count("request") != 1 || j.count("param") != 1)
+    if (j.count("request") != 1 || j.count("param") != 1)
       return false;
-    
-    json j_param = j["param"];
-    if (j_param.size() != 3)
-      return false;
-    
-    if(
-        j_param.count("map_name") == 1 and 
-        j_param.count("start_time") == 1 and 
-        j_param.count("finish_time") == 1 and 
-        j_param["finish_time"] > j_param["start_time"])
-        {
-          request_param.map_name = j_param["map_name"];
-          // We assume the time parameters are passed as strings and 
-          // require conversion to rmf_traffic::Time
 
-          std::string start_time_string = j_param["start_time"];
-          std::string finish_time_string = j_param["finish_time"];
+    if (j["request"] == "trajectory")
+    { 
+      json j_param = j["param"];
+      if (j_param.size() != 3)
+        return false;
+      
+      if (
+          j_param.count("map_name") == 1 and 
+          j_param.count("start_time") == 1 and 
+          j_param.count("finish_time") == 1 and 
+          j_param["finish_time"] > j_param["start_time"])
+          {
+            RequestParam request_param;
+            request_param.map_name = j_param["map_name"];
+            // We assume the time parameters are passed as strings and 
+            // require conversion to rmf_traffic::Time
 
-          std::chrono::nanoseconds start_time_nano(
-              std::stoull(start_time_string));
-          std::chrono::nanoseconds finish_time_nano(
-              std::stoull(finish_time_string));
+            std::string start_time_string = j_param["start_time"];
+            std::string finish_time_string = j_param["finish_time"];
 
-          request_param.start_time = rmf_traffic::Time(
-              rmf_traffic::Duration(start_time_nano));
-          request_param.finish_time = rmf_traffic::Time(
-              rmf_traffic::Duration(finish_time_nano));
+            std::chrono::nanoseconds start_time_nano(
+                std::stoull(start_time_string));
+            std::chrono::nanoseconds finish_time_nano(
+                std::stoull(finish_time_string));
 
-          return true;
-        }
+            request_param.start_time = rmf_traffic::Time(
+                rmf_traffic::Duration(start_time_nano));
+            request_param.finish_time = rmf_traffic::Time(
+                rmf_traffic::Duration(finish_time_nano));
+
+            std::cout << "Trajectory request received" << std::endl;
+            std::cout << "map_name: "
+                << request_param.map_name << std::endl;
+            std::cout << "start_time: "
+                << request_param.start_time.time_since_epoch().count() << std::endl;
+            std::cout<<"finish_time: "
+                << request_param.finish_time.time_since_epoch().count() << std::endl;
+            
+            std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
+            auto trajectories = _visualizer_data_node.get_trajectories(request_param);
+            parse_trajectories(trajectories, response);
+
+            return true;
+          }
+      else
+      {
+        return false;
+      }
+    }
+    else if (j["request"] == "time")
+    {
+      std::cout << "Time request received" << std::endl;
+      json j_res = { {"response", "time"}, {"values", {} } };
+      j_res["values"].push_back(
+          _visualizer_data_node.now().time_since_epoch().count());
+      response = j_res.dump();
+      return true;
+    }
     else
+    {
       return false;
+    }
   }
 
   catch(const std::exception& e)
   {
-    std::cerr << e.what() << '\n';
+    // std::cerr << e.what() << '\n';
     return false;
   }
 }

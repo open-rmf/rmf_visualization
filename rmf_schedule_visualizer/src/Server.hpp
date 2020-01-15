@@ -81,7 +81,7 @@ private:
  
   void on_message(connection_hdl hdl, server::message_ptr msg);
 
-  bool parse_request(server::message_ptr msg, RequestParam& request_param);
+  bool parse_request(server::message_ptr msg, std::string& response);
 
   void parse_trajectories(
       std::vector<rmf_traffic::Trajectory>& trajectories,
