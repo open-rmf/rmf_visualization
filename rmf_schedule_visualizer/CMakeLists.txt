@@ -108,6 +108,11 @@ install(
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+install(DIRECTORY
+  launch/
+  DESTINATION share/${PROJECT_NAME}
+)
+
 add_subdirectory(test)
 
 ament_package()
