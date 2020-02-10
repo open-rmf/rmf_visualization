@@ -33,13 +33,12 @@ An active `rmf_traffic_schedule` node is prerequisite. This can be started with 
 ros2 run rmf_traffic_ros2 rmf_traffic_schedule
 ```
 
-Start the visualizer node and RViz2 with the (optional) configration file.
+Launch the visualizer
 ```
-ros2 run rmf_schedule_visualizer rviz2 -r 10
-rviz2 -d ~/ws_rmf/install/rmf_schedule_visualizer/share/rmf_schedule_visualizer/config/rmf.rviz 
-The default refresh rate(hz) for the visualizer is 1hz and can be set using -r flag.
+ros2 launch visualizer visualizer.xml
 ```
 
+## Submitting a Trajectory
 If no active trajectories are present in the schedule, a test trajectory can be submitted for visualization.
 ```
 ros2 run rmf_schedule_visualizer submit_trajectory 
