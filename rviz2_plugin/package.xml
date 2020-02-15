@@ -16,8 +16,6 @@
   <depend>pluginlib</depend>
   <depend>resource_retriever</depend>
 
-  <test_depend>ament_lint_common</test_depend>
-
   <build_depend>qtbase5-dev</build_depend>
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
@@ -25,6 +23,5 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <!--rviz_common plugin="${prefix}/plugin_description.xml"/-->
   </export>
 </package>

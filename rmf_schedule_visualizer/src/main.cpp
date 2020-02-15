@@ -28,16 +28,16 @@ bool get_arg(
     const bool mandatory = true)
 {
   const auto key_arg = std::find(args.begin(), args.end(), key);
-  if(key_arg == args.end())
+  if (key_arg == args.end())
   {
-    if(mandatory)
+    if (mandatory)
     {
       std::cerr << "You must specify a " << desc <<" using the " << key
                 << " argument!" << std::endl;
     }
     return false;
   }
-  else if(key_arg+1 == args.end())
+  else if (key_arg+1 == args.end())
   {
     std::cerr << "The " << key << " argument must be followed by a " << desc
               << "!" << std::endl;
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   const auto visualizer_data_node =
     rmf_schedule_visualizer::VisualizerDataNode::make(node_name);
 
-  if(!visualizer_data_node)
+  if (!visualizer_data_node)
   {
     std::cerr << "Failed to initialize the visualizer node" << std::endl;
     return 1;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 
   const auto server_ptr = rmf_schedule_visualizer::Server::make(port, *visualizer_data_node);
   
-  if(!server_ptr)
+  if (!server_ptr)
   {
     std::cerr << "Failed to initialize the websocket server" << std::endl;
     return 1;

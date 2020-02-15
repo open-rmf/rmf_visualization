@@ -84,16 +84,16 @@ public:
     auto sub_conflict_opt = rclcpp::SubscriptionOptions();
     sub_conflict_opt.callback_group = _cb_group_conflict_sub;
     _conflcit_sub = this->create_subscription<ScheduleConflict>(
-          "/rmf_traffic/schedule_conflict",
-          rclcpp::QoS(10),
-          [&](ScheduleConflict::SharedPtr msg)
-          {
-            std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
-            _conflict_id.clear();
-            for (const auto& i : msg->indices)
-              _conflict_id.push_back(i);
-          },
-          sub_conflict_opt);
+        "/rmf_traffic/schedule_conflict",
+        rclcpp::QoS(10),
+        [&](ScheduleConflict::SharedPtr msg)
+        {
+          std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+          _conflict_id.clear();
+          for (const auto& i : msg->indices)
+            _conflict_id.push_back(i);
+        },
+        sub_conflict_opt);
 
     // Create subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
@@ -616,7 +616,6 @@ private:
   RvizParam _rviz_param;
 };
 
-
 bool get_arg(
     const std::vector<std::string>& args,
     const std::string& key,
@@ -625,16 +624,16 @@ bool get_arg(
     const bool mandatory = true)
 {
   const auto key_arg = std::find(args.begin(), args.end(), key);
-  if(key_arg == args.end())
+  if (key_arg == args.end())
   {
-    if(mandatory)
+    if (mandatory)
     {
       std::cerr << "You must specify a " << desc <<" using the " << key
                 << " argument!" << std::endl;
     }
     return false;
   }
-  else if(key_arg+1 == args.end())
+  else if (key_arg+1 == args.end())
   {
     std::cerr << "The " << key << " argument must be followed by a " << desc
               << "!" << std::endl;
@@ -663,7 +662,7 @@ int main(int argc, char* argv[])
   const auto visualizer_data_node =
     rmf_schedule_visualizer::VisualizerDataNode::make(node_name);
 
-  if(!visualizer_data_node)
+  if (!visualizer_data_node)
   {
     std::cerr << "Failed to initialize the visualizer node" << std::endl;
     return 1;
