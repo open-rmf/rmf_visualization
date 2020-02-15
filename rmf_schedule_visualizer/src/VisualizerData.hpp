@@ -24,19 +24,20 @@
 #include <rmf_traffic/Trajectory.hpp>
 #include <rmf_traffic/schedule/Viewer.hpp>
 
+#include <rmf_schedule_visualizer/CommonData.hpp>
+
 #include <rclcpp/node.hpp>
+
 #include <std_msgs/msg/string.hpp>
 
-#include <set>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
-#include <rmf_schedule_visualizer/CommonData.hpp>
-#include <mutex>
 
+#include <set>
+#include <mutex>
 
 namespace rmf_schedule_visualizer {
 
-//==============================================================================
 class VisualizerDataNode : public rclcpp::Node
 {
 public:
@@ -74,17 +75,17 @@ private:
   // Create a VisualizerData node with a specified name
   VisualizerDataNode(std::string _node_name);
 
+  void debug_cb(std_msgs::msg::String::UniquePtr msg);
+
   using DebugSub = rclcpp::Subscription<std_msgs::msg::String>;
   DebugSub::SharedPtr debug_sub;
 
   void start(Data data);
 
-  
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::string _node_name;
   std::unique_ptr<Data> data;
   std::mutex _mutex;
-
 };
 
 } // namespace rmf_schedule_visualizer

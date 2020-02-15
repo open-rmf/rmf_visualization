@@ -193,7 +193,7 @@ void Server::parse_trajectories(
   json _j_res = { {"response", "trajectory"}, {"values", {} } };
   json _j_traj ={ {"shape", {} }, {"dimensions", {} }, {"segments", {} } };
   json _j_seg = { {"x", {} }, {"v", {} }, {"t", {} } };
-
+  
   auto j_res = _j_res;
 
   try
@@ -208,7 +208,7 @@ void Server::parse_trajectories(
           trajectory.begin()->get_profile()->get_shape()->source());
       j_traj["dimensions"].push_back(circle.get_radius());
 
-      for (auto it = trajectory.begin(); it!= trajectory.end(); it++)
+      for (auto it = trajectory.begin(); it != trajectory.end(); it++)
       {
         auto j_seg = _j_seg;
         auto finish_time = it->get_finish_time();
@@ -222,7 +222,6 @@ void Server::parse_trajectories(
         j_traj["segments"].push_back(j_seg);
       }
       j_res["values"].push_back(j_traj);
-
     }
   }
   catch(const std::exception& e)
@@ -234,7 +233,7 @@ void Server::parse_trajectories(
 
 Server::~Server()
 {
-  //thread safe access to _connections
+  //Thread safe access to _connections
   const auto connection_copies = _connections;
   for (auto& connection : connection_copies)
   {
