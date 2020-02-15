@@ -24,6 +24,7 @@
 
 
 namespace rmf_schedule_visualizer {
+
 using json = nlohmann::json;
 
 std::shared_ptr<Server> Server::make(
@@ -56,7 +57,7 @@ void Server::run()
 }
 
 /// Constructor with port number and reference to visualizer_data_node
-Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node )
+Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node)
 : _port(port),
   _visualizer_data_node(visualizer_data_node)
 {
@@ -83,7 +84,7 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 
   auto ok = parse_request(msg,response);
 
-  if(ok)
+  if (ok)
   {
     std::cout << "Response: " << response << std::endl;
     server::message_ptr response_msg = std::move(msg);
@@ -114,52 +115,53 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
     if (j["request"] == "trajectory")
     { 
       json j_param = j["param"];
+
       if (j_param.size() != 3)
         return false;
-      
-      if (
-          j_param.count("map_name") == 1 and 
-          j_param.count("start_time") == 1 and 
-          j_param.count("finish_time") == 1 and 
-          j_param["finish_time"] > j_param["start_time"])
-          {
-            RequestParam request_param;
-            request_param.map_name = j_param["map_name"];
-            // We assume the time parameters are passed as strings and 
-            // require conversion to rmf_traffic::Time
-
-            std::string start_time_string = j_param["start_time"];
-            std::string finish_time_string = j_param["finish_time"];
-
-            std::chrono::nanoseconds start_time_nano(
-                std::stoull(start_time_string));
-            std::chrono::nanoseconds finish_time_nano(
-                std::stoull(finish_time_string));
-
-            request_param.start_time = rmf_traffic::Time(
-                rmf_traffic::Duration(start_time_nano));
-            request_param.finish_time = rmf_traffic::Time(
-                rmf_traffic::Duration(finish_time_nano));
-
-            std::cout << "Trajectory request received" << std::endl;
-            std::cout << "map_name: "
-                << request_param.map_name << std::endl;
-            std::cout << "start_time: "
-                << request_param.start_time.time_since_epoch().count() << std::endl;
-            std::cout<<"finish_time: "
-                << request_param.finish_time.time_since_epoch().count() << std::endl;
-            
-            std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
-            auto trajectories = _visualizer_data_node.get_trajectories(request_param);
-            parse_trajectories(trajectories, response);
-
-            return true;
-          }
-      else
-      {
+      if (j_param.count("map_name") != 1)
         return false;
-      }
+      if (j_param.count("start_time") != 1)
+        return false;
+      if (j_param.count("finish_time") != 1)
+        return false;
+      if (j_param["finish_time"] < j_param["start_time"])
+        return false;
+      
+      // All checks have passed 
+      RequestParam request_param;
+      request_param.map_name = j_param["map_name"];
+      // We assume the time parameters are passed as strings and 
+      // require conversion to rmf_traffic::Time
+
+      std::string start_time_string = j_param["start_time"];
+      std::string finish_time_string = j_param["finish_time"];
+
+      std::chrono::nanoseconds start_time_nano(
+          std::stoull(start_time_string));
+      std::chrono::nanoseconds finish_time_nano(
+          std::stoull(finish_time_string));
+
+      request_param.start_time = rmf_traffic::Time(
+          rmf_traffic::Duration(start_time_nano));
+      request_param.finish_time = rmf_traffic::Time(
+          rmf_traffic::Duration(finish_time_nano));
+
+      std::cout << "Trajectory request received" << std::endl;
+      std::cout << "map_name: "
+          << request_param.map_name << std::endl;
+      std::cout << "start_time: "
+          << request_param.start_time.time_since_epoch().count() << std::endl;
+      std::cout<<"finish_time: "
+          << request_param.finish_time.time_since_epoch().count() << std::endl;
+      
+      std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
+      auto trajectories = _visualizer_data_node.get_trajectories(request_param);
+      parse_trajectories(trajectories, response);
+
+      return true;
+          
     }
+
     else if (j["request"] == "time")
     {
       std::cout << "Time request received" << std::endl;
@@ -180,6 +182,7 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
     // std::cerr << e.what() << '\n';
     return false;
   }
+
 }
 
 void Server::parse_trajectories(
