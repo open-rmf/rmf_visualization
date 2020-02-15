@@ -27,13 +27,7 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Test)
 
 add_definitions(-DQT_NO_KEYWORDS)
 
-## Here we specify the list of source files.
-## The generated MOC files are included automatically as headers.
-set(SRC_FILES
-  src/SchedulePanel.cpp
-)
-
-add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
+add_library(${PROJECT_NAME} SHARED src/SchedulePanel.cpp)
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
@@ -44,7 +38,6 @@ target_link_libraries(${PROJECT_NAME}
     ${rviz_rendering_LIBRARIES}
     ${rviz_default_plugins_LIBRARIES}
     ${Qt5Widgets_LIBRARIES}
-
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -86,6 +79,5 @@ install(
 #install(FILES
 #  plugin_description.xml
 #  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
 
 ament_package()
