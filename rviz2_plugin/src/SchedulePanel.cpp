@@ -38,59 +38,50 @@ SchedulePanel::SchedulePanel(QWidget* parent)
   _param_pub = this->create_publisher<RvizParamMsg>(
       _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
 
-  // Create layout for output topic box
-  QHBoxLayout* topic_layout = new QHBoxLayout;
-  topic_layout->addWidget(new QLabel("Output Topic:"));
+  // Create layout for output topic and map_name
+  QHBoxLayout* layout1 = new QHBoxLayout;
+  layout1->addWidget(new QLabel("Output Topic:"));
   _topic_editor = new QLineEdit;
-  _topic_editor->setFixedWidth(400);
-  topic_layout->addWidget(_topic_editor);
-  topic_layout->addStretch();
+  _topic_editor->setFixedWidth(150);
+  layout1->addWidget(_topic_editor);
 
-  // Create layout for map_name box
-  QHBoxLayout* map_name_layout = new QHBoxLayout;
-  map_name_layout->addWidget(new QLabel("Map Name:"));
+  layout1->addWidget(new QLabel("Map Name:"));
   _map_name_editor = new QLineEdit;
-  _map_name_editor->setFixedWidth(400);
-  map_name_layout->addWidget(_map_name_editor);
-  map_name_layout->addStretch();
+  _map_name_editor->setFixedWidth(50);
+  layout1->addWidget(_map_name_editor);
+  layout1->addStretch();
 
-  // Create layout for finish_duration box
-  QHBoxLayout* finish_duration_layout = new QHBoxLayout;
-  finish_duration_layout->addWidget(new QLabel("Query Duration(s):"));
-  _finish_duration_editor = new QLineEdit;
-  _finish_duration_editor->setFixedWidth(200);
-  finish_duration_layout->addWidget(_finish_duration_editor);
-  finish_duration_layout->addStretch();
-
-  // Create layout for start_duration slider box
-  QVBoxLayout* start_duration_layout = new QVBoxLayout;
-  QHBoxLayout* label_layout = new QHBoxLayout;
-  label_layout->addWidget(new QLabel("Start Duration(s):"));
+  // Create layout for start_duration and finish_duration
+  QHBoxLayout* layout2 = new QHBoxLayout;
+  layout2->addWidget(new QLabel("Start Duration(s):"));
   _start_duration_editor = new QLineEdit;
-  _start_duration_editor->setFixedWidth(100);
-  label_layout->addWidget(_start_duration_editor);
-  label_layout->addStretch();
-  label_layout->addWidget(new QLabel("Max(s)"));
-  start_duration_layout->addLayout(label_layout);
+  _start_duration_editor->setFixedWidth(50);
+  layout2->addWidget(_start_duration_editor);
 
-  QHBoxLayout* slider_layout = new QHBoxLayout;
+  layout2->addWidget(new QLabel("Query Duration(s):"));
+  _finish_duration_editor = new QLineEdit;
+  _finish_duration_editor->setFixedWidth(50);
+  layout2->addWidget(_finish_duration_editor);
+  layout2->addStretch();
+
+  // Create layout for slider
+  QHBoxLayout* layout3 = new QHBoxLayout;
   _start_duration_slider = new QSlider(Qt::Horizontal);
   _start_duration_slider->setMinimum(0);
   _start_duration_slider->setMaximum(600);
   _start_duration_slider->setSingleStep(5);
-  slider_layout->addWidget(_start_duration_slider);
+  layout3->addWidget(_start_duration_slider);
   _start_duration_max_editor = new QLineEdit;
-  _start_duration_max_editor->setFixedWidth(100);
-  slider_layout->addWidget(_start_duration_max_editor);
-  start_duration_layout->addLayout(slider_layout);
+  _start_duration_max_editor->setFixedWidth(50);
+  layout3->addWidget(_start_duration_max_editor);
+  layout3->addWidget(new QLabel("(s)"));
 
   // Combine all layouts in vertival layput
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addStretch();
-  layout->addLayout(topic_layout);
-  layout->addLayout(map_name_layout);
-  layout->addLayout(start_duration_layout);
-  layout->addLayout(finish_duration_layout);
+  layout->addLayout(layout1);
+  layout->addLayout(layout2);
+  layout->addLayout(layout3);
   setLayout(layout);
 
   connect(_topic_editor,
