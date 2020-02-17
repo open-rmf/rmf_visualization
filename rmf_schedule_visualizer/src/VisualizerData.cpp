@@ -88,7 +88,7 @@ void VisualizerDataNode::start(Data _data)
 
 void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
 {
-  if (msg->data.c_str() == "info")
+  if (msg->data == "info")
   {
     std::lock_guard<std::mutex> guard(_mutex);
     RCLCPP_INFO(this->get_logger(), "Schedule Info: ");
