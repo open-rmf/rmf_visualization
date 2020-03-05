@@ -18,16 +18,13 @@
 #include <rmf_traffic/Trajectory.hpp>
 #include <rmf_traffic_ros2/Trajectory.hpp>
 #include <rmf_traffic_ros2/Time.hpp>
-#include <rmf_traffic_msgs/srv/submit_trajectories.hpp>
+#include <rmf_traffic_ros2/schedule/Writer.hpp>
 #include <rmf_traffic/Time.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 
-using SubmitTrajectories = rmf_traffic_msgs::srv::SubmitTrajectories;
-using SubmitTrajectoryClient = rclcpp::Client<SubmitTrajectories>;
-using SubmitTrajectoryHandle = SubmitTrajectoryClient::SharedPtr;
 using namespace std::chrono_literals;
 
 
@@ -80,86 +77,47 @@ public:
     _start_time = rmf_traffic_ros2::convert(get_clock()->now()) + start_delay;
     _finish_time = _start_time + duration_;
 
-    auto profile = rmf_traffic::Trajectory::Profile::make_guided(
+    auto profile = rmf_traffic::Profile(
         rmf_traffic::geometry::make_final_convex<
           rmf_traffic::geometry::Circle>(radius));
     
-    rmf_traffic::Trajectory t(map_name);
+    rmf_traffic::Trajectory t;
     t.insert(
         _start_time,
-        profile,
         _position,
         _velocity);
 
     t.insert(
         _start_time + 10s,
-        profile,
         _position + Eigen::Vector3d{10, 0, 0},
         _velocity);
     
     t.insert(
         _start_time + 15s,
-        profile,
         _position + Eigen::Vector3d{10, 0, M_PI_2},
         _velocity);
     
     t.insert(
         _finish_time,
-        profile,
         _position + Eigen::Vector3d{10, 10, M_PI_2},
         _velocity);
 
-    SubmitTrajectories::Request request_msg;
-    request_msg.trajectories.emplace_back(rmf_traffic_ros2::convert(t));
-    request_msg.fleet.fleet_id = "test_fleet";
-    request_msg.fleet.type = rmf_traffic_msgs::msg::FleetProperties::TYPE_NO_CONTROL;
+    rmf_traffic::Route route{std::move(map_name), std::move(t)};
 
-    _submit_trajectory = this->create_client<SubmitTrajectories>(
-        rmf_traffic_ros2::SubmitTrajectoriesSrvName);
+    _writer = rmf_traffic_ros2::schedule::Writer::make(*this);
+    _writer->wait_for_service();
 
-    while (!_submit_trajectory->wait_for_service(1s)) 
+    _writer->async_make_participant(
+          rmf_traffic::schedule::ParticipantDescription{
+            "test",
+            "submit_trajectory_node",
+            rmf_traffic::schedule::ParticipantDescription::Rx::Unresponsive,
+            std::move(profile)
+          },
+          [route = std::move(route)](rmf_traffic::schedule::Participant p)
     {
-      if (!rclcpp::ok()) 
-      {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-        // TODO(YV) use correct error code
-        rclcpp::exceptions::throw_from_rcl_error(200, "Interrupted");
-      }
-      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
-    }
-
-    if (_submit_trajectory->service_is_ready())
-    {
-      _submit_trajectory->async_send_request(
-          std::make_shared<SubmitTrajectories::Request>(std::move(request_msg)),
-          [&](const SubmitTrajectoryClient::SharedFuture future)
-      {
-        if (!future.valid() || std::future_status::ready != future.wait_for(0s))
-        {
-          RCLCPP_ERROR(
-                this->get_logger(),
-                "Failed to get response from schedule");
-          return;
-        }
-        const auto response = *future.get();
-
-        RCLCPP_INFO(this->get_logger(),"Accepted: " + response.accepted);
-        if (!response.error.empty())
-        {
-          RCLCPP_ERROR(
-                this->get_logger(),
-                "Error response from schedule: " + response.error);
-          return;
-        }
-      });
-    }
-    else
-    {
-      RCLCPP_ERROR(
-          this->get_logger(),
-          rmf_traffic_ros2::SubmitTrajectoriesSrvName +
-          " service is unavailable!");
-    }
+      p.set({std::move(route)});
+    });
   }
 
 
@@ -168,7 +126,7 @@ private:
   rmf_traffic::Time _finish_time;
   Eigen::Vector3d _position;
   Eigen::Vector3d _velocity;
-  SubmitTrajectoryHandle _submit_trajectory;
+  rmf_traffic_ros2::schedule::WriterPtr _writer;
 };
 
 

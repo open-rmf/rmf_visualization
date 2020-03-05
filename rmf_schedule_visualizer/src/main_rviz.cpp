@@ -20,6 +20,7 @@
 
 #include <rmf_traffic/geometry/Box.hpp>
 #include <rmf_traffic/geometry/Circle.hpp>
+#include <rmf_traffic/Motion.hpp>
 #include <rmf_traffic/Time.hpp>
 #include <rmf_traffic_ros2/Time.hpp>
 
@@ -90,7 +91,7 @@ public:
         {
           std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
           _conflict_id.clear();
-          for (const auto& i : msg->indices)
+          for (const auto& i : msg->participants)
             _conflict_id.push_back(i);
         },
         sub_conflict_opt);
@@ -190,21 +191,21 @@ private:
     // 2) Path until param.finish_time
     for (const auto& element : _elements)
     {
-      active_id.push_back(element.id);
+      active_id.push_back(element.participant);
 
-      if (element.trajectory.find(traj_param.start_time) != element.trajectory.end())
+      if (element.route.trajectory().find(traj_param.start_time) != element.route.trajectory().end())
       {
         auto location_marker = make_location_marker(element, traj_param);
         marker_array.markers.push_back(location_marker);
       }
-      if (traj_param.start_time < *element.trajectory.finish_time())
+      if (traj_param.start_time < *element.route.trajectory().finish_time())
       {
         auto path_marker = make_path_marker(element, traj_param);
         marker_array.markers.push_back(path_marker);
 
         // Add id to _marker_tracker
-        if (_marker_tracker.find(element.id) == _marker_tracker.end())
-          _marker_tracker.insert(element.id);
+        if (_marker_tracker.find(element.participant) == _marker_tracker.end())
+          _marker_tracker.insert(element.participant);
       }
     }
     // Add map markers
@@ -330,20 +331,23 @@ private:
     Marker marker_msg;
 
     // TODO Link the color, shape and size of marker to profile of trajectory
-    const auto& trajectory = element.trajectory;
+    const auto& trajectory = element.route.trajectory();
 
     const double radius = static_cast<const rmf_traffic::geometry::Circle&>(
-          trajectory.begin()->get_profile()->get_shape()->source()).get_radius();
+          element.description.profile().footprint()->source()).get_radius();
 
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(param.start_time);
-    marker_msg.ns = "trajectory";
-    marker_msg.id = element.id;
+    marker_msg.ns = "participant " + std::to_string(element.participant);
+    marker_msg.id = element.route_id;
     marker_msg.type = marker_msg.CYLINDER;
     marker_msg.action = marker_msg.ADD;
 
     // Set the pose of the marker
-    auto motion = trajectory.find(param.start_time)->compute_motion();
+    const auto it = trajectory.find(param.start_time);
+    auto begin = it; --begin;
+    auto end = it; ++end;
+    auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
     Eigen::Vector3d position =  motion->compute_position(param.start_time);
     marker_msg.pose.position.x = position[0];
     marker_msg.pose.position.y = position[1];
@@ -382,15 +386,15 @@ private:
         const RequestParam param)
   {
     // TODO Link the color, shape and size of marker to profile of trajectory
-    const auto& trajectory = element.trajectory;
-    const bool conflict = is_conflict(element.id);
+    const auto& trajectory = element.route.trajectory();
+    const bool conflict = is_conflict(element.participant);
 
     Marker marker_msg;
 
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(param.start_time);
-    marker_msg.ns = "trajectory";
-    marker_msg.id = -1* element.id;
+    marker_msg.ns = "participant " + std::to_string(element.participant);
+    marker_msg.id = -1*element.route_id;
     marker_msg.type = marker_msg.LINE_STRIP;
     marker_msg.action = marker_msg.ADD;
 
@@ -427,7 +431,9 @@ private:
     auto it = trajectory.find(start_time);
     assert(it != trajectory.end());
     assert(trajectory.find(end_time) != trajectory.end());
-    const auto motion = it->compute_motion();
+    auto begin = it; --begin;
+    auto end = it; ++end;
+    const auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
     marker_msg.points.push_back(
           make_point(motion->compute_position(start_time)));
 
@@ -435,15 +441,22 @@ private:
     for (; it < trajectory.find(end_time); it++)
     {
       assert(it != trajectory.end());
-      const Eigen::Vector3d p = it->get_finish_position();
+      const Eigen::Vector3d p = it->position();
       marker_msg.points.push_back(make_point(p));
     }
 
     // Add either last segment point or position at end_time
-    const Eigen::Vector3d p = t_finish_time < param.finish_time ?
-        it->get_finish_position()
-        : it->compute_motion()->compute_position(end_time);
-    marker_msg.points.push_back(make_point(p));
+    if (t_finish_time < param.finish_time)
+    {
+      marker_msg.points.push_back(make_point(it->position()));
+    }
+    else
+    {
+      const auto motion =
+          rmf_traffic::Motion::compute_cubic_splines(it, trajectory.end());
+      marker_msg.points.push_back(
+            make_point(motion->compute_position(end_time)));
+    }
 
     return marker_msg;
   }
@@ -589,7 +602,7 @@ private:
 
   double _rate;
   std::string _frame_id;
-  std::vector<int64_t> _conflict_id;
+  std::vector<uint64_t> _conflict_id;
   std::unordered_set<uint64_t> _marker_tracker; 
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;

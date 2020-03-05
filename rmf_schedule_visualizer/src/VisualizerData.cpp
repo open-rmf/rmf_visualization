@@ -38,7 +38,7 @@ std::shared_ptr<VisualizerDataNode> VisualizerDataNode::make(
   // Creating a mirror manager that queries over all 
   // Spacetime in the database schedule 
   auto mirror_mgr_future = rmf_traffic_ros2::schedule::make_mirror(
-      *visualizer_data, rmf_traffic::schedule::query_everything().spacetime(),
+      *visualizer_data, rmf_traffic::schedule::query_all(),
       &visualizer_data->_mutex);
 
   const auto stop_time = start_time + wait_time;
@@ -102,7 +102,7 @@ void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
           << std::endl;
       // Query since database was created
       auto view = data->mirror.viewer().query(
-          rmf_traffic::schedule::make_query(0));
+            rmf_traffic::schedule::query_all());
       if (view.size()==0)
         RCLCPP_INFO(this->get_logger(), "View is empty");
       // Do not want to iterate larger views
@@ -110,15 +110,15 @@ void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
       {
         for (const auto& element : view)
         {
-          auto t = element.trajectory;
-          std::cout<<"Trajectory ID: "<<element.id<<std::endl;
+          auto t = element.route.trajectory();
+          std::cout<<"Participant ID: "<<element.participant<<std::endl;
           std::cout<<"Segment Number: "<<t.size()<<std::endl;
           size_t s_count = 0;
           for (auto it = t.begin(); it != t.end(); it++)
           {
             ++s_count;
-            auto finish_time = it->get_finish_time();
-            auto finish_position = it->get_finish_position();
+            auto finish_time = it->time();
+            auto finish_position = it->position();
             std::cout << "Segment: " << s_count << std::endl;
             std::cout << "\tfinish_time: " << std::to_string(
                 finish_time.time_since_epoch().count())
@@ -151,7 +151,7 @@ std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(
 
   const auto view = data->mirror.viewer().query(query);
   for (const auto& element : view)
-    trajectories.push_back(element.trajectory);
+    trajectories.push_back(element.route.trajectory());
 
   return trajectories;
 }

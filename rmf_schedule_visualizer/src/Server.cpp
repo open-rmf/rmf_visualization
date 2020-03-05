@@ -203,17 +203,18 @@ void Server::parse_trajectories(
       auto j_traj = _j_traj;
       // TODO(YV) interpret the shape from profile 
       // This will fail if shape is Box
-      j_traj["shape"] = ("circle");
-      const auto &circle = static_cast<const rmf_traffic::geometry::Circle&>(
-          trajectory.begin()->get_profile()->get_shape()->source());
-      j_traj["dimensions"].push_back(circle.get_radius());
+      // TODO(MXG): Revive this code
+//      j_traj["shape"] = ("circle");
+//      const auto &circle = static_cast<const rmf_traffic::geometry::Circle&>(
+//          trajectory.begin()->get_profile()->get_shape()->source());
+//      j_traj["dimensions"].push_back(circle.get_radius());
 
       for (auto it = trajectory.begin(); it != trajectory.end(); it++)
       {
         auto j_seg = _j_seg;
-        auto finish_time = it->get_finish_time();
-        auto finish_position = it->get_finish_position();
-        auto finish_velocity = it->get_finish_velocity();
+        auto finish_time = it->time();
+        auto finish_position = it->position();
+        auto finish_velocity = it->velocity();
         j_seg["x"] = 
             {finish_position[0],finish_position[1],finish_position[2]};
         j_seg["v"] =
