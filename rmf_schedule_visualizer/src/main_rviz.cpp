@@ -70,6 +70,7 @@ public:
 
     // Create a timer with specified rate. This timer runs on the main thread.
     const double period = 1.0/_rate;
+    std::cout << " -------- MARKER UPDATE PERIOD: " << period << std::endl;
     _timer_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::duration<double, std::ratio<1>>(period));
     _timer = this->create_wall_timer(_timer_period, std::bind(&RvizNode::timer_callback, this));
@@ -169,7 +170,9 @@ private:
 
     // TODO store a cache of trajectories to prevent frequent access.
     // Update cache whenever mirror manager updates
+    std::cout << " ------------- WAITING FOR DATA NODE MUTEX" << std::endl;
     std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+    std::cout << " ------------- OBTAINED DATA NODE MUTEX" << std::endl;
 
     RequestParam query_param;
     query_param.map_name = _rviz_param.map_name;
@@ -186,11 +189,38 @@ private:
     // Store the ids of active trajectories
     std::vector<uint64_t> active_id;
 
+    std::cout << " -- Drawing markers from ["
+              << rmf_traffic::time::to_seconds(traj_param.start_time.time_since_epoch())
+              << "] to ["
+              << rmf_traffic::time::to_seconds(traj_param.finish_time.time_since_epoch())
+              << "]" << std::endl;
+
+    for (const auto p : _visualizer_data_node.data->mirror.viewer().participant_ids())
+    {
+      std::cout << "[" << p << "]: ";
+      const auto itinerary_opt = _visualizer_data_node.data->mirror.viewer().get_itinerary(p);
+      if (itinerary_opt)
+      {
+        const auto itinerary = *itinerary_opt;
+        for (const auto r : itinerary)
+        {
+          std::cout << "(" << rmf_traffic::time::to_seconds(r->trajectory().start_time()->time_since_epoch())
+                    << " -> " << rmf_traffic::time::to_seconds(r->trajectory().finish_time()->time_since_epoch())
+                    << ") ";
+        }
+      }
+
+      std::cout << std::endl;
+    }
+
+
     // For each trajectory create two markers
     // 1) Current position
     // 2) Path until param.finish_time
+    std::cout << "participants: ";
     for (const auto& element : _elements)
     {
+      std::cout << element.participant << " ";
       active_id.push_back(element.participant);
 
       if (element.route.trajectory().find(traj_param.start_time) != element.route.trajectory().end())
@@ -208,6 +238,7 @@ private:
           _marker_tracker.insert(element.participant);
       }
     }
+    std::cout << std::endl;
     // Add map markers
     add_map_markers(marker_array);
 
@@ -659,6 +690,8 @@ bool get_arg(
 
 int main(int argc, char* argv[])
 {
+  std::cout << " ------------ STARTING VISUALIZATION NODE" << std::endl;
+
   const std::vector<std::string> args =
       rclcpp::init_and_remove_ros_arguments(argc, argv);
 

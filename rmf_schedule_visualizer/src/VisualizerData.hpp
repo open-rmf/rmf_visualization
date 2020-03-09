@@ -60,7 +60,7 @@ public:
 
   std::mutex& get_mutex();
 
-private:
+public:
   struct Data
   {
     rmf_traffic_ros2::schedule::MirrorManager mirror;
