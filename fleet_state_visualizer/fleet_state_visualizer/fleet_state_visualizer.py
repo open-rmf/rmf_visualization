@@ -107,10 +107,7 @@ class FleetStateVisualizer(Node):
               t.pose.position.x = rs.location.x + 1.2 * math.cos(rs.location.yaw - 0.7853)
               t.pose.position.y = rs.location.y + 1.2 * math.sin(rs.location.yaw - 0.7853)
               t.pose.position.z = 0.0
-              t.pose.orientation.w = 0.7071068
-              t.pose.orientation.x = 0.0
-              t.pose.orientation.y = 0.0
-              t.pose.orientation.z = 0.7071068
+              t.pose.orientation.w = 1.0
               t.text = rs.name
               t.scale.z = 0.7
               t.color.r = 1.0
