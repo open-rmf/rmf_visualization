@@ -13,6 +13,10 @@ class FleetStateVisualizer(Node):
     def __init__(self):
         super().__init__('fleet_state_visualizer')
         self.get_logger().info('hello i am fleet state visualizer')
+        self.display_names = True
+        if (self.declare_parameter('display_names').value):
+          self.display_names = self.get_parameter('display_names').value
+
         self.create_subscription(
             FleetState,
             'fleet_states',
@@ -49,7 +53,7 @@ class FleetStateVisualizer(Node):
             m.pose.position.y = rs.location.y
             m.pose.position.z = 0.0
             m.pose.orientation.w = 1.0  # unit quaternion...
-            if rs.name.split('_')[0] == 'MiR':
+            if rs.name.split('_')[0] == 'mir100':
                 m.scale.x = 0.6
                 m.scale.y = 0.6
             elif rs.name.split('_')[0][:5] == 'magni':
@@ -59,8 +63,8 @@ class FleetStateVisualizer(Node):
                 m.scale.x = 2.05
                 m.scale.y = 2.05
             else:
-                m.scale.x = 0.5
-                m.scale.y = 0.5
+                m.scale.x = 1.0
+                m.scale.y = 1.0
             m.scale.z = 1.0
             m.color.r = 1.0  # todo
             m.color.b = 1.0  # todo
@@ -90,11 +94,34 @@ class FleetStateVisualizer(Node):
             n.color.a = 1.0
             # print(n)
 
+            if (self.display_names):
+              # text marker
+              t = Marker()
+              t.header.frame_id = 'map'
+              t.header.stamp = rs.location.t
+              t.ns = 'fleet_markers'
+              t.id = marker_id
+              marker_id += 1
+              t.type = Marker.TEXT_VIEW_FACING  # 9
+              t.action = Marker.MODIFY
+              t.pose.position.x = rs.location.x + 1.2 * math.cos(rs.location.yaw - 0.7853)
+              t.pose.position.y = rs.location.y + 1.2 * math.sin(rs.location.yaw - 0.7853)
+              t.pose.position.z = 0.0
+              t.pose.orientation.w = 1.0
+              t.text = rs.name
+              t.scale.z = 0.7
+              t.color.r = 1.0
+              t.color.g = 1.0
+              t.color.b = 1.0
+              t.color.a = 1.0
+
             ma.markers.append(m)
             ma.markers.append(n)
+            if (self.display_names):
+              ma.markers.append(t)
         
         self.marker_pub.publish(ma)
-        print(ma)
+        # print(ma)
 
 def main():
     rclpy.init()
