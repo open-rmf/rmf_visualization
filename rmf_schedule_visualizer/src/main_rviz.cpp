@@ -23,16 +23,22 @@
 #include <rmf_traffic/Time.hpp>
 #include <rmf_traffic_ros2/Time.hpp>
 
-#include <geometry_msgs/msg/point.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
+
 #include <rmf_traffic_msgs/msg/schedule_conflict.hpp>
 #include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
+
 #include <building_map_msgs/msg/building_map.hpp>
 #include <building_map_msgs/msg/level.hpp>
+#include <building_map_msgs/msg/graph_node.hpp>
+
+#include <geometry_msgs/msg/point.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
 
 #include <mutex>
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace std::chrono_literals;
 
@@ -48,6 +54,7 @@ public:
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
   using BuildingMap = building_map_msgs::msg::BuildingMap;
   using Level = building_map_msgs::msg::Level;
+  using GraphNode = building_map_msgs::msg::GraphNode;
   using Color = std_msgs::msg::ColorRGBA;
 
   RvizNode(
@@ -207,8 +214,8 @@ private:
           _marker_tracker.insert(element.id);
       }
     }
-    // Add map markers
-    add_map_markers(marker_array);
+    // // Add map markers
+    // add_map_markers(marker_array);
 
     // Add deletion markers for trajectories no longer active
     std::unordered_set<uint64_t> removed_markers;
@@ -234,75 +241,114 @@ private:
     }
   }
 
-  void add_map_markers(MarkerArray& marker_array)
+  void publish_map_markers()
   {
     if (_map_msg.levels.size() < 1)
       return;
 
-    if (_has_level)
-    {    
-      // Marker for node locations
-      Marker node_marker;
-      node_marker.header.frame_id = _frame_id; // map
-      node_marker.header.stamp = rmf_traffic_ros2::convert(
-          _visualizer_data_node.now());
-      node_marker.ns = "map";
-      node_marker.id = 0;
-      node_marker.type = node_marker.POINTS;
-      node_marker.action = node_marker.ADD;
+    if (!_has_level)
+      return;
 
-      node_marker.pose.orientation.w = 1;
+    MarkerArray marker_array;
+    auto make_label = [&](const GraphNode& node, const uint64_t count) -> Marker
+    {
+      Marker label_marker;
+      label_marker.header.frame_id = _frame_id; // map
+      label_marker.header.stamp = rmf_traffic_ros2::convert(
+          _visualizer_data_node.now());
+      label_marker.ns = "labels";
+      label_marker.id = count;
+      label_marker.type = label_marker.TEXT_VIEW_FACING;
+      label_marker.action = label_marker.MODIFY;
+
+      // Set the pose of the marker
+      label_marker.pose.orientation.w = 1;
+      label_marker.pose.position.x = node.x + 1.2 * std::cos(0.7853);
+      label_marker.pose.position.y = node.y + 1.2 * std::sin(0.7853);
+      label_marker.pose.position.z = 0.0;
 
       // Set the scale of the marker
-      node_marker.scale.x = 0.1;
-      node_marker.scale.y = 0.1;
-      node_marker.scale.z = 1.0;
+      label_marker.scale.z = 0.7;
 
+      // Set the text of the marker
+      label_marker.text = node.name.c_str();
       // Set the color of the marker
-      node_marker.color = make_color(1, 1, 1);
+      label_marker.color = make_color(1, 1, 1);
 
-      // Set the lifetime of the marker
-      if (_rate <= 1)
-        node_marker.lifetime = convert(_timer_period);
-      else
-      {
-        builtin_interfaces::msg::Duration duration;
-        duration.sec = 1;
-        duration.nanosec = 0;
-        node_marker.lifetime = duration;
-      }
-      // Marker for lanes
-      Marker lane_marker = node_marker;
-      lane_marker.id = 2;
-      lane_marker.type = lane_marker.LINE_LIST;
-      lane_marker.scale.x = 0.5;
+      return label_marker;
+    };
 
-      // Add markers for nodes and lanes in each graph
-      uint64_t graph_count = 0;
-      for (const auto nav_graph : _level.nav_graphs)
+
+    // Marker for node locations
+    Marker node_marker;
+    node_marker.header.frame_id = _frame_id; // map
+    node_marker.header.stamp = rmf_traffic_ros2::convert(
+        _visualizer_data_node.now());
+    node_marker.ns = "map";
+    node_marker.id = 0;
+    node_marker.type = node_marker.POINTS;
+    node_marker.action = node_marker.MODIFY;
+
+    node_marker.pose.orientation.w = 1;
+
+    // Set the scale of the marker
+    node_marker.scale.x = 0.1;
+    node_marker.scale.y = 0.1;
+    node_marker.scale.z = 1.0;
+
+    // Set the color of the marker
+    node_marker.color = make_color(1, 1, 1);
+
+    // // Set the lifetime of the marker
+    // if (_rate <= 1)
+    //   node_marker.lifetime = convert(_timer_period);
+    // else
+    // {
+    //   builtin_interfaces::msg::Duration duration;
+    //   duration.sec = 1;
+    //   duration.nanosec = 0;
+    //   node_marker.lifetime = duration;
+    // }
+
+    // Marker for lanes
+    Marker lane_marker = node_marker;
+    lane_marker.id = 2;
+    lane_marker.type = lane_marker.LINE_LIST;
+    lane_marker.scale.x = 0.5;
+
+    // Add markers for nodes and lanes in each graph
+    uint64_t graph_count = 0;
+    uint64_t waypoint_count = 0;
+    for (const auto nav_graph : _level.nav_graphs)
+    {
+      for (const auto vertex : nav_graph.vertices)
       {
-        for (const auto vertex : nav_graph.vertices)
-        {
-          node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
-        }
-        // Unique lane marker for each graph
-        lane_marker.id = graph_count + 2;
-        lane_marker.points.clear();
-        // TODO use graph id or graph name to lookup color
-        lane_marker.color = get_color(graph_count);
-        for (const auto edge : nav_graph.edges)
-        {
-          auto n1 = nav_graph.vertices[edge.v1_idx];
-          auto n2 = nav_graph.vertices[edge.v2_idx];
-          lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}, true));
-          lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}, true));
-        }
-        graph_count++;
-        // Insert lane marker to marker_array
-         marker_array.markers.push_back(lane_marker);
+        node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
+        if (!vertex.name.empty())
+          marker_array.markers.push_back(
+              make_label(vertex, waypoint_count));
+        ++waypoint_count;
       }
-      marker_array.markers.push_back(node_marker);
+      // Unique lane marker for each graph
+      lane_marker.id = graph_count + 2;
+      lane_marker.points.clear();
+      // TODO use graph id or graph name to lookup color
+      lane_marker.color = get_color(graph_count);
+      for (const auto edge : nav_graph.edges)
+      {
+        auto n1 = nav_graph.vertices[edge.v1_idx];
+        auto n2 = nav_graph.vertices[edge.v2_idx];
+        lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}, true));
+        lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}, true));
+      }
+      graph_count++;
+      // Insert lane marker to marker_array
+        marker_array.markers.push_back(lane_marker);
     }
+    marker_array.markers.push_back(node_marker);
+
+    if (marker_array.markers.size() > 0)
+      _marker_array_pub->publish(marker_array);
   }
 
   void delete_marker(const uint64_t id, MarkerArray& marker_array)
@@ -340,7 +386,7 @@ private:
     marker_msg.ns = "trajectory";
     marker_msg.id = element.id;
     marker_msg.type = marker_msg.CYLINDER;
-    marker_msg.action = marker_msg.ADD;
+    marker_msg.action = marker_msg.MODIFY;
 
     // Set the pose of the marker
     auto motion = trajectory.find(param.start_time)->compute_motion();
@@ -392,7 +438,7 @@ private:
     marker_msg.ns = "trajectory";
     marker_msg.id = -1* element.id;
     marker_msg.type = marker_msg.LINE_STRIP;
-    marker_msg.action = marker_msg.ADD;
+    marker_msg.action = marker_msg.MODIFY;
 
     marker_msg.pose.orientation.w = 1;
 
@@ -572,7 +618,12 @@ private:
           break;
         }
       }
-      if (!found)
+      if (found)
+      {
+        for (int i = 0; i < 10; i++)
+          publish_map_markers();
+      }
+      else
       {
         _has_level = false;
         RCLCPP_INFO(this->get_logger(),"Level cache not updated");
