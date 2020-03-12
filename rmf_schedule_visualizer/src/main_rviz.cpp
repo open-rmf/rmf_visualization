@@ -72,6 +72,7 @@ public:
     _rviz_param.map_name = map_name;
     _rviz_param.query_duration = std::chrono::seconds(600);
     _rviz_param.start_duration = std::chrono::seconds(0);
+    _active_map_name = map_name;
     update_level_cache();
 
     // Create a timer with specified rate. This timer runs on the main thread.
@@ -80,10 +81,17 @@ public:
         std::chrono::duration<double, std::ratio<1>>(period));
     _timer = this->create_wall_timer(_timer_period, std::bind(&RvizNode::timer_callback, this));
     
-    // Create publisher for marker_array
-    _marker_array_pub = this->create_publisher<MarkerArray>(
-        "dp2_marker_array",
+    // Create publisher for schedule markers
+    _schedule_markers_pub = this->create_publisher<MarkerArray>(
+        "schedule_markers",
         rclcpp::ServicesQoS());
+
+    // Create publisher for map markers
+    auto transient_qos_profile = rclcpp::QoS(10);
+    transient_qos_profile.transient_local();
+    _map_markers_pub = this->create_publisher<MarkerArray>(
+        "map_markers",
+        transient_qos_profile);
     
     // Create subscriber for schedule_conflict in separate thread
     _cb_group_conflict_sub = this->create_callback_group(
@@ -143,11 +151,9 @@ public:
     rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_map_opt = rclcpp::SubscriptionOptions();
     sub_map_opt.callback_group = _cb_group_map_sub;
-    auto qos_profile = rclcpp::QoS(10);
-    qos_profile.transient_local();
     _map_sub = this->create_subscription<BuildingMap>(
         "/map",
-        qos_profile,
+        transient_qos_profile,
         [&](BuildingMap::SharedPtr msg)
         {
           std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
@@ -214,8 +220,6 @@ private:
           _marker_tracker.insert(element.id);
       }
     }
-    // // Add map markers
-    // add_map_markers(marker_array);
 
     // Add deletion markers for trajectories no longer active
     std::unordered_set<uint64_t> removed_markers;
@@ -237,19 +241,24 @@ private:
     {
       RCLCPP_DEBUG(this->get_logger(),
         "Publishing marker array of size: " + std::to_string(marker_array.markers.size()));
-      _marker_array_pub->publish(marker_array);
+      _schedule_markers_pub->publish(marker_array);
     }
   }
 
   void publish_map_markers()
   {
-    if (_map_msg.levels.size() < 1)
-      return;
 
-    if (!_has_level)
-      return;
+    auto convert_to_delete = [=](MarkerArray array) -> MarkerArray
+    {
+      for (auto& marker : array.markers)
+        {
+          marker.header.stamp = rmf_traffic_ros2::convert(
+              _visualizer_data_node.now());
+          marker.action = marker.DELETE;
+        }
+      return array;
+    };
 
-    MarkerArray marker_array;
     auto make_label = [&](const GraphNode& node, const uint64_t count) -> Marker
     {
       Marker label_marker;
@@ -278,77 +287,114 @@ private:
       return label_marker;
     };
 
+    auto marker_it = _map_markers_cache.find(_level.name.c_str());
 
-    // Marker for node locations
-    Marker node_marker;
-    node_marker.header.frame_id = _frame_id; // map
-    node_marker.header.stamp = rmf_traffic_ros2::convert(
-        _visualizer_data_node.now());
-    node_marker.ns = "map";
-    node_marker.id = 0;
-    node_marker.type = node_marker.POINTS;
-    node_marker.action = node_marker.MODIFY;
-
-    node_marker.pose.orientation.w = 1;
-
-    // Set the scale of the marker
-    node_marker.scale.x = 0.1;
-    node_marker.scale.y = 0.1;
-    node_marker.scale.z = 1.0;
-
-    // Set the color of the marker
-    node_marker.color = make_color(1, 1, 1);
-
-    // // Set the lifetime of the marker
-    // if (_rate <= 1)
-    //   node_marker.lifetime = convert(_timer_period);
-    // else
-    // {
-    //   builtin_interfaces::msg::Duration duration;
-    //   duration.sec = 1;
-    //   duration.nanosec = 0;
-    //   node_marker.lifetime = duration;
-    // }
-
-    // Marker for lanes
-    Marker lane_marker = node_marker;
-    lane_marker.id = 2;
-    lane_marker.type = lane_marker.LINE_LIST;
-    lane_marker.scale.x = 0.5;
-
-    // Add markers for nodes and lanes in each graph
-    uint64_t graph_count = 0;
-    uint64_t waypoint_count = 0;
-    for (const auto nav_graph : _level.nav_graphs)
+    // Delete previously published map markers if building map does not contain
+    // _rviz_param.map_name
+    if (!_has_level)
     {
-      for (const auto vertex : nav_graph.vertices)
-      {
-        node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
-        if (!vertex.name.empty())
-          marker_array.markers.push_back(
-              make_label(vertex, waypoint_count));
-        ++waypoint_count;
-      }
-      // Unique lane marker for each graph
-      lane_marker.id = graph_count + 2;
-      lane_marker.points.clear();
-      // TODO use graph id or graph name to lookup color
-      lane_marker.color = get_color(graph_count);
-      for (const auto edge : nav_graph.edges)
-      {
-        auto n1 = nav_graph.vertices[edge.v1_idx];
-        auto n2 = nav_graph.vertices[edge.v2_idx];
-        lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}, true));
-        lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}, true));
-      }
-      graph_count++;
-      // Insert lane marker to marker_array
-        marker_array.markers.push_back(lane_marker);
-    }
-    marker_array.markers.push_back(node_marker);
+      if (_active_map_name.empty())
+        return;
 
-    if (marker_array.markers.size() > 0)
-      _marker_array_pub->publish(marker_array);
+      if (marker_it != _map_markers_cache.end())
+      {
+        // We modify the timestamp and action and publish
+        auto array = convert_to_delete(marker_it->second);
+        _map_markers_pub->publish(array);
+        _active_map_name = "";
+      }
+      return;
+    }
+
+    // We first delete previously published map
+    if (_active_map_name != _level.name.c_str())
+    {
+      auto it = _map_markers_cache.find(_active_map_name);
+      if(it != _map_markers_cache.end())
+      {
+        auto array = convert_to_delete(it->second);
+        _map_markers_pub->publish(array);
+        _active_map_name = "";
+      }
+    }
+
+    // If the map markers are in the cache
+    if (marker_it != _map_markers_cache.end())
+    {
+      _map_markers_pub->publish(marker_it->second);
+      _active_map_name = _level.name.c_str();
+      return;
+    }
+    else
+    {
+      // We create the new marker array and cache it
+      MarkerArray marker_array;
+
+      // Marker for node locations
+      Marker node_marker;
+      node_marker.header.frame_id = _frame_id; // map
+      node_marker.header.stamp = rmf_traffic_ros2::convert(
+          _visualizer_data_node.now());
+      node_marker.ns = "map";
+      node_marker.id = 0;
+      node_marker.type = node_marker.POINTS;
+      node_marker.action = node_marker.MODIFY;
+
+      node_marker.pose.orientation.w = 1;
+
+      // Set the scale of the marker
+      node_marker.scale.x = 0.1;
+      node_marker.scale.y = 0.1;
+      node_marker.scale.z = 1.0;
+
+      // Set the color of the marker
+      node_marker.color = make_color(1, 1, 1);
+
+      // Marker for lanes
+      Marker lane_marker = node_marker;
+      lane_marker.id = 2;
+      lane_marker.type = lane_marker.LINE_LIST;
+      lane_marker.scale.x = 0.5;
+
+      // Add markers for nodes and lanes in each graph
+      uint64_t graph_count = 0;
+      uint64_t waypoint_count = 0;
+      for (const auto nav_graph : _level.nav_graphs)
+      {
+        for (const auto vertex : nav_graph.vertices)
+        {
+          node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
+          if (!vertex.name.empty())
+            marker_array.markers.push_back(
+                make_label(vertex, waypoint_count));
+          ++waypoint_count;
+        }
+        // Unique lane marker for each graph
+        lane_marker.id = graph_count + 2;
+        lane_marker.points.clear();
+        // TODO use graph id or graph name to lookup color
+        lane_marker.color = get_color(graph_count);
+        for (const auto edge : nav_graph.edges)
+        {
+          auto n1 = nav_graph.vertices[edge.v1_idx];
+          auto n2 = nav_graph.vertices[edge.v2_idx];
+          lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}, true));
+          lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}, true));
+        }
+        graph_count++;
+        // Insert lane marker to marker_array
+          marker_array.markers.push_back(lane_marker);
+      }
+      marker_array.markers.push_back(node_marker);
+
+      if (marker_array.markers.size() > 0)
+      {
+        _map_markers_cache.insert(
+            std::make_pair(_level.name.c_str(), marker_array));
+        _map_markers_pub->publish(marker_array);
+        _active_map_name = _level.name.c_str();
+      }
+    }      
   }
 
   void delete_marker(const uint64_t id, MarkerArray& marker_array)
@@ -603,31 +649,29 @@ private:
 
   void update_level_cache()
   {
-    // Update Level cahce when map is updated
+    // Update Level cache when map is updated
     if (_map_msg.levels.size() > 0)
     {
-      bool found = false;
+      _has_level = false;
       for (auto level : _map_msg.levels)
       {
         if (level.name == _rviz_param.map_name)
         {
-          found = true;
           _has_level = true;
           _level = level;
-            RCLCPP_INFO(this->get_logger(),"Level cache updated");
+          RCLCPP_INFO(this->get_logger(),"Level cache updated");
+          // publish_map_markers();
           break;
         }
       }
-      if (found)
+
+      if (!_has_level)
       {
-        for (int i = 0; i < 10; i++)
-          publish_map_markers();
-      }
-      else
-      {
-        _has_level = false;
         RCLCPP_INFO(this->get_logger(),"Level cache not updated");
+        // publish_map_markers(true);
       }
+
+      publish_map_markers();
     }
   }
 
@@ -649,12 +693,16 @@ private:
   BuildingMap _map_msg;
   bool _has_level;
   Level _level;
+  std::string _active_map_name;
   std::unordered_map<uint64_t, std_msgs::msg::ColorRGBA> _color_map;
+  std::unordered_map<std::string, MarkerArray> _map_markers_cache;
   // Cache of predefined colors for use
   std::vector<Color> _color_list;
 
   rclcpp::TimerBase::SharedPtr _timer;
-  rclcpp::Publisher<MarkerArray>::SharedPtr _marker_array_pub;
+  rclcpp::Publisher<MarkerArray>::SharedPtr _schedule_markers_pub;
+  rclcpp::Publisher<MarkerArray>::SharedPtr _map_markers_pub;
+
   rclcpp::Subscription<ScheduleConflict>::SharedPtr _conflcit_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_conflict_sub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
