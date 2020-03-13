@@ -272,8 +272,8 @@ private:
 
       // Set the pose of the marker
       label_marker.pose.orientation.w = 1;
-      label_marker.pose.position.x = node.x + 1.2 * std::cos(0.7853);
-      label_marker.pose.position.y = node.y + 1.2 * std::sin(0.7853);
+      label_marker.pose.position.x = node.x + 1.0 * std::cos(0.7853);
+      label_marker.pose.position.y = node.y + 1.0 * std::sin(0.7853);
       label_marker.pose.position.z = 0.0;
 
       // Set the scale of the marker
@@ -339,15 +339,10 @@ private:
       node_marker.id = 0;
       node_marker.type = node_marker.POINTS;
       node_marker.action = node_marker.MODIFY;
-
       node_marker.pose.orientation.w = 1;
-
-      // Set the scale of the marker
       node_marker.scale.x = 0.1;
       node_marker.scale.y = 0.1;
       node_marker.scale.z = 1.0;
-
-      // Set the color of the marker
       node_marker.color = make_color(1, 1, 1);
 
       // Marker for lanes
@@ -660,7 +655,6 @@ private:
           _has_level = true;
           _level = level;
           RCLCPP_INFO(this->get_logger(),"Level cache updated");
-          // publish_map_markers();
           break;
         }
       }
@@ -668,10 +662,10 @@ private:
       if (!_has_level)
       {
         RCLCPP_INFO(this->get_logger(),"Level cache not updated");
-        // publish_map_markers(true);
       }
 
       publish_map_markers();
+      
     }
   }
 
