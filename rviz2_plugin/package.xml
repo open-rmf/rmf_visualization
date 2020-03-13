@@ -13,7 +13,7 @@
   <depend>rmf_schedule_visualizer_msgs</depend>
   <depend>rviz_common</depend>
   <depend>rviz_rendering</depend>
-  <depend>rivz_default_plugins</depend>
+  <depend>rviz_default_plugins</depend>
   <depend>pluginlib</depend>
   <depend>resource_retriever</depend>
 
