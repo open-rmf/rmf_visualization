@@ -4,7 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /MarkerArray2/Topic1
+        - /MarkerArray2
+        - /MarkerArray2/Namespaces1
       Splitter Ratio: 0.5
     Tree Height: 923
   - Class: rviz_common/Selection
@@ -51,13 +52,26 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        map: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: dp2_marker_array
+        Value: /schedule_markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        labels: false
+        map: true
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map_markers
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
@@ -135,11 +149,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 81.27279663085938
+      Scale: 79.88577270507812
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 17.417360305786133
-      Y: -21.619190216064453
+      X: 16.866823196411133
+      Y: -21.146560668945312
     Saved: ~
 Window Geometry:
   Displays:
