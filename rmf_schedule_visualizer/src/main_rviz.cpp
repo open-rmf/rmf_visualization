@@ -23,11 +23,13 @@
 #include <rmf_traffic/Motion.hpp>
 #include <rmf_traffic/Time.hpp>
 #include <rmf_traffic_ros2/Time.hpp>
+#include <rmf_traffic_ros2/StandardNames.hpp>
 
 #include <geometry_msgs/msg/point.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-#include <rmf_traffic_msgs/msg/schedule_conflict.hpp>
+#include <rmf_traffic_msgs/msg/schedule_conflict_notice.hpp>
+#include <rmf_traffic_msgs/msg/schedule_conflict_conclusion.hpp>
 #include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
 #include <building_map_msgs/msg/building_map.hpp>
 #include <building_map_msgs/msg/level.hpp>
@@ -44,7 +46,8 @@ public:
   using MarkerArray = visualization_msgs::msg::MarkerArray;
   using Point = geometry_msgs::msg::Point;
   using RequestParam = rmf_schedule_visualizer::RequestParam;
-  using ScheduleConflict = rmf_traffic_msgs::msg::ScheduleConflict;
+  using ConflictNotice = rmf_traffic_msgs::msg::ScheduleConflictNotice;
+  using ConflictConclusion = rmf_traffic_msgs::msg::ScheduleConflictConclusion;
   using Element = rmf_traffic::schedule::Viewer::View::Element;
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
   using BuildingMap = building_map_msgs::msg::BuildingMap;
@@ -85,17 +88,24 @@ public:
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_conflict_opt = rclcpp::SubscriptionOptions();
     sub_conflict_opt.callback_group = _cb_group_conflict_sub;
-    _conflcit_sub = this->create_subscription<ScheduleConflict>(
-        "/rmf_traffic/schedule_conflict",
+    _conflict_notice_sub = this->create_subscription<ConflictNotice>(
+        rmf_traffic_ros2::ScheduleConflictNoticeTopicName,
         rclcpp::QoS(10),
-        [&](ScheduleConflict::SharedPtr msg)
+        [&](ConflictNotice::UniquePtr msg)
         {
           std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
-          _conflict_id.clear();
-          for (const auto& i : msg->participants)
-            _conflict_id.push_back(i);
+          _conflicts[msg->conflict_version] = msg->participants;
         },
         sub_conflict_opt);
+
+    _conflict_conclusion_sub = this->create_subscription<ConflictConclusion>(
+          rmf_traffic_ros2::ScheduleConflictConclusionTopicName,
+          rclcpp::ServicesQoS(),
+          [&](ConflictConclusion::UniquePtr msg)
+    {
+        std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+        _conflicts.erase(msg->conflict_version);
+    });
 
     // Create subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
@@ -537,11 +547,13 @@ private:
 
   bool is_conflict(int64_t id)
   {
-    if (std::find(_conflict_id.begin(), _conflict_id.end(), id) 
-        != _conflict_id.end())
-      return true;
-    else 
-      return false;
+    for (const auto& c : _conflicts)
+    {
+      if (std::find(c.second.begin(), c.second.end(), id) != c.second.end())
+        return true;
+    }
+
+    return false;
   }
 
   Color make_color(float r, float g, float b, float a = 1.0)
@@ -633,11 +645,14 @@ private:
 
   double _rate;
   std::string _frame_id;
-  std::vector<uint64_t> _conflict_id;
   std::unordered_set<uint64_t> _marker_tracker; 
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;
   std::chrono::nanoseconds _timer_period;
+
+  std::unordered_map<
+      rmf_traffic::schedule::Version,
+      std::vector<rmf_traffic::schedule::ParticipantId>> _conflicts;
 
   BuildingMap _map_msg;
   bool _has_level;
@@ -648,7 +663,10 @@ private:
 
   rclcpp::TimerBase::SharedPtr _timer;
   rclcpp::Publisher<MarkerArray>::SharedPtr _marker_array_pub;
-  rclcpp::Subscription<ScheduleConflict>::SharedPtr _conflcit_sub;
+  rclcpp::Subscription<ConflictNotice>::SharedPtr _conflict_notice_sub;
+  rclcpp::Subscription<ConflictConclusion>::SharedPtr _conflict_conclusion_sub;
+
+  rclcpp::Subscription<ConflictConclusion>::SharedPtr _conflict_conclusion;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_conflict_sub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_param_sub;
