@@ -69,13 +69,17 @@ To start the websocket node,
 The default <port_number> of the websocet server is `8006`. 
 
 ### Client Request Format
+To receive the current server time 
 ```
-{
-  "request" : "trajectory"
-  "param" : {"map_name" : "level1", "start_time" : 129109940563641, "finish_time" : 338243159033329}
-}
+{"request":"time","param":{}}
+
 ```
-Here the values of `map_name`, `start_time` and `fnish_time` are supplied by the client. `start_time` and `finish_time` are in nanoseconds measured from the start of the epoch.
+
+To recive list of active trajectories between start_time and finish_time
+```
+{"request":"trajectory","param":{"start_time":"49588000000","finish_time":"4958800000000","map_name":"L1"}}
+```
+Here the values of `map_name`, `start_time` and `fnish_time` are supplied by the client. `start_time` and `finish_time` are in nanoseconds measured from the start of the epoch. It is recommended to sync the client clock with that of the server.
 
 ### Server Response Format 
 ```
