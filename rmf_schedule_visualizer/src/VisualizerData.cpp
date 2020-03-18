@@ -120,9 +120,10 @@ void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
             auto finish_time = it->get_finish_time();
             auto finish_position = it->get_finish_position();
             std::cout << "Segment: " << s_count << std::endl;
-            std::cout << "\tfinish_time: " << std::to_string(
-                finish_time.time_since_epoch().count())
-                << std::endl;
+            RCLCPP_INFO(get_logger(), "Finish_time: [%s]", std::to_string(finish_time.time_since_epoch().count()).c_str());
+            // std::cout << "\tfinish_time: " << std::to_string(
+                // finish_time.time_since_epoch().count())
+                // << std::endl;
                     
             std::cout << "\tfinish_position: " << finish_position[0]
                 << " " <<finish_position[1]
