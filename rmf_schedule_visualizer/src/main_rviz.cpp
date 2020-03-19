@@ -16,8 +16,6 @@
 */
 
 #include "VisualizerData.hpp"
-#include "Server.hpp"
-
 #include <rclcpp/rclcpp.hpp>
 
 #include <rmf_traffic/geometry/Box.hpp>
@@ -772,19 +770,6 @@ int main(int argc, char* argv[])
       *visualizer_data_node,
       std::move(map_name),
       rate);
-
-  std::string port_string;
-  get_arg(args, "-p", port_string, "port",false);
-  const uint16_t port = port_string.empty()? 8006 : std::stoul(
-      port_string, nullptr, 0);
-
-  const auto server_ptr = rmf_schedule_visualizer::Server::make(port, *visualizer_data_node);
-  
-  if (!server_ptr)
-  {
-    std::cerr << "Failed to initialize the websocket server" << std::endl;
-    return 1;
-  }
 
   rclcpp::executors::MultiThreadedExecutor executor{
     rclcpp::executor::ExecutorArgs(), 2

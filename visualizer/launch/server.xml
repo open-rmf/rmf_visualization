@@ -1,0 +1,14 @@
+<?xml version = '1.0' ?>
+
+<launch>
+
+<arg name="use_sim_time" default="true"/>
+<arg name="port" default="8006"/>
+
+<group>
+  <node pkg="rmf_schedule_visualizer" exec="schedule_visualizer" args="-p $(var port)">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+</group>
+
+</launch>
