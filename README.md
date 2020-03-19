@@ -37,6 +37,10 @@ Launch the visualizer
 ```
 ros2 launch visualizer visualizer.xml
 ```
+MarkerArray messages are published over three topics,
+1)`/map_markers` visualizes the nav graphs, waypoints and waypoint labels. Requires `Transient Local` durability
+2)`/schedule_markers` visualizes planned trajectory of the robots in the rmf_schedule
+3)`fleet_markers` visualizes the current pose of robots as published over `/fleet_states`
 
 ## Submitting a Trajectory
 If no active trajectories are present in the schedule, a test trajectory can be submitted for visualization.
