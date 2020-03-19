@@ -58,7 +58,7 @@ target_include_directories(schedule_visualizer
     ${WEBSOCKETPP_INCLUDE_DIR}
 )
 #===============================================================================
-add_executable(rviz2 src/VisualizerData.cpp src/Server.cpp src/main_rviz.cpp)
+add_executable(rviz2 src/VisualizerData.cpp src/main_rviz.cpp)
 
 target_link_libraries(rviz2
   PUBLIC
@@ -85,8 +85,6 @@ target_include_directories(rviz2
     ${geometry_msgs_INCLUDE_DIRS}
     ${rmf_schedule_visualizer_msgs_INCLUDE_DIRS}
     ${building_map_msgs_INCLUDE_DIRS}
-    ${WEBSOCKETPP_INCLUDE_DIR}
-
 )
 
 #===============================================================================

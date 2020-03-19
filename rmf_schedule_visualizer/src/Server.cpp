@@ -128,9 +128,8 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
         return false;
       
       // We assume the duration is passed as a string representing milliseconds
-      std::string duration_string = j_param["duration"];
-      std::chrono::milliseconds duration(
-          std::stoull(duration_string));
+      std::uint64_t duration_num = j_param["duration"];
+      std::chrono::milliseconds duration(duration_num);
 
       // All checks have passed
       RequestParam request_param;
@@ -141,7 +140,7 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
 
       RCLCPP_INFO(_visualizer_data_node.get_logger(),
         "Trajectory Response recived with map_name [%s] and duration [%s]ms",
-        request_param.map_name.c_str(), duration_string.c_str());
+        request_param.map_name.c_str(), std::to_string(duration_num).c_str());
       
       std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
       auto elements = _visualizer_data_node.get_elements(request_param);
