@@ -65,11 +65,14 @@ Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node)
 void Server::on_open(connection_hdl hdl)
 {
   _connections.insert(hdl);
+  RCLCPP_INFO(_visualizer_data_node.get_logger(), "Connected with a client");
 }
 
 void Server::on_close(connection_hdl hdl)
 {
   _connections.erase(hdl);
+  RCLCPP_INFO(_visualizer_data_node.get_logger(), "Disconnected with a client");
+
 }
 
 void Server::on_message(connection_hdl hdl, server::message_ptr msg)
@@ -205,7 +208,8 @@ std::string Server::parse_trajectories(const std::vector<Element>& elements)
             {finish_position[0],finish_position[1],finish_position[2]};
         j_seg["v"] =
             {finish_velocity[0],finish_velocity[1],finish_velocity[2]};
-        j_seg["t"] = std::to_string(finish_time.time_since_epoch().count());
+        j_seg["t"] = std::chrono::duration_cast<std::chrono::milliseconds>(
+            finish_time.time_since_epoch()).count();
         j_traj["segments"].push_back(j_seg);
       }
 
