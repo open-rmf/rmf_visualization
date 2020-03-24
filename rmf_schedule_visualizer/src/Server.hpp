@@ -23,8 +23,9 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <iostream>
 #include <set>
+
+#include <json.hpp>
 
 #include "VisualizerData.hpp"
 
@@ -38,6 +39,8 @@ using websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
+using json = nlohmann::json;
+using Element = rmf_traffic::schedule::Viewer::View::Element;
 
 class Server
 {
@@ -81,11 +84,9 @@ private:
  
   void on_message(connection_hdl hdl, server::message_ptr msg);
 
-  bool parse_request(server::message_ptr msg, std::string& response);
+  bool parse_request(const server::message_ptr msg, std::string& response);
 
-  void parse_trajectories(
-      std::vector<rmf_traffic::Trajectory>& trajectories,
-      std::string& response);
+  std::string parse_trajectories(const std::vector<Element>& elements);
 
   server _server;
   con_list _connections;
@@ -94,6 +95,11 @@ private:
   VisualizerDataNode& _visualizer_data_node;
   bool _is_initialized = false;
   std::unique_ptr<Data> data;
+
+    // Templates used for response generation
+  const json _j_res = { {"response", {}}, {"values", {}}};
+  const json _j_traj ={ {"id", {}}, {"shape", {}}, {"dimensions", {}}, {"segments", {}}};
+  const json _j_seg = { {"x", {}}, {"v", {}}, {"t", {}}};
 };
 
 } // namespace rmf_schedule_visualizer
