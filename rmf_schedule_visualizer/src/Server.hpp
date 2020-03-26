@@ -86,7 +86,10 @@ private:
 
   bool parse_request(const server::message_ptr msg, std::string& response);
 
-  std::string parse_trajectories(const std::vector<Element>& elements);
+  std::string parse_trajectories(
+      const std::vector<Element>& elements,
+      const bool trim,
+      const RequestParam& request_param);
 
   server _server;
   con_list _connections;

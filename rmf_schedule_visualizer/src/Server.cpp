@@ -123,11 +123,13 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
     { 
       json j_param = j["param"];
 
-      if (j_param.size() != 2)
+      if (j_param.size() != 3)
         return false;
       if (j_param.count("map_name") != 1)
         return false;
       if (j_param.count("duration") != 1)
+        return false;
+      if (j_param.count("trim") != 1)
         return false;
       
       // We assume the duration is passed as a string representing milliseconds
@@ -147,8 +149,10 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
       
       std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
       auto elements = _visualizer_data_node.get_elements(request_param);
-      response = parse_trajectories(elements);
 
+      bool trim = j_param["trim"];
+      response = parse_trajectories(elements, trim, request_param);
+      
       return true;
           
     }
@@ -180,7 +184,10 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
 
 }
 
-std::string Server::parse_trajectories(const std::vector<Element>& elements)
+std::string Server::parse_trajectories(
+    const std::vector<Element>& elements,
+    const bool trim,
+    const RequestParam& request_param)
 {
   std::string response;
   auto j_res = _j_res;
@@ -191,19 +198,18 @@ std::string Server::parse_trajectories(const std::vector<Element>& elements)
     for (const auto& element : elements)
     {
       const auto& trajectory = element.trajectory;
-
+      
       auto j_traj = _j_traj;
       j_traj["id"] = element.id;
       j_traj["shape"] = "circle";
       j_traj["dimensions"] = trajectory.begin()->
           get_profile()->get_shape()->get_characteristic_length();
 
-      for (auto it = trajectory.begin(); it != trajectory.end(); it++)
+      auto add_segment = [&](rmf_traffic::Time finish_time,
+           Eigen::Vector3d finish_position,
+           Eigen::Vector3d finish_velocity)
       {
         auto j_seg = _j_seg;
-        auto finish_time = it->get_finish_time();
-        auto finish_position = it->get_finish_position();
-        auto finish_velocity = it->get_finish_velocity();
         j_seg["x"] = 
             {finish_position[0],finish_position[1],finish_position[2]};
         j_seg["v"] =
@@ -211,8 +217,52 @@ std::string Server::parse_trajectories(const std::vector<Element>& elements)
         j_seg["t"] = std::chrono::duration_cast<std::chrono::milliseconds>(
             finish_time.time_since_epoch()).count();
         j_traj["segments"].push_back(j_seg);
+      };
+
+      if (trim)
+      {       
+        const auto start_time = std::max(
+            *trajectory.start_time(), request_param.start_time);
+        const auto end_time = std::min(
+            *trajectory.finish_time(), request_param.finish_time);
+        auto it = trajectory.find(start_time);
+        assert(it != trajectory.end());
+        assert(trajectory.find(end_time) != trajectory.end());
+
+        // Add the trimmed start
+        auto motion = it->compute_motion();
+        add_segment(start_time,
+            motion->compute_position(start_time),
+            motion->compute_velocity(start_time));
+
+        // Add the segments in between
+        for (; it < trajectory.find(end_time); it++)
+        {
+          assert(it != trajectory.end());
+          add_segment(it->get_finish_time(),
+              it->get_finish_position(),
+              it->get_finish_velocity());
+        }
+
+        // Add the trimmed end
+        ++it;
+        assert(it != trajectory.end());
+        motion = it->compute_motion();
+        add_segment(start_time,
+            motion->compute_position(start_time),
+            motion->compute_velocity(start_time));
       }
 
+      else
+      {
+        for (auto it = trajectory.begin(); it != trajectory.end(); it++)
+        {
+          add_segment(it->get_finish_time(),
+              it->get_finish_position(),
+              it->get_finish_velocity());
+        }
+      }
+      
       j_res["values"].push_back(j_traj);
 
     }
