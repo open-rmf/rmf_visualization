@@ -248,9 +248,9 @@ std::string Server::parse_trajectories(
         ++it;
         assert(it != trajectory.end());
         motion = it->compute_motion();
-        add_segment(start_time,
-            motion->compute_position(start_time),
-            motion->compute_velocity(start_time));
+        add_segment(end_time,
+            motion->compute_position(end_time),
+            motion->compute_velocity(end_time));
       }
 
       else
