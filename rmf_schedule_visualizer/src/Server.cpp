@@ -245,7 +245,6 @@ std::string Server::parse_trajectories(
         }
 
         // Add the trimmed end
-        ++it;
         assert(it != trajectory.end());
         motion = it->compute_motion();
         add_segment(end_time,
