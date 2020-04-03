@@ -197,13 +197,13 @@ std::string Server::parse_trajectories(
   {
     for (const auto& element : elements)
     {
-      const auto& trajectory = element.trajectory;
+      const auto& trajectory =  element.route.trajectory();
       
       auto j_traj = _j_traj;
-      j_traj["id"] = element.id;
+      j_traj["id"] = element.route_id;
       j_traj["shape"] = "circle";
-      j_traj["dimensions"] = trajectory.begin()->
-          get_profile()->get_shape()->get_characteristic_length();
+      j_traj["dimensions"] = element.description.profile().footprint()
+          ->get_characteristic_length();
 
       auto add_segment = [&](rmf_traffic::Time finish_time,
            Eigen::Vector3d finish_position,

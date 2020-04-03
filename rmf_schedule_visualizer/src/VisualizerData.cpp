@@ -107,9 +107,9 @@ void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
       {
         for (const auto& element : view)
         {
-          auto t = element.trajectory;
+          auto t = element.route.trajectory();
           RCLCPP_INFO(get_logger(), "Trajectory id: [%d]\nTrajectory size: [%d]",
-              element.id, t.size());
+              element.route_id, t.size());
           int count = 0;
           for (auto it = t.begin(); it != t.end(); it++)
           {
