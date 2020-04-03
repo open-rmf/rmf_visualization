@@ -38,7 +38,7 @@ std::shared_ptr<VisualizerDataNode> VisualizerDataNode::make(
   // Creating a mirror manager that queries over all 
   // Spacetime in the database schedule 
   auto mirror_mgr_future = rmf_traffic_ros2::schedule::make_mirror(
-      *visualizer_data, rmf_traffic::schedule::query_everything().spacetime(),
+      *visualizer_data, rmf_traffic::schedule::query_all(),
       &visualizer_data->_mutex);
 
   const auto stop_time = start_time + wait_time;
@@ -99,8 +99,7 @@ void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
           data->mirror.viewer().latest_version());
       // Query since database was created
       auto view = data->mirror.viewer().query(
-          rmf_traffic::schedule::make_query(0));
-
+            rmf_traffic::schedule::query_all());
       if (view.size()==0)
         RCLCPP_INFO(this->get_logger(), "Schedule is empty");
 
@@ -115,8 +114,8 @@ void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
           for (auto it = t.begin(); it != t.end(); it++)
           {
             ++count;
-            auto finish_time = it->get_finish_time();
-            auto finish_position = it->get_finish_position();
+            auto finish_time = it->time();
+            auto finish_position = it->position();
             RCLCPP_INFO(get_logger(),
               "waypoint: [%d]\ntime: [%s]\nposiiton:[%d, %d, %d]",
                 count,
@@ -145,7 +144,7 @@ std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(
 
   const auto view = data->mirror.viewer().query(query);
   for (const auto& element : view)
-    trajectories.push_back(element.trajectory);
+    trajectories.push_back(element.route.trajectory());
 
   return trajectories;
 }

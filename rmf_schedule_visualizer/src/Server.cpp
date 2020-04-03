@@ -19,7 +19,7 @@
 
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
-
+ #include <rmf_traffic/Motion.hpp> 
 
 namespace rmf_schedule_visualizer {
 
@@ -230,7 +230,9 @@ std::string Server::parse_trajectories(
         assert(trajectory.find(end_time) != trajectory.end());
 
         // Add the trimmed start
-        auto motion = it->compute_motion();
+        auto begin = it; --begin;
+        auto end = it; ++end;
+        auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
         add_segment(start_time,
             motion->compute_position(start_time),
             motion->compute_velocity(start_time));
@@ -239,14 +241,16 @@ std::string Server::parse_trajectories(
         for (; it < trajectory.find(end_time); it++)
         {
           assert(it != trajectory.end());
-          add_segment(it->get_finish_time(),
-              it->get_finish_position(),
-              it->get_finish_velocity());
+          add_segment(it->time(),
+              it->position(),
+              it->velocity());
         }
 
         // Add the trimmed end
         assert(it != trajectory.end());
-        motion = it->compute_motion();
+        begin = it; --begin;
+        end = it; ++end;
+        motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
         add_segment(end_time,
             motion->compute_position(end_time),
             motion->compute_velocity(end_time));
@@ -256,9 +260,9 @@ std::string Server::parse_trajectories(
       {
         for (auto it = trajectory.begin(); it != trajectory.end(); it++)
         {
-          add_segment(it->get_finish_time(),
-              it->get_finish_position(),
-              it->get_finish_velocity());
+          add_segment(it->time(),
+              it->position(),
+              it->velocity());
         }
       }
       

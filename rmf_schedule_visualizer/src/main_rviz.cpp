@@ -20,13 +20,16 @@
 
 #include <rmf_traffic/geometry/Box.hpp>
 #include <rmf_traffic/geometry/Circle.hpp>
+#include <rmf_traffic/Motion.hpp>
 #include <rmf_traffic/Time.hpp>
 #include <rmf_traffic_ros2/Time.hpp>
+#include <rmf_traffic_ros2/StandardNames.hpp>
 
+#include <geometry_msgs/msg/point.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-
-#include <rmf_traffic_msgs/msg/schedule_conflict.hpp>
+#include <rmf_traffic_msgs/msg/schedule_conflict_notice.hpp>
+#include <rmf_traffic_msgs/msg/schedule_conflict_conclusion.hpp>
 #include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
 
 #include <building_map_msgs/msg/building_map.hpp>
@@ -49,7 +52,8 @@ public:
   using MarkerArray = visualization_msgs::msg::MarkerArray;
   using Point = geometry_msgs::msg::Point;
   using RequestParam = rmf_schedule_visualizer::RequestParam;
-  using ScheduleConflict = rmf_traffic_msgs::msg::ScheduleConflict;
+  using ConflictNotice = rmf_traffic_msgs::msg::ScheduleConflictNotice;
+  using ConflictConclusion = rmf_traffic_msgs::msg::ScheduleConflictConclusion;
   using Element = rmf_traffic::schedule::Viewer::View::Element;
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
   using BuildingMap = building_map_msgs::msg::BuildingMap;
@@ -98,17 +102,24 @@ public:
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
     auto sub_conflict_opt = rclcpp::SubscriptionOptions();
     sub_conflict_opt.callback_group = _cb_group_conflict_sub;
-    _conflcit_sub = this->create_subscription<ScheduleConflict>(
-        "/rmf_traffic/schedule_conflict",
+    _conflict_notice_sub = this->create_subscription<ConflictNotice>(
+        rmf_traffic_ros2::ScheduleConflictNoticeTopicName,
         rclcpp::QoS(10),
-        [&](ScheduleConflict::SharedPtr msg)
+        [&](ConflictNotice::UniquePtr msg)
         {
           std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
-          _conflict_id.clear();
-          for (const auto& i : msg->indices)
-            _conflict_id.push_back(i);
+          _conflicts[msg->conflict_version] = msg->participants;
         },
         sub_conflict_opt);
+
+    _conflict_conclusion_sub = this->create_subscription<ConflictConclusion>(
+          rmf_traffic_ros2::ScheduleConflictConclusionTopicName,
+          rclcpp::ServicesQoS(),
+          [&](ConflictConclusion::UniquePtr msg)
+    {
+        std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+        _conflicts.erase(msg->conflict_version);
+    });
 
     // Create subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
@@ -203,21 +214,21 @@ private:
     // 2) Path until param.finish_time
     for (const auto& element : _elements)
     {
-      active_id.push_back(element.id);
+      active_id.push_back(element.participant);
 
-      if (element.trajectory.find(traj_param.start_time) != element.trajectory.end())
+      if (element.route.trajectory().find(traj_param.start_time) != element.route.trajectory().end())
       {
         auto location_marker = make_location_marker(element, traj_param);
         marker_array.markers.push_back(location_marker);
       }
-      if (traj_param.start_time < *element.trajectory.finish_time())
+      if (traj_param.start_time < *element.route.trajectory().finish_time())
       {
         auto path_marker = make_path_marker(element, traj_param);
         marker_array.markers.push_back(path_marker);
 
         // Add id to _marker_tracker
-        if (_marker_tracker.find(element.id) == _marker_tracker.end())
-          _marker_tracker.insert(element.id);
+        if (_marker_tracker.find(element.participant) == _marker_tracker.end())
+          _marker_tracker.insert(element.participant);
       }
     }
 
@@ -378,7 +389,7 @@ private:
         }
         graph_count++;
         // Insert lane marker to marker_array
-          marker_array.markers.push_back(lane_marker);
+         marker_array.markers.push_back(lane_marker);
       }
       marker_array.markers.push_back(node_marker);
 
@@ -417,20 +428,23 @@ private:
     Marker marker_msg;
 
     // TODO Link the color, shape and size of marker to profile of trajectory
-    const auto& trajectory = element.trajectory;
+    const auto& trajectory = element.route.trajectory();
 
     const double radius = static_cast<const rmf_traffic::geometry::Circle&>(
-          trajectory.begin()->get_profile()->get_shape()->source()).get_radius();
+          element.description.profile().footprint()->source()).get_radius();
 
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(param.start_time);
-    marker_msg.ns = "trajectory";
-    marker_msg.id = element.id;
+    marker_msg.ns = "participant " + std::to_string(element.participant);
+    marker_msg.id = element.route_id;
     marker_msg.type = marker_msg.CYLINDER;
     marker_msg.action = marker_msg.MODIFY;
 
     // Set the pose of the marker
-    auto motion = trajectory.find(param.start_time)->compute_motion();
+    const auto it = trajectory.find(param.start_time);
+    auto begin = it; --begin;
+    auto end = it; ++end;
+    auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
     Eigen::Vector3d position =  motion->compute_position(param.start_time);
     marker_msg.pose.position.x = position[0];
     marker_msg.pose.position.y = position[1];
@@ -469,15 +483,15 @@ private:
         const RequestParam param)
   {
     // TODO Link the color, shape and size of marker to profile of trajectory
-    const auto& trajectory = element.trajectory;
-    const bool conflict = is_conflict(element.id);
+    const auto& trajectory = element.route.trajectory();
+    const bool conflict = is_conflict(element.participant);
 
     Marker marker_msg;
 
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(param.start_time);
-    marker_msg.ns = "trajectory";
-    marker_msg.id = -1* element.id;
+    marker_msg.ns = "participant " + std::to_string(element.participant);
+    marker_msg.id = -1*element.route_id;
     marker_msg.type = marker_msg.LINE_STRIP;
     marker_msg.action = marker_msg.MODIFY;
 
@@ -514,7 +528,9 @@ private:
     auto it = trajectory.find(start_time);
     assert(it != trajectory.end());
     assert(trajectory.find(end_time) != trajectory.end());
-    const auto motion = it->compute_motion();
+    auto begin = it; --begin;
+    auto end = it; ++end;
+    const auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
     marker_msg.points.push_back(
           make_point(motion->compute_position(start_time)));
 
@@ -522,15 +538,22 @@ private:
     for (; it < trajectory.find(end_time); it++)
     {
       assert(it != trajectory.end());
-      const Eigen::Vector3d p = it->get_finish_position();
+      const Eigen::Vector3d p = it->position();
       marker_msg.points.push_back(make_point(p));
     }
 
     // Add either last segment point or position at end_time
-    const Eigen::Vector3d p = t_finish_time < param.finish_time ?
-        it->get_finish_position()
-        : it->compute_motion()->compute_position(end_time);
-    marker_msg.points.push_back(make_point(p));
+    if (t_finish_time < param.finish_time)
+    {
+      marker_msg.points.push_back(make_point(it->position()));
+    }
+    else
+    {
+      const auto motion =
+          rmf_traffic::Motion::compute_cubic_splines(it, trajectory.end());
+      marker_msg.points.push_back(
+            make_point(motion->compute_position(end_time)));
+    }
 
     return marker_msg;
   }
@@ -580,11 +603,13 @@ private:
 
   bool is_conflict(int64_t id)
   {
-    if (std::find(_conflict_id.begin(), _conflict_id.end(), id) 
-        != _conflict_id.end())
-      return true;
-    else 
-      return false;
+    for (const auto& c : _conflicts)
+    {
+      if (std::find(c.second.begin(), c.second.end(), id) != c.second.end())
+        return true;
+    }
+
+    return false;
   }
 
   Color make_color(float r, float g, float b, float a = 1.0)
@@ -678,11 +703,14 @@ private:
 
   double _rate;
   std::string _frame_id;
-  std::vector<int64_t> _conflict_id;
   std::unordered_set<uint64_t> _marker_tracker; 
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;
   std::chrono::nanoseconds _timer_period;
+
+  std::unordered_map<
+      rmf_traffic::schedule::Version,
+      std::vector<rmf_traffic::schedule::ParticipantId>> _conflicts;
 
   BuildingMap _map_msg;
   bool _has_level;
@@ -696,8 +724,10 @@ private:
   rclcpp::TimerBase::SharedPtr _timer;
   rclcpp::Publisher<MarkerArray>::SharedPtr _schedule_markers_pub;
   rclcpp::Publisher<MarkerArray>::SharedPtr _map_markers_pub;
+  rclcpp::Subscription<ConflictNotice>::SharedPtr _conflict_notice_sub;
+  rclcpp::Subscription<ConflictConclusion>::SharedPtr _conflict_conclusion_sub;
 
-  rclcpp::Subscription<ScheduleConflict>::SharedPtr _conflcit_sub;
+  rclcpp::Subscription<ConflictConclusion>::SharedPtr _conflict_conclusion;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_conflict_sub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_param_sub;
