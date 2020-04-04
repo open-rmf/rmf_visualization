@@ -218,8 +218,8 @@ private:
 
       if (element.route.trajectory().find(traj_param.start_time) != element.route.trajectory().end())
       {
-        auto location_marker = make_location_marker(element, traj_param);
-        marker_array.markers.push_back(location_marker);
+        // auto location_marker = make_location_marker(element, traj_param);
+        // marker_array.markers.push_back(location_marker);
       }
       if (traj_param.start_time < *element.route.trajectory().finish_time())
       {
