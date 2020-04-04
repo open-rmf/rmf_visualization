@@ -218,8 +218,8 @@ private:
 
       if (element.route.trajectory().find(traj_param.start_time) != element.route.trajectory().end())
       {
-        // auto location_marker = make_location_marker(element, traj_param);
-        // marker_array.markers.push_back(location_marker);
+        auto location_marker = make_location_marker(element, traj_param);
+        marker_array.markers.push_back(location_marker);
       }
       if (traj_param.start_time < *element.route.trajectory().finish_time())
       {
@@ -446,6 +446,8 @@ private:
     auto end = it; ++end;
     auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
     Eigen::Vector3d position =  motion->compute_position(param.start_time);
+    if (!check_limits(position))
+      return marker_msg;
     marker_msg.pose.position.x = position[0];
     marker_msg.pose.position.y = position[1];
     marker_msg.pose.position.z = 0;
@@ -531,6 +533,8 @@ private:
     auto begin = it; --begin;
     auto end = it; ++end;
     const auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
+    if (!check_limits(motion->compute_position(start_time)))
+      return marker_msg;
     marker_msg.points.push_back(
           make_point(motion->compute_position(start_time)));
 
@@ -539,18 +543,24 @@ private:
     {
       assert(it != trajectory.end());
       const Eigen::Vector3d p = it->position();
+      if (!check_limits(p))
+        return marker_msg;
       marker_msg.points.push_back(make_point(p));
     }
 
     // Add either last segment point or position at end_time
     if (t_finish_time < param.finish_time)
     {
+      if (!check_limits(it->position()))
+        return marker_msg;
       marker_msg.points.push_back(make_point(it->position()));
     }
     else
     {
       const auto motion =
           rmf_traffic::Motion::compute_cubic_splines(it, trajectory.end());
+      if (!check_limits(motion->compute_position(end_time)))
+        return marker_msg;
       marker_msg.points.push_back(
             make_point(motion->compute_position(end_time)));
     }
@@ -558,12 +568,29 @@ private:
     return marker_msg;
   }
 
+  bool check_limits(const Eigen::Vector3d& position)
+  {
+    const auto max_value = std::numeric_limits<uint16_t>::max();
+    for (size_t i = 0; i < 3; i++)
+    {
+      if(std::abs(position[i]) > max_value)
+      {
+        RCLCPP_ERROR(get_logger(), "Positional value exceeding limit: [%f]", position[i]);
+        return false;
+      }
+    }
+    return true;
+  }
+
   Point make_point(const Eigen::Vector3d tp, bool z = false)
   {
     Point p;
-    p.x = tp[0];
-    p.y = tp[1];
-    p.z = z ? tp[2] : 0;
+    if (check_limits(tp))
+    {
+      p.x = tp[0];
+      p.y = tp[1];
+      p.z = z ? tp[2] : 0;
+    }
     return p;
   }
 
