@@ -205,8 +205,7 @@ private:
 
       if (element.route.trajectory().find(traj_param.start_time) != element.route.trajectory().end())
       {
-        auto location_marker = make_location_marker(element, traj_param);
-        marker_array.markers.push_back(location_marker);
+        add_location_markers(marker_array.markers, element, traj_param);
       }
       if (traj_param.start_time < *element.route.trajectory().finish_time())
       {
@@ -335,30 +334,23 @@ private:
   }
 
   visualization_msgs::msg::Marker make_location_marker(
-        Element element,
-        const RequestParam param)
+      const Element& element,
+      const RequestParam& param,
+      const Eigen::Vector3d& position,
+      const double radius,
+      const double height,
+      int32_t id,
+      const Color& color)
   {
     Marker marker_msg;
 
-    // TODO Link the color, shape and size of marker to profile of trajectory
-    const auto& trajectory = element.route.trajectory();
-
-    const double radius = static_cast<const rmf_traffic::geometry::Circle&>(
-          element.description.profile().footprint()->source()).get_radius();
-
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(param.start_time);
-    marker_msg.ns = "participant " + std::to_string(element.participant);
-    marker_msg.id = element.route_id;
+    marker_msg.ns = "participant location " + std::to_string(element.participant);
+    marker_msg.id = id;
     marker_msg.type = marker_msg.CYLINDER;
     marker_msg.action = marker_msg.ADD;
 
-    // Set the pose of the marker
-    const auto it = trajectory.find(param.start_time);
-    auto begin = it; --begin;
-    auto end = it; ++end;
-    auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
-    Eigen::Vector3d position =  motion->compute_position(param.start_time);
     marker_msg.pose.position.x = position[0];
     marker_msg.pose.position.y = position[1];
     marker_msg.pose.position.z = 0;
@@ -372,11 +364,11 @@ private:
     // Set the scale of the marker
     marker_msg.scale.x = radius / 1.0;
     marker_msg.scale.y = radius / 1.0;
-    marker_msg.scale.z = 1.0;
+    marker_msg.scale.z = height;
 
     // Set the color of the marker
-    marker_msg.color = make_color(1.0, 1.0, 0, 0.7);
-    
+    marker_msg.color = color;
+
     // Set the lifetime of the marker
     if (_rate <= 1)
       marker_msg.lifetime = convert(_timer_period);
@@ -389,6 +381,55 @@ private:
     }
 
     return marker_msg;
+  }
+
+  visualization_msgs::msg::Marker make_footprint_marker(
+      const Element& element,
+      const RequestParam& param,
+      const Eigen::Vector3d& position)
+  {
+    const double r_footprint =
+        static_cast<const rmf_traffic::geometry::Circle&>(
+          element.description.profile().footprint()->source()).get_radius();
+
+    return make_location_marker(
+          element, param, position, r_footprint, 1.0, 0,
+          make_color(1.0, 1.0, 0, 0.7));
+  }
+
+  visualization_msgs::msg::Marker make_vicinity_marker(
+      const Element& element,
+      const RequestParam& param,
+      const Eigen::Vector3d& position)
+  {
+    const double r_vicinity =
+        static_cast<const rmf_traffic::geometry::Circle&>(
+          element.description.profile().vicinity()->source()).get_radius();
+
+    return make_location_marker(
+          element, param, position, r_vicinity, 0.5, 1,
+          make_color(0.5, 1.0, 0.9, 0.5));
+  }
+
+  void add_location_markers(
+      std::vector<visualization_msgs::msg::Marker>& array,
+      const Element& element,
+      const RequestParam& param)
+  {
+    // TODO Link the color, shape and size of marker to profile of trajectory
+    const auto& trajectory = element.route.trajectory();
+
+    // Find the pose of the markers
+    const auto it = trajectory.find(param.start_time);
+    auto begin = it; --begin;
+    auto end = it; ++end;
+    auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
+    Eigen::Vector3d position =  motion->compute_position(param.start_time);
+
+    array.push_back(make_footprint_marker(element, param, position));
+
+    if (element.description.profile().vicinity() != element.description.profile().footprint())
+      array.push_back(make_vicinity_marker(element, param, position));
   }
 
   visualization_msgs::msg::Marker make_path_marker(
@@ -404,7 +445,7 @@ private:
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(param.start_time);
     marker_msg.ns = "participant " + std::to_string(element.participant);
-    marker_msg.id = -1*element.route_id;
+    marker_msg.id = element.route_id;
     marker_msg.type = marker_msg.LINE_STRIP;
     marker_msg.action = marker_msg.ADD;
 
