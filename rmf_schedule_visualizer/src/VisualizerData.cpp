@@ -77,13 +77,23 @@ void VisualizerDataNode::start(Data _data)
   data->mirror.update();
 
   //Create a subscriber to a /debug topic to print information from this node
-  debug_sub= create_subscription<std_msgs::msg::String>(
+  debug_sub = create_subscription<std_msgs::msg::String>(
       _node_name+"/debug",rclcpp::SystemDefaultsQoS(),
       [&](std_msgs::msg::String::UniquePtr msg)
       {
         debug_cb(std::move(msg));
       });
 
+  _conflcit_sub = create_subscription<ScheduleConflict>(
+    "/rmf_traffic/schedule_conflict",
+    rclcpp::QoS(10),
+    [&](ScheduleConflict::UniquePtr msg)
+    {
+      std::lock_guard<std::mutex> lock(_mutex);
+      _conflict_id.clear();
+      for (const auto& i : msg->indices)
+        _conflict_id.push_back(i);
+    });
 }
 
 void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
@@ -179,6 +189,11 @@ rmf_traffic::Time VisualizerDataNode::now()
 std::mutex& VisualizerDataNode::get_mutex()
 {
   return _mutex;
+}
+
+std::vector<uint64_t> VisualizerDataNode::get_conflicts() const
+{
+  return _conflict_id;
 }
 
 } // namespace rmf_schedule_visualizer
