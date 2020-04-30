@@ -36,6 +36,7 @@
 
 #include <set>
 #include <mutex>
+#include <unordered_set>
 
 namespace rmf_schedule_visualizer {
 
@@ -59,7 +60,7 @@ public:
   /// trajectory and ID pairs.
   std::vector<Element> get_elements(RequestParam request_param);
 
-  std::vector<uint64_t> get_conflicts() const;
+  const std::unordered_set<uint64_t>& get_conflicts() const;
 
   rmf_traffic::Time now();
 
@@ -92,7 +93,7 @@ private:
   std::string _node_name;
   std::unique_ptr<Data> data;
   std::mutex _mutex;
-  std::vector<uint64_t> _conflict_id;
+  std::unordered_set<uint64_t> _conflict_id;
 };
 
 } // namespace rmf_schedule_visualizer

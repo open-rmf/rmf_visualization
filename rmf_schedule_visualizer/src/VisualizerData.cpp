@@ -92,7 +92,7 @@ void VisualizerDataNode::start(Data _data)
       std::lock_guard<std::mutex> lock(_mutex);
       _conflict_id.clear();
       for (const auto& i : msg->indices)
-        _conflict_id.push_back(i);
+        _conflict_id.insert(i);
     });
 }
 
@@ -191,7 +191,7 @@ std::mutex& VisualizerDataNode::get_mutex()
   return _mutex;
 }
 
-std::vector<uint64_t> VisualizerDataNode::get_conflicts() const
+const std::unordered_set<uint64_t>& VisualizerDataNode::get_conflicts() const
 {
   return _conflict_id;
 }
