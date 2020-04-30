@@ -76,6 +76,24 @@ void VisualizerDataNode::start(Data _data)
   data = std::make_unique<Data>(std::move(_data));
   data->mirror.update();
 
+  _conflict_notice_sub = this->create_subscription<ConflictNotice>(
+      rmf_traffic_ros2::ScheduleConflictNoticeTopicName,
+      rclcpp::QoS(10),
+      [&](ConflictNotice::UniquePtr msg)
+      {
+        std::lock_guard<std::mutex> guard(_mutex);
+        _conflicts[msg->conflict_version] = msg->participants;
+      });
+
+  _conflict_conclusion_sub = this->create_subscription<ConflictConclusion>(
+      rmf_traffic_ros2::ScheduleConflictConclusionTopicName,
+      rclcpp::ServicesQoS(),
+      [&](ConflictConclusion::UniquePtr msg)
+      {
+        std::lock_guard<std::mutex> guard(_mutex);
+        _conflicts.erase(msg->conflict_version);
+      });
+
   //Create a subscriber to a /debug topic to print information from this node
   debug_sub= create_subscription<std_msgs::msg::String>(
       _node_name+"/debug",rclcpp::SystemDefaultsQoS(),
@@ -178,6 +196,19 @@ rmf_traffic::Time VisualizerDataNode::now()
 std::mutex& VisualizerDataNode::get_mutex()
 {
   return _mutex;
+}
+
+std::unordered_set<uint64_t> VisualizerDataNode::get_conflicts() const
+{
+  std::unordered_set<uint64_t> conflict_id;
+  for (const auto& conflict : _conflicts)
+  {
+    std::copy(conflict.second.begin(),
+      conflict.second.end(),
+      std::inserter(conflict_id,conflict_id.end()));
+  }
+
+  return conflict_id;
 }
 
 } // namespace rmf_schedule_visualizer

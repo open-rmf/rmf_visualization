@@ -100,7 +100,7 @@ private:
   std::unique_ptr<Data> data;
 
     // Templates used for response generation
-  const json _j_res = { {"response", {}}, {"values", {}}};
+  const json _j_res = { {"response", {}}, {"values", {}}, {"conflicts", {}}};
   const json _j_traj ={ {"id", {}}, {"shape", {}}, {"dimensions", {}}, {"segments", {}}};
   const json _j_seg = { {"x", {}}, {"v", {}}, {"t", {}}};
 };

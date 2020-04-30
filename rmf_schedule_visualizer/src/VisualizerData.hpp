@@ -23,6 +23,10 @@
 
 #include <rmf_traffic/Trajectory.hpp>
 #include <rmf_traffic/schedule/Viewer.hpp>
+#include <rmf_traffic_ros2/StandardNames.hpp>
+
+#include <rmf_traffic_msgs/msg/schedule_conflict_notice.hpp>
+#include <rmf_traffic_msgs/msg/schedule_conflict_conclusion.hpp>
 
 #include <rmf_schedule_visualizer/CommonData.hpp>
 
@@ -35,6 +39,7 @@
 
 #include <set>
 #include <mutex>
+#include <unordered_set>
 
 namespace rmf_schedule_visualizer {
 
@@ -42,6 +47,8 @@ class VisualizerDataNode : public rclcpp::Node
 {
 public:
   using Element = rmf_traffic::schedule::Viewer::View::Element;
+  using ConflictNotice = rmf_traffic_msgs::msg::ScheduleConflictNotice;
+  using ConflictConclusion = rmf_traffic_msgs::msg::ScheduleConflictConclusion;
   /// Builder function which returns a pointer to VisualizerNode when
   /// the Mirror Manager is readied and websocket is started.
   /// A nullptr is returned if initialization fails. 
@@ -55,6 +62,8 @@ public:
   /// Function to query Mirror Manager for elements containing
   /// trajectory and ID pairs.
   std::vector<Element> get_elements(RequestParam request_param);
+
+  std::unordered_set<uint64_t> get_conflicts() const; 
 
   rmf_traffic::Time now();
 
@@ -79,6 +88,8 @@ public:
 
   using DebugSub = rclcpp::Subscription<std_msgs::msg::String>;
   DebugSub::SharedPtr debug_sub;
+  rclcpp::Subscription<ConflictNotice>::SharedPtr _conflict_notice_sub;
+  rclcpp::Subscription<ConflictConclusion>::SharedPtr _conflict_conclusion_sub;
 
   void start(Data data);
 
@@ -86,6 +97,9 @@ public:
   std::string _node_name;
   std::unique_ptr<Data> data;
   std::mutex _mutex;
+  std::unordered_map<
+    rmf_traffic::schedule::Version,
+    std::vector<rmf_traffic::schedule::ParticipantId>> _conflicts;
 };
 
 } // namespace rmf_schedule_visualizer
