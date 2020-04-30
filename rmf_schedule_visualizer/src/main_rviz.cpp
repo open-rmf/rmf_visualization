@@ -26,7 +26,6 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
-#include <rmf_traffic_msgs/msg/schedule_conflict.hpp>
 #include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
 
 #include <building_map_msgs/msg/building_map.hpp>
@@ -49,7 +48,6 @@ public:
   using MarkerArray = visualization_msgs::msg::MarkerArray;
   using Point = geometry_msgs::msg::Point;
   using RequestParam = rmf_schedule_visualizer::RequestParam;
-  using ScheduleConflict = rmf_traffic_msgs::msg::ScheduleConflict;
   using Element = rmf_traffic::schedule::Viewer::View::Element;
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
   using BuildingMap = building_map_msgs::msg::BuildingMap;
@@ -93,23 +91,6 @@ public:
         "map_markers",
         transient_qos_profile);
     
-    // Create subscriber for schedule_conflict in separate thread
-    _cb_group_conflict_sub = this->create_callback_group(
-        rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
-    auto sub_conflict_opt = rclcpp::SubscriptionOptions();
-    sub_conflict_opt.callback_group = _cb_group_conflict_sub;
-    _conflcit_sub = this->create_subscription<ScheduleConflict>(
-        "/rmf_traffic/schedule_conflict",
-        rclcpp::QoS(10),
-        [&](ScheduleConflict::SharedPtr msg)
-        {
-          std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
-          _conflict_id.clear();
-          for (const auto& i : msg->indices)
-            _conflict_id.push_back(i);
-        },
-        sub_conflict_opt);
-
     // Create subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
         rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
@@ -580,11 +561,10 @@ private:
 
   bool is_conflict(int64_t id)
   {
-    if (std::find(_conflict_id.begin(), _conflict_id.end(), id) 
-        != _conflict_id.end())
+    const auto& conflicts = _visualizer_data_node.get_conflicts();
+    if (conflicts.find(id) != conflicts.end())
       return true;
-    else 
-      return false;
+    return false;
   }
 
   Color make_color(float r, float g, float b, float a = 1.0)
@@ -678,7 +658,6 @@ private:
 
   double _rate;
   std::string _frame_id;
-  std::vector<int64_t> _conflict_id;
   std::unordered_set<uint64_t> _marker_tracker; 
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;
@@ -697,7 +676,6 @@ private:
   rclcpp::Publisher<MarkerArray>::SharedPtr _schedule_markers_pub;
   rclcpp::Publisher<MarkerArray>::SharedPtr _map_markers_pub;
 
-  rclcpp::Subscription<ScheduleConflict>::SharedPtr _conflcit_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_conflict_sub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_param_sub;
