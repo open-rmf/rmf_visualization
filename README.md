@@ -37,6 +37,10 @@ Launch the visualizer
 ```
 ros2 launch visualizer visualizer.xml
 ```
+MarkerArray messages are published over three topics,
+1)`/map_markers` visualizes the nav graphs, waypoints and waypoint labels. Requires `Transient Local` durability
+2)`/schedule_markers` visualizes planned trajectory of the robots in the rmf_schedule
+3)`fleet_markers` visualizes the current pose of robots as published over `/fleet_states`
 
 ## Submitting a Trajectory
 If no active trajectories are present in the schedule, a test trajectory can be submitted for visualization.
@@ -69,13 +73,17 @@ To start the websocket node,
 The default <port_number> of the websocet server is `8006`. 
 
 ### Client Request Format
+To receive the current server time 
 ```
-{
-  "request" : "trajectory"
-  "param" : {"map_name" : "level1", "start_time" : 129109940563641, "finish_time" : 338243159033329}
-}
+{"request":"time","param":{}}
+
 ```
-Here the values of `map_name`, `start_time` and `fnish_time` are supplied by the client. `start_time` and `finish_time` are in nanoseconds measured from the start of the epoch.
+
+To recive list of active trajectories between start_time and finish_time
+```
+{"request":"trajectory","param":{"start_time":"49588000000","finish_time":"4958800000000","map_name":"L1"}}
+```
+Here the values of `map_name`, `start_time` and `fnish_time` are supplied by the client. `start_time` and `finish_time` are in nanoseconds measured from the start of the epoch. It is recommended to sync the client clock with that of the server.
 
 ### Server Response Format 
 ```

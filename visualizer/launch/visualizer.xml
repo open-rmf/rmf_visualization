@@ -6,13 +6,16 @@
 <arg name="rate" default="10"/>
 <arg name="map_name" default="B1"/>
 <arg name="viz_config_file" default="$(find-pkg-share rmf_schedule_visualizer)/config/rmf.rviz"/>
+<arg name="display_names" default="true"/>
 
 <group>
   <node pkg="rmf_schedule_visualizer" exec="rviz2" args="-r $(var rate) -m $(var map_name)">
     <param name="use_sim_time" value="$(var use_sim_time)"/>
   </node>
 
-  <node pkg="fleet_state_visualizer" exec="fleet_state_visualizer"/>
+  <node pkg="fleet_state_visualizer" exec="fleet_state_visualizer">
+    <param name="display_names" value ="$(var display_names)"/>
+  </node>
 
   <executable cmd="rviz2 -d $(var viz_config_file)" output="both"/>
 </group>

@@ -17,15 +17,11 @@
 
 #include "Server.hpp"
 
-#include <json.hpp>
-
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
-
+ #include <rmf_traffic/Motion.hpp> 
 
 namespace rmf_schedule_visualizer {
-
-using json = nlohmann::json;
 
 std::shared_ptr<Server> Server::make(
     uint16_t port,
@@ -47,13 +43,11 @@ std::shared_ptr<Server> Server::make(
 /// Run the server after initialization
 void Server::run()
 {
-  if (_is_initialized)
-  {
-    _server.set_reuse_addr(true);
-    _server.listen(_port);
-    _server.start_accept();
-    _server_thread = std::thread([&](){this->_server.run();});
-  }
+  assert (_is_initialized);
+  _server.set_reuse_addr(true);
+  _server.listen(_port);
+  _server.start_accept();
+  _server_thread = std::thread([&](){this->_server.run();});
 }
 
 /// Constructor with port number and reference to visualizer_data_node
@@ -71,30 +65,41 @@ Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node)
 void Server::on_open(connection_hdl hdl)
 {
   _connections.insert(hdl);
+  RCLCPP_INFO(_visualizer_data_node.get_logger(), "Connected with a client");
 }
 
 void Server::on_close(connection_hdl hdl)
 {
   _connections.erase(hdl);
+  RCLCPP_INFO(_visualizer_data_node.get_logger(), "Disconnected with a client");
+
 }
 
 void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 {
-  std::string response;
+  std::string response = "";
+
+  if (msg->get_payload().empty())
+  {
+    RCLCPP_INFO(_visualizer_data_node.get_logger(), "Empty request received");
+    return;
+  }
 
   auto ok = parse_request(msg,response);
 
   if (ok)
   {
-    std::cout << "Response: " << response << std::endl;
+    RCLCPP_INFO(_visualizer_data_node.get_logger(),
+        "Response: %s", response.c_str());
     server::message_ptr response_msg = std::move(msg);
     response_msg->set_payload(response);
     _server.send(hdl, response_msg);
   }
   else
   {
-    std::cout << "Invalid request received" << std::endl;
+    RCLCPP_INFO(_visualizer_data_node.get_logger(), "Invalid request received");
   }
+
 }
 
 bool Server::parse_request(server::message_ptr msg, std::string& response)
@@ -103,9 +108,11 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
 
   // TODO(YV) get names of the keys from config yaml file 
   std::string msg_payload = msg->get_payload();
+
   try
   {
     json j = json::parse(msg_payload);
+
     if (j.size() != 2)
       return false;
     
@@ -120,44 +127,32 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
         return false;
       if (j_param.count("map_name") != 1)
         return false;
-      if (j_param.count("start_time") != 1)
+      if (j_param.count("duration") != 1)
         return false;
-      if (j_param.count("finish_time") != 1)
-        return false;
-      if (j_param["finish_time"] < j_param["start_time"])
+      if (j_param.count("trim") != 1)
         return false;
       
-      // All checks have passed 
+      // We assume the duration is passed as a string representing milliseconds
+      std::uint64_t duration_num = j_param["duration"];
+      std::chrono::milliseconds duration(duration_num);
+
+      // All checks have passed
       RequestParam request_param;
       request_param.map_name = j_param["map_name"];
-      // We assume the time parameters are passed as strings and 
-      // require conversion to rmf_traffic::Time
+      request_param.start_time = _visualizer_data_node.now();
+      request_param.finish_time = request_param.start_time +
+          duration;
 
-      std::string start_time_string = j_param["start_time"];
-      std::string finish_time_string = j_param["finish_time"];
-
-      std::chrono::nanoseconds start_time_nano(
-          std::stoull(start_time_string));
-      std::chrono::nanoseconds finish_time_nano(
-          std::stoull(finish_time_string));
-
-      request_param.start_time = rmf_traffic::Time(
-          rmf_traffic::Duration(start_time_nano));
-      request_param.finish_time = rmf_traffic::Time(
-          rmf_traffic::Duration(finish_time_nano));
-
-      std::cout << "Trajectory request received" << std::endl;
-      std::cout << "map_name: "
-          << request_param.map_name << std::endl;
-      std::cout << "start_time: "
-          << request_param.start_time.time_since_epoch().count() << std::endl;
-      std::cout<<"finish_time: "
-          << request_param.finish_time.time_since_epoch().count() << std::endl;
+      RCLCPP_INFO(_visualizer_data_node.get_logger(),
+        "Trajectory Response recived with map_name [%s] and duration [%s]ms",
+        request_param.map_name.c_str(), std::to_string(duration_num).c_str());
       
       std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
-      auto trajectories = _visualizer_data_node.get_trajectories(request_param);
-      parse_trajectories(trajectories, response);
+      auto elements = _visualizer_data_node.get_elements(request_param);
 
+      bool trim = j_param["trim"];
+      response = parse_trajectories(elements, trim, request_param);
+      
       return true;
           
     }
@@ -165,71 +160,127 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
     else if (j["request"] == "time")
     {
       std::cout << "Time request received" << std::endl;
-      json j_res = { {"response", "time"}, {"values", {} } };
+      json j_res = _j_res;
+      j_res["response"] = "time";
       j_res["values"].push_back(
           _visualizer_data_node.now().time_since_epoch().count());
       response = j_res.dump();
       return true;
     }
+
     else
     {
       return false;
     }
+
   }
 
   catch(const std::exception& e)
   {
-    // std::cerr << e.what() << '\n';
+    RCLCPP_ERROR(_visualizer_data_node.get_logger(),
+        "Error: %s", std::to_string(*e.what()).c_str());
     return false;
   }
 
 }
 
-void Server::parse_trajectories(
-    std::vector<rmf_traffic::Trajectory>& trajectories,
-    std::string& response)
+std::string Server::parse_trajectories(
+    const std::vector<Element>& elements,
+    const bool trim,
+    const RequestParam& request_param)
 {
-  // Templates used for response generation
-  json _j_res = { {"response", "trajectory"}, {"values", {} } };
-  json _j_traj ={ {"shape", {} }, {"dimensions", {} }, {"segments", {} } };
-  json _j_seg = { {"x", {} }, {"v", {} }, {"t", {} } };
-  
+  std::string response;
   auto j_res = _j_res;
+  j_res["response"] = "trajectory";
+  j_res["conflicts"] = _visualizer_data_node.get_conflicts();
 
   try
   {
-    for (rmf_traffic::Trajectory trajectory : trajectories)
+    for (const auto& element : elements)
     {
+      const auto& trajectory =  element.route.trajectory();
+      
       auto j_traj = _j_traj;
-      // TODO(YV) interpret the shape from profile 
-      // This will fail if shape is Box
-      // TODO(MXG): Revive this code
-//      j_traj["shape"] = ("circle");
-//      const auto &circle = static_cast<const rmf_traffic::geometry::Circle&>(
-//          trajectory.begin()->get_profile()->get_shape()->source());
-//      j_traj["dimensions"].push_back(circle.get_radius());
+      j_traj["id"] = element.route_id;
+      j_traj["shape"] = "circle";
+      j_traj["dimensions"] = element.description.profile().footprint()
+          ->get_characteristic_length();
 
-      for (auto it = trajectory.begin(); it != trajectory.end(); it++)
+      auto add_segment = [&](rmf_traffic::Time finish_time,
+           Eigen::Vector3d finish_position,
+           Eigen::Vector3d finish_velocity)
       {
         auto j_seg = _j_seg;
-        auto finish_time = it->time();
-        auto finish_position = it->position();
-        auto finish_velocity = it->velocity();
         j_seg["x"] = 
             {finish_position[0],finish_position[1],finish_position[2]};
         j_seg["v"] =
             {finish_velocity[0],finish_velocity[1],finish_velocity[2]};
-        j_seg["t"] = std::to_string(finish_time.time_since_epoch().count());
+        j_seg["t"] = std::chrono::duration_cast<std::chrono::milliseconds>(
+            finish_time.time_since_epoch()).count();
         j_traj["segments"].push_back(j_seg);
+      };
+
+      if (trim)
+      {       
+        const auto start_time = std::max(
+            *trajectory.start_time(), request_param.start_time);
+        const auto end_time = std::min(
+            *trajectory.finish_time(), request_param.finish_time);
+        auto it = trajectory.find(start_time);
+        assert(it != trajectory.end());
+        assert(trajectory.find(end_time) != trajectory.end());
+
+        // Add the trimmed start
+        auto begin = it; --begin;
+        auto end = it; ++end;
+        auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
+        add_segment(start_time,
+            motion->compute_position(start_time),
+            motion->compute_velocity(start_time));
+
+        // Add the segments in between
+        for (; it < trajectory.find(end_time); it++)
+        {
+          assert(it != trajectory.end());
+          add_segment(it->time(),
+              it->position(),
+              it->velocity());
+        }
+
+        // Add the trimmed end
+        assert(it != trajectory.end());
+        begin = it; --begin;
+        end = it; ++end;
+        motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
+        add_segment(end_time,
+            motion->compute_position(end_time),
+            motion->compute_velocity(end_time));
       }
+
+      else
+      {
+        for (auto it = trajectory.begin(); it != trajectory.end(); it++)
+        {
+          add_segment(it->time(),
+              it->position(),
+              it->velocity());
+        }
+      }
+      
       j_res["values"].push_back(j_traj);
+
     }
   }
+
   catch(const std::exception& e)
   {
-    std::cerr << e.what() << '\n';
+    RCLCPP_ERROR(_visualizer_data_node.get_logger(),
+        "Error: %s", std::to_string(*e.what()).c_str());
+    return "";
   }
+
   response = j_res.dump();
+  return response;
 }
 
 Server::~Server()
