@@ -254,12 +254,12 @@ private:
 
       // Set the pose of the marker
       label_marker.pose.orientation.w = 1;
-      label_marker.pose.position.x = node.x + 1.0 * std::cos(0.7853);
-      label_marker.pose.position.y = node.y + 1.0 * std::sin(0.7853);
+      label_marker.pose.position.x = node.x + 0.4 * std::cos(0.7853);
+      label_marker.pose.position.y = node.y + 0.4 * std::sin(0.7853);
       label_marker.pose.position.z = 0.0;
 
       // Set the scale of the marker
-      label_marker.scale.z = 0.7;
+      label_marker.scale.z = 0.2;
 
       // Set the text of the marker
       label_marker.text = node.name.c_str();
@@ -810,7 +810,7 @@ int main(int argc, char* argv[])
   get_arg(args, "-m", map_name, "map name", false);
 
   const auto visualizer_data_node =
-    rmf_schedule_visualizer::VisualizerDataNode::make(node_name);
+    rmf_schedule_visualizer::VisualizerDataNode::make(node_name, 120s);
 
   if (!visualizer_data_node)
   {
