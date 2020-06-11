@@ -34,9 +34,9 @@ SchedulePanel::SchedulePanel(QWidget* parent)
   _finish_duration("600"),
   _start_duration_value(0)
 {
-  // Creating publisher 
+  // Creating publisher
   _param_pub = this->create_publisher<RvizParamMsg>(
-      _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
+    _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
 
   // Create layout for output topic and map_name
   QHBoxLayout* layout1 = new QHBoxLayout;
@@ -85,17 +85,17 @@ SchedulePanel::SchedulePanel(QWidget* parent)
   setLayout(layout);
 
   connect(_topic_editor,
-      SIGNAL(editingFinished()), this, SLOT(update_topic()));
+    SIGNAL(editingFinished()), this, SLOT(update_topic()));
   connect(_map_name_editor,
-      SIGNAL(editingFinished()), this, SLOT(update_map_name()));
+    SIGNAL(editingFinished()), this, SLOT(update_map_name()));
   connect(_finish_duration_editor,
-      SIGNAL(editingFinished()), this, SLOT(update_finish_duration()));
+    SIGNAL(editingFinished()), this, SLOT(update_finish_duration()));
   connect(_start_duration_slider,
-      SIGNAL(valueChanged(int)), this, SLOT(update_start_duration()));
+    SIGNAL(valueChanged(int)), this, SLOT(update_start_duration()));
   connect(_start_duration_max_editor,
-      SIGNAL(editingFinished()), this, SLOT(update_start_duration_max()));
+    SIGNAL(editingFinished()), this, SLOT(update_start_duration_max()));
   connect(_start_duration_editor,
-      SIGNAL(editingFinished()), this, SLOT(update_start_duration_editor()));
+    SIGNAL(editingFinished()), this, SLOT(update_start_duration_editor()));
 
   // Updating text fields with default
   _topic_editor->setText(_param_topic);
@@ -139,7 +139,7 @@ void SchedulePanel::set_start_duration_max(const QString& new_max)
 {
   int finish_duration_value = std::stoi(_finish_duration.toStdString());
   int max_value = std::min(
-        std::stoi(new_max.toStdString()),finish_duration_value);
+    std::stoi(new_max.toStdString()), finish_duration_value);
   if (max_value > 0)
   {
     // Update the upper bound of the slider
@@ -155,7 +155,7 @@ void SchedulePanel::set_start_duration(const QString& new_value)
 
   if (value < 0 or value == _start_duration_value)
     return;
-  
+
   value = std::min(value, _start_duration_slider->maximum());
   _start_duration_value = value;
   _start_duration_slider->setValue(value);
@@ -185,10 +185,10 @@ void SchedulePanel::set_topic(const QString& new_topic)
     // If the topic is the empty string, don't publish anything.
     if (_param_topic != "")
     {
-      // Update publisher 
+      // Update publisher
       _param_pub = this->create_publisher<RvizParamMsg>(
-          _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
-      // Send new message 
+        _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
+      // Send new message
       send_param();
     }
     Q_EMIT configChanged();

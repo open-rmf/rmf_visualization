@@ -24,18 +24,18 @@
 
 #include <rmf_schedule_visualizer_msgs/msg/rviz_param.hpp>
 
-#include<QSlider>
+#include <QSlider>
 #include <QLineEdit>
 
 namespace rviz2_plugin {
 
 using  RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
 
-class SchedulePanel: public rviz_common::Panel, public rclcpp::Node
+class SchedulePanel : public rviz_common::Panel, public rclcpp::Node
 {
-Q_OBJECT
+  Q_OBJECT
 public:
-  SchedulePanel( QWidget* parent = 0 );
+  SchedulePanel(QWidget* parent = 0);
   virtual void load(const rviz_common::Config& config);
   virtual void save(rviz_common::Config config) const;
 

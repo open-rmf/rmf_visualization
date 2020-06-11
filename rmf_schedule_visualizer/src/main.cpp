@@ -21,11 +21,11 @@
 #include <rclcpp/rclcpp.hpp>
 
 bool get_arg(
-    const std::vector<std::string>& args,
-    const std::string& key,
-    std::string& value,
-    const std::string& desc,
-    const bool mandatory = true)
+  const std::vector<std::string>& args,
+  const std::string& key,
+  std::string& value,
+  const std::string& desc,
+  const bool mandatory = true)
 {
   const auto key_arg = std::find(args.begin(), args.end(), key);
   if (key_arg == args.end())
@@ -51,15 +51,15 @@ bool get_arg(
 int main(int argc, char* argv[])
 {
   const std::vector<std::string> args =
-      rclcpp::init_and_remove_ros_arguments(argc, argv);
+    rclcpp::init_and_remove_ros_arguments(argc, argv);
 
   std::string node_name = "viz";
   get_arg(args, "-n", node_name, "node name", false);
 
   std::string port_string;
-  get_arg(args, "-p", port_string, "port",false);
-  const uint16_t port = port_string.empty()? 8006 : std::stoul(
-      port_string, nullptr, 0);
+  get_arg(args, "-p", port_string, "port", false);
+  const uint16_t port = port_string.empty() ? 8006 : std::stoul(
+    port_string, nullptr, 0);
 
   const auto visualizer_data_node =
     rmf_schedule_visualizer::VisualizerDataNode::make(node_name);
@@ -71,27 +71,28 @@ int main(int argc, char* argv[])
   }
 
   RCLCPP_INFO(
-        visualizer_data_node->get_logger(),
-        "VisualizerDataNode /" + node_name + " started...");
+    visualizer_data_node->get_logger(),
+    "VisualizerDataNode /" + node_name + " started...");
 
 
-  const auto server_ptr = rmf_schedule_visualizer::Server::make(port, *visualizer_data_node);
-  
+  const auto server_ptr = rmf_schedule_visualizer::Server::make(port,
+      *visualizer_data_node);
+
   if (!server_ptr)
   {
     std::cerr << "Failed to initialize the websocket server" << std::endl;
     return 1;
   }
-  
+
   RCLCPP_INFO(
-        visualizer_data_node->get_logger(),
-        "Websocket server started on port: " + std::to_string(port));
+    visualizer_data_node->get_logger(),
+    "Websocket server started on port: " + std::to_string(port));
 
   rclcpp::spin(visualizer_data_node);
-  
+
   RCLCPP_INFO(
-        visualizer_data_node->get_logger(),
-        "Closing down");
+    visualizer_data_node->get_logger(),
+    "Closing down");
 
   rclcpp::shutdown();
 }

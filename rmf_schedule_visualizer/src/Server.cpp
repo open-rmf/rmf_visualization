@@ -19,17 +19,17 @@
 
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic/geometry/Box.hpp>
- #include <rmf_traffic/Motion.hpp> 
+ #include <rmf_traffic/Motion.hpp>
 
 namespace rmf_schedule_visualizer {
 
 std::shared_ptr<Server> Server::make(
-    uint16_t port,
-    VisualizerDataNode& visualizer_data_node)
+  uint16_t port,
+  VisualizerDataNode& visualizer_data_node)
 {
   std::shared_ptr<Server> server_ptr(new Server(port, visualizer_data_node));
   try
-  { 
+  {
     server_ptr->run();
   }
   catch (std::exception& e)
@@ -39,15 +39,15 @@ std::shared_ptr<Server> Server::make(
   }
   return server_ptr;
 }
-  
+
 /// Run the server after initialization
 void Server::run()
 {
-  assert (_is_initialized);
+  assert(_is_initialized);
   _server.set_reuse_addr(true);
   _server.listen(_port);
   _server.start_accept();
-  _server_thread = std::thread([&](){this->_server.run();});
+  _server_thread = std::thread([&]() {this->_server.run();});
 }
 
 /// Constructor with port number and reference to visualizer_data_node
@@ -56,10 +56,10 @@ Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node)
   _visualizer_data_node(visualizer_data_node)
 {
   _server.init_asio();
-  _server.set_open_handler(bind(&Server::on_open,this,_1));
-  _server.set_close_handler(bind(&Server::on_close,this,_1));
-  _server.set_message_handler(bind(&Server::on_message,this,_1,_2));
-  _is_initialized = true; 
+  _server.set_open_handler(bind(&Server::on_open, this, _1));
+  _server.set_close_handler(bind(&Server::on_close, this, _1));
+  _server.set_message_handler(bind(&Server::on_message, this, _1, _2));
+  _is_initialized = true;
 }
 
 void Server::on_open(connection_hdl hdl)
@@ -85,12 +85,12 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
     return;
   }
 
-  auto ok = parse_request(msg,response);
+  auto ok = parse_request(msg, response);
 
   if (ok)
   {
     RCLCPP_INFO(_visualizer_data_node.get_logger(),
-        "Response: %s", response.c_str());
+      "Response: %s", response.c_str());
     server::message_ptr response_msg = std::move(msg);
     response_msg->set_payload(response);
     _server.send(hdl, response_msg);
@@ -106,7 +106,7 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
 {
   using namespace std::chrono_literals;
 
-  // TODO(YV) get names of the keys from config yaml file 
+  // TODO(YV) get names of the keys from config yaml file
   std::string msg_payload = msg->get_payload();
 
   try
@@ -115,12 +115,12 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
 
     if (j.size() != 2)
       return false;
-    
+
     if (j.count("request") != 1 || j.count("param") != 1)
       return false;
 
     if (j["request"] == "trajectory")
-    { 
+    {
       json j_param = j["param"];
 
       if (j_param.size() != 3)
@@ -131,7 +131,7 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
         return false;
       if (j_param.count("trim") != 1)
         return false;
-      
+
       // We assume the duration is passed as a string representing milliseconds
       std::uint64_t duration_num = j_param["duration"];
       std::chrono::milliseconds duration(duration_num);
@@ -141,20 +141,20 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
       request_param.map_name = j_param["map_name"];
       request_param.start_time = _visualizer_data_node.now();
       request_param.finish_time = request_param.start_time +
-          duration;
+        duration;
 
       RCLCPP_INFO(_visualizer_data_node.get_logger(),
         "Trajectory Response recived with map_name [%s] and duration [%s]ms",
         request_param.map_name.c_str(), std::to_string(duration_num).c_str());
-      
+
       std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
       auto elements = _visualizer_data_node.get_elements(request_param);
 
       bool trim = j_param["trim"];
       response = parse_trajectories(elements, trim, request_param);
-      
+
       return true;
-          
+
     }
 
     else if (j["request"] == "time")
@@ -163,7 +163,7 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
       json j_res = _j_res;
       j_res["response"] = "time";
       j_res["values"].push_back(
-          _visualizer_data_node.now().time_since_epoch().count());
+        _visualizer_data_node.now().time_since_epoch().count());
       response = j_res.dump();
       return true;
     }
@@ -175,19 +175,19 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
 
   }
 
-  catch(const std::exception& e)
+  catch (const std::exception& e)
   {
     RCLCPP_ERROR(_visualizer_data_node.get_logger(),
-        "Error: %s", std::to_string(*e.what()).c_str());
+      "Error: %s", std::to_string(*e.what()).c_str());
     return false;
   }
 
 }
 
 std::string Server::parse_trajectories(
-    const std::vector<Element>& elements,
-    const bool trim,
-    const RequestParam& request_param)
+  const std::vector<Element>& elements,
+  const bool trim,
+  const RequestParam& request_param)
 {
   std::string response;
   auto j_res = _j_res;
@@ -198,34 +198,34 @@ std::string Server::parse_trajectories(
   {
     for (const auto& element : elements)
     {
-      const auto& trajectory =  element.route.trajectory();
-      
+      const auto& trajectory = element.route.trajectory();
+
       auto j_traj = _j_traj;
       j_traj["id"] = element.route_id;
       j_traj["shape"] = "circle";
       j_traj["dimensions"] = element.description.profile().footprint()
-          ->get_characteristic_length();
+        ->get_characteristic_length();
 
       auto add_segment = [&](rmf_traffic::Time finish_time,
-           Eigen::Vector3d finish_position,
-           Eigen::Vector3d finish_velocity)
-      {
-        auto j_seg = _j_seg;
-        j_seg["x"] = 
-            {finish_position[0],finish_position[1],finish_position[2]};
-        j_seg["v"] =
-            {finish_velocity[0],finish_velocity[1],finish_velocity[2]};
-        j_seg["t"] = std::chrono::duration_cast<std::chrono::milliseconds>(
+          Eigen::Vector3d finish_position,
+          Eigen::Vector3d finish_velocity)
+        {
+          auto j_seg = _j_seg;
+          j_seg["x"] =
+          {finish_position[0], finish_position[1], finish_position[2]};
+          j_seg["v"] =
+          {finish_velocity[0], finish_velocity[1], finish_velocity[2]};
+          j_seg["t"] = std::chrono::duration_cast<std::chrono::milliseconds>(
             finish_time.time_since_epoch()).count();
-        j_traj["segments"].push_back(j_seg);
-      };
+          j_traj["segments"].push_back(j_seg);
+        };
 
       if (trim)
-      {       
+      {
         const auto start_time = std::max(
-            *trajectory.start_time(), request_param.start_time);
+          *trajectory.start_time(), request_param.start_time);
         const auto end_time = std::min(
-            *trajectory.finish_time(), request_param.finish_time);
+          *trajectory.finish_time(), request_param.finish_time);
         auto it = trajectory.find(start_time);
         assert(it != trajectory.end());
         assert(trajectory.find(end_time) != trajectory.end());
@@ -235,16 +235,16 @@ std::string Server::parse_trajectories(
         auto end = it; ++end;
         auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
         add_segment(start_time,
-            motion->compute_position(start_time),
-            motion->compute_velocity(start_time));
+          motion->compute_position(start_time),
+          motion->compute_velocity(start_time));
 
         // Add the segments in between
         for (; it < trajectory.find(end_time); it++)
         {
           assert(it != trajectory.end());
           add_segment(it->time(),
-              it->position(),
-              it->velocity());
+            it->position(),
+            it->velocity());
         }
 
         // Add the trimmed end
@@ -253,8 +253,8 @@ std::string Server::parse_trajectories(
         end = it; ++end;
         motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
         add_segment(end_time,
-            motion->compute_position(end_time),
-            motion->compute_velocity(end_time));
+          motion->compute_position(end_time),
+          motion->compute_velocity(end_time));
       }
 
       else
@@ -262,20 +262,20 @@ std::string Server::parse_trajectories(
         for (auto it = trajectory.begin(); it != trajectory.end(); it++)
         {
           add_segment(it->time(),
-              it->position(),
-              it->velocity());
+            it->position(),
+            it->velocity());
         }
       }
-      
+
       j_res["values"].push_back(j_traj);
 
     }
   }
 
-  catch(const std::exception& e)
+  catch (const std::exception& e)
   {
     RCLCPP_ERROR(_visualizer_data_node.get_logger(),
-        "Error: %s", std::to_string(*e.what()).c_str());
+      "Error: %s", std::to_string(*e.what()).c_str());
     return "";
   }
 
@@ -292,7 +292,7 @@ Server::~Server()
     _server.close(connection, websocketpp::close::status::normal, "shutdown");
   }
 
-  if(_server_thread.joinable())
+  if (_server_thread.joinable())
   {
     _server.stop();
     _server_thread.join();

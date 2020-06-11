@@ -51,19 +51,20 @@ public:
   using ConflictConclusion = rmf_traffic_msgs::msg::ScheduleConflictConclusion;
   /// Builder function which returns a pointer to VisualizerNode when
   /// the Mirror Manager is readied and websocket is started.
-  /// A nullptr is returned if initialization fails. 
+  /// A nullptr is returned if initialization fails.
   static std::shared_ptr<VisualizerDataNode> make(
-      std::string node_name,
-      rmf_traffic::Duration wait_time = std::chrono::seconds(10));
+    std::string node_name,
+    rmf_traffic::Duration wait_time = std::chrono::seconds(10));
 
   /// Function to query Mirror Manager for trajectories.
-  std::vector<rmf_traffic::Trajectory> get_trajectories(RequestParam request_param);
+  std::vector<rmf_traffic::Trajectory> get_trajectories(
+    RequestParam request_param);
 
   /// Function to query Mirror Manager for elements containing
   /// trajectory and ID pairs.
   std::vector<Element> get_elements(RequestParam request_param);
 
-  std::unordered_set<uint64_t> get_conflicts() const; 
+  std::unordered_set<uint64_t> get_conflicts() const;
 
   rmf_traffic::Time now();
 
