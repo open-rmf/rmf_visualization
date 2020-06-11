@@ -6,13 +6,13 @@ A visualizer for robot trajectories in the `rmf schedule database` and live loca
 
 ![](docs/media/visualizer.gif)
 
-## System Requirements
+# System Requirements
 
 The visualizer is developed and tested on
 [Ubuntu 18.04 LTS](http://releases.ubuntu.com/18.04/) with 
 [ROS2 Eloquent](https://index.ros.org/doc/ros2/Installation/#installationguide). It can also be run on the `dashing` distribution of ROS2.
 
-## Installation 
+# Installation 
 ```
 sudo apt-get update 
 sudo apt-get install libeigen3-dev libccd-dev libfcl-dev libyaml-cpp-dev ros-eloquent-rviz2 libwebsocketpp-dev libboost-all-dev -y
@@ -23,82 +23,73 @@ git clone https://github.com/osrf/traffic_editor.git
 git clone https://github.com/osrf/rmf_schedule_visualizer.git
 cd ~/ws_rmf
 source /opt/ros/eloquent/setup.bash
-colcon build --packages-up-to rmf_schedule_visualizer fleet_state_visualizer rviz2_plugin
+colcon build
 ```
 
-## Usage 
+# Running 
 
-An active `rmf_traffic_schedule` node is prerequisite. This can be started with the command
+To launch the visualizer
+```
+ros2 launch visualizer visualizer.xml
+```
+
+An active `rmf_traffic_schedule` node is prerequisite for the visualizer to initialize. If a schedule node is not running, it can be started with the command. Note: More than one schedule node must not be running at any given instance. 
 ```
 ros2 run rmf_traffic_ros2 rmf_traffic_schedule
 ```
 
-Launch the visualizer
-```
-ros2 launch visualizer visualizer.xml
-```
 MarkerArray messages are published over three topics,
 1)`/map_markers` visualizes the nav graphs, waypoints and waypoint labels. Requires `Transient Local` durability
 2)`/schedule_markers` visualizes planned trajectory of the robots in the rmf_schedule
 3)`fleet_markers` visualizes the current pose of robots as published over `/fleet_states`
 
-## Submitting a Trajectory
-If no active trajectories are present in the schedule, a test trajectory can be submitted for visualization.
-```
-ros2 run rmf_schedule_visualizer submit_trajectory 
+The visualizer will also render navigation graphs that are published by `building_map_server` in the `building_map_tools` package of `traffic_editor`. The live locations of robots as published over`/fleet_states` by various `fleet adapters`are represented by the purple spheres.
 
-Optional Arguements:
--m <map_name> -x <x_posiiton> -y <y_position> -D <delay> -d <duration>```
+The visualizer node queries for trajectories in the schedule from the current instance in time until a duration of `query_duration`(s) into the future. The trajectories are also filtered based on a`map_name`. The predicted position of the robot (yellow cylinder) and its conflict-free path (green) are then visualized in RViz2. The schedule can be viewed `start_duration` seconds from the current instance on time by adjusting the slider appropraitely. The default values of `map_name`, `query_duration` and `start_duration` are "B1", 600s and 0s respectively. These values can be modified through the cusom `SchedulePanel` panel GUI in Rviz2. 
 
-Example:
-ros2 run rmf_schedule_visualizer submit_trajectory -D 10 -d 20
+# Websocket Server for Custom UIs 
+For developers looking to create custom UIs outside of the ROS2 environment, this repository provides a websocket server to exchange information contained in an active rmf schedule database. This may primarily be used to query for robot trajectories in the schedule along with conflict information if any. The format for various requests and corresponding responses are described below.
 
-The submits an "L-shaped" trajectory which spans from `std::chrono::steady_clock::now()` till `duration` seconds has passed. This trajectory is active only after `delay` seconds.
-```
+To start the websocket server,
 
-The visualizer will also render navigation graphs that are published by `building_map_server` in the `building_map_tools` package of `traffic_editor`.
+```ros2 launch visualizer server.xml```
 
-The live locations of robots as published over`/fleet_states` by various `fleet adapters` can be visualized by running
-``` ros2 run fleet_state_visualizer fleet_state_visualizer ```
+The default port_number of the websocet server is `8006`. 
 
-The visualizer node queries for trajectories in the schedule from the current instance in time until a duration of `query_duration`(s) into the future. The trajectories are also filtered based on a`map_name`. The position of the robot (yellow cylinder) and its conflict-free path (green) are then visualized in RViz2. The schedule can be viewed `start_duration` seconds from the current instance on time by adjusting the slider appropraitely. The default values of `map_name`, `query_duration` and `start_duration` are "B1", 600s and 0s respectively. These values can be modified through the cusom `SchedulePanel` panel GUI in Rviz2. 
+## Sample Client Requests
 
-## Websocket Backend for Custom UIs 
-For developers wanting to develop custom UIs outside of the ROS2 environment, this repository provies a bridge-like node. Running this node starts a websocket server which can receive query requests from clients. The server then responds with information of trajectoties in the `rmf schedule database` that match the query requirements. The format of the request and response messages are described below.
-
-To start the websocket node,
-
-```ros2 run rmf_schedule_visualizer schedule_visualizer -n <node_name> -p <port_number>```
-
-The default <port_number> of the websocet server is `8006`. 
-
-### Client Request Format
-To receive the current server time 
+### Server Time
+To receive the current server time in milliseconds
 ```
 {"request":"time","param":{}}
 
 ```
-
-To recive list of active trajectories between start_time and finish_time
+Sample server response
 ```
-{"request":"trajectory","param":{"start_time":"49588000000","finish_time":"4958800000000","map_name":"L1"}}
+{"response":"time","values":[167165000000]}
 ```
-Here the values of `map_name`, `start_time` and `fnish_time` are supplied by the client. `start_time` and `finish_time` are in nanoseconds measured from the start of the epoch. It is recommended to sync the client clock with that of the server.
 
-### Server Response Format 
+### Trajectories in RMF Schedule
+To receive a list of active trajectories and conflicts if any between `now` and until a `duration`(milliseconds)
+```
+{"request":"trajectory","param":{"map_name":"L1","duration":60000, "trim":true}}
+```
+
+If `trim` is `false`, data of the complete trajectory is forwarded even if there is only partial overlap in the query duration.
+
+Sample server response 
 ```
 {
-  "response" : "trajectory"
-  "trajectory" : [ {"shape" : "box",
-                    "dimensions" : [1.0, 1.0]
-                    "segments" : [{ "x" : [0,0,0], "v" : [0,0,0], "t" : 129129940563641} , {....} , ...] },
-                   {"shape" : "circle",
-                    "dimensions:" : [1.5]
-                    "segments" : .... },
-                   {...},
-                   ...
-                 ]
+  "response":"trajectory",
+  "values":[{
+    "shape":"circle",
+    "dimensions":0.3,
+    "id":310,
+    "segments":[
+      {"t":336857,"v":[0.018886815933120995,0.4996431607843137,0.0],"x":[11.610485884950174,-8.054053944114406,-1.6085801124572754]},
+      {"t":338700,"v":[0.01888681593558913,0.4996431608496359,0.0],"x":[11.645306833719362,-7.132879672805034,-1.6085801124572754]}]}],
+  "conflicts":[]
 }
 
 ```
-Here `segments` is a list of dictionaries containing parameters of the knots in the piecewise cubic spline trajectory. `x` stores positional data in [x, y,theta] coordinates while `v`, the velocity data in the same coordinates. `t` is the time as measured from the start of the epoch.
+Here `segments` is a list of dictionaries containing parameters of the knots in the piecewise cubic spline trajectory. `x` stores positional data in [x, y,theta] coordinates while `v`, the velocity data in the same coordinates. `t` is the time recorded in milliseconds.
