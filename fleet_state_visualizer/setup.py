@@ -31,7 +31,8 @@ setup(
     scripts=[],
     entry_points={
         'console_scripts': [
-            'fleet_state_visualizer = fleet_state_visualizer.fleet_state_visualizer:main',
+            'fleet_state_visualizer = \
+                fleet_state_visualizer.fleet_state_visualizer:main',
         ],
     },
 )

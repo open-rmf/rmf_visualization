@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'building_systems_visualizer = building_systems_visualizer.building_systems_visualizer:main'
+            'building_systems_visualizer = \
+                building_systems_visualizer.building_systems_visualizer:main'
         ],
     },
 )
