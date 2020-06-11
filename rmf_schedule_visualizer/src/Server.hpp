@@ -47,15 +47,15 @@ class Server
 public:
   /// Builder function which returns a pointer to Server after
   /// the websocket has successfully started.
-  /// A nullptr is returned if initialization fails. 
+  /// A nullptr is returned if initialization fails.
   static std::shared_ptr<Server> make(
-      uint16_t port,
-      VisualizerDataNode& visualizer_data_node);
+    uint16_t port,
+    VisualizerDataNode& visualizer_data_node);
 
   ~Server();
 
 private:
-  using con_list= std::set<connection_hdl,std::owner_less<connection_hdl>>;
+  using con_list = std::set<connection_hdl, std::owner_less<connection_hdl>>;
 
   struct Data
   {
@@ -63,8 +63,8 @@ private:
     std::string response;
 
     Data(
-        std::string request_,
-        std::string response_)
+      std::string request_,
+      std::string response_)
     : request(std::move(request_)),
       response(std::move(response_))
     {
@@ -81,15 +81,15 @@ private:
   void on_open(connection_hdl hdl);
 
   void on_close(connection_hdl hdl);
- 
+
   void on_message(connection_hdl hdl, server::message_ptr msg);
 
   bool parse_request(const server::message_ptr msg, std::string& response);
 
   std::string parse_trajectories(
-      const std::vector<Element>& elements,
-      const bool trim,
-      const RequestParam& request_param);
+    const std::vector<Element>& elements,
+    const bool trim,
+    const RequestParam& request_param);
 
   server _server;
   con_list _connections;
@@ -99,9 +99,10 @@ private:
   bool _is_initialized = false;
   std::unique_ptr<Data> data;
 
-    // Templates used for response generation
+  // Templates used for response generation
   const json _j_res = { {"response", {}}, {"values", {}}, {"conflicts", {}}};
-  const json _j_traj ={ {"id", {}}, {"shape", {}}, {"dimensions", {}}, {"segments", {}}};
+  const json _j_traj =
+  { {"id", {}}, {"shape", {}}, {"dimensions", {}}, {"segments", {}}};
   const json _j_seg = { {"x", {}}, {"v", {}}, {"t", {}}};
 };
 

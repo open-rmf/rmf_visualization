@@ -28,27 +28,27 @@
 namespace rmf_schedule_visualizer {
 
 std::shared_ptr<VisualizerDataNode> VisualizerDataNode::make(
-    std::string node_name,
-    rmf_traffic::Duration wait_time)
+  std::string node_name,
+  rmf_traffic::Duration wait_time)
 {
   const auto start_time = std::chrono::steady_clock::now();
   std::shared_ptr<VisualizerDataNode> visualizer_data(
-        new VisualizerDataNode(std::move(node_name)));
+    new VisualizerDataNode(std::move(node_name)));
 
-  // Creating a mirror manager that queries over all 
-  // Spacetime in the database schedule 
+  // Creating a mirror manager that queries over all
+  // Spacetime in the database schedule
   auto mirror_mgr_future = rmf_traffic_ros2::schedule::make_mirror(
-      *visualizer_data, rmf_traffic::schedule::query_everything().spacetime(),
-      &visualizer_data->_mutex);
+    *visualizer_data, rmf_traffic::schedule::query_all(),
+    &visualizer_data->_mutex);
 
   const auto stop_time = start_time + wait_time;
-  while(rclcpp::ok() && std::chrono::steady_clock::now() < stop_time)
+  while (rclcpp::ok() && std::chrono::steady_clock::now() < stop_time)
   {
     rclcpp::spin_some(visualizer_data);
     using namespace std::chrono_literals;
     bool ready = (mirror_mgr_future.wait_for(0s) == std::future_status::ready);
 
-    if(ready)
+    if (ready)
     {
       visualizer_data->start(Data{mirror_mgr_future.get()});
       return visualizer_data;
@@ -56,9 +56,9 @@ std::shared_ptr<VisualizerDataNode> VisualizerDataNode::make(
   }
 
   RCLCPP_ERROR(
-        visualizer_data->get_logger(),
-        "Mirror was not initialized in enough time ["
-        + std::to_string(rmf_traffic::time::to_seconds(wait_time)) + "s]!");
+    visualizer_data->get_logger(),
+    "Mirror was not initialized in enough time ["
+    + std::to_string(rmf_traffic::time::to_seconds(wait_time)) + "s]!");
   return nullptr;
 }
 
@@ -76,24 +76,32 @@ void VisualizerDataNode::start(Data _data)
   data = std::make_unique<Data>(std::move(_data));
   data->mirror.update();
 
+  _conflict_notice_sub = this->create_subscription<ConflictNotice>(
+    rmf_traffic_ros2::ScheduleConflictNoticeTopicName,
+    rclcpp::QoS(10),
+    [&](ConflictNotice::UniquePtr msg)
+    {
+      std::lock_guard<std::mutex> guard(_mutex);
+      _conflicts[msg->conflict_version] = msg->participants;
+    });
+
+  _conflict_conclusion_sub = this->create_subscription<ConflictConclusion>(
+    rmf_traffic_ros2::ScheduleConflictConclusionTopicName,
+    rclcpp::ServicesQoS(),
+    [&](ConflictConclusion::UniquePtr msg)
+    {
+      std::lock_guard<std::mutex> guard(_mutex);
+      _conflicts.erase(msg->conflict_version);
+    });
+
   //Create a subscriber to a /debug topic to print information from this node
   debug_sub = create_subscription<std_msgs::msg::String>(
-      _node_name+"/debug",rclcpp::SystemDefaultsQoS(),
-      [&](std_msgs::msg::String::UniquePtr msg)
-      {
-        debug_cb(std::move(msg));
-      });
-
-  _conflcit_sub = create_subscription<ScheduleConflict>(
-    "/rmf_traffic/schedule_conflict",
-    rclcpp::QoS(10),
-    [&](ScheduleConflict::UniquePtr msg)
+    _node_name+"/debug", rclcpp::SystemDefaultsQoS(),
+    [&](std_msgs::msg::String::UniquePtr msg)
     {
-      std::lock_guard<std::mutex> lock(_mutex);
-      _conflict_id.clear();
-      for (const auto& i : msg->indices)
-        _conflict_id.insert(i);
+      debug_cb(std::move(msg));
     });
+
 }
 
 void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
@@ -102,36 +110,36 @@ void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
   {
     std::lock_guard<std::mutex> guard(_mutex);
     // Display the latest changes made to the mirror
-    // along with details of trajectories in the schedule 
+    // along with details of trajectories in the schedule
     try
     {
       RCLCPP_INFO(get_logger(), "Mirror Version: [%d]",
-          data->mirror.viewer().latest_version());
+        data->mirror.viewer().latest_version());
       // Query since database was created
       auto view = data->mirror.viewer().query(
-          rmf_traffic::schedule::make_query(0));
-
-      if (view.size()==0)
+        rmf_traffic::schedule::query_all());
+      if (view.size() == 0)
         RCLCPP_INFO(this->get_logger(), "Schedule is empty");
 
       else
       {
         for (const auto& element : view)
         {
-          auto t = element.trajectory;
-          RCLCPP_INFO(get_logger(), "Trajectory id: [%d]\nTrajectory size: [%d]",
-              element.id, t.size());
+          auto t = element.route.trajectory();
+          RCLCPP_INFO(
+            get_logger(), "Trajectory id: [%d]\nTrajectory size: [%d]",
+            element.route_id, t.size());
           int count = 0;
           for (auto it = t.begin(); it != t.end(); it++)
           {
             ++count;
-            auto finish_time = it->get_finish_time();
-            auto finish_position = it->get_finish_position();
+            auto finish_time = it->time();
+            auto finish_position = it->position();
             RCLCPP_INFO(get_logger(),
               "waypoint: [%d]\ntime: [%s]\nposiiton:[%d, %d, %d]",
-                count,
-                std::to_string(finish_time.time_since_epoch().count()).c_str(),
-                finish_position[0], finish_position[1], finish_position[2]);
+              count,
+              std::to_string(finish_time.time_since_epoch().count()).c_str(),
+              finish_position[0], finish_position[1], finish_position[2]);
           }
         }
       }
@@ -144,32 +152,32 @@ void VisualizerDataNode::debug_cb(std_msgs::msg::String::UniquePtr msg)
 }
 
 std::vector<rmf_traffic::Trajectory> VisualizerDataNode::get_trajectories(
-    RequestParam request_param)
+  RequestParam request_param)
 {
-  std::vector<rmf_traffic::Trajectory> trajectories; 
+  std::vector<rmf_traffic::Trajectory> trajectories;
   const std::vector<std::string> maps {request_param.map_name};
   const auto query = rmf_traffic::schedule::make_query(
-      maps,
-      &request_param.start_time,
-      &request_param.finish_time);
+    maps,
+    &request_param.start_time,
+    &request_param.finish_time);
 
   const auto view = data->mirror.viewer().query(query);
   for (const auto& element : view)
-    trajectories.push_back(element.trajectory);
+    trajectories.push_back(element.route.trajectory());
 
   return trajectories;
 }
 
 using Element = rmf_traffic::schedule::Viewer::View::Element;
 std::vector<Element> VisualizerDataNode::get_elements(
-    RequestParam request_param)
+  RequestParam request_param)
 {
-  std::vector<Element> elements; 
+  std::vector<Element> elements;
   const std::vector<std::string> maps {request_param.map_name};
   const auto query = rmf_traffic::schedule::make_query(
-      maps,
-      &request_param.start_time,
-      &request_param.finish_time);
+    maps,
+    &request_param.start_time,
+    &request_param.finish_time);
 
   const auto view = data->mirror.viewer().query(query);
 
@@ -191,9 +199,17 @@ std::mutex& VisualizerDataNode::get_mutex()
   return _mutex;
 }
 
-const std::unordered_set<uint64_t>& VisualizerDataNode::get_conflicts() const
+std::unordered_set<uint64_t> VisualizerDataNode::get_conflicts() const
 {
-  return _conflict_id;
+  std::unordered_set<uint64_t> conflict_id;
+  for (const auto& conflict : _conflicts)
+  {
+    std::copy(conflict.second.begin(),
+      conflict.second.end(),
+      std::inserter(conflict_id, conflict_id.end()));
+  }
+
+  return conflict_id;
 }
 
 } // namespace rmf_schedule_visualizer

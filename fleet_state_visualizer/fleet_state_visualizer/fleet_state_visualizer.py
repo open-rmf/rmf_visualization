@@ -104,12 +104,12 @@ class FleetStateVisualizer(Node):
               marker_id += 1
               t.type = Marker.TEXT_VIEW_FACING  # 9
               t.action = Marker.MODIFY
-              t.pose.position.x = rs.location.x + 1.2 * math.cos(rs.location.yaw - 0.7853)
-              t.pose.position.y = rs.location.y + 1.2 * math.sin(rs.location.yaw - 0.7853)
+              t.pose.position.x = rs.location.x + 1.0 * math.cos(rs.location.yaw - 0.7853)
+              t.pose.position.y = rs.location.y + 1.0 * math.sin(rs.location.yaw - 0.7853)
               t.pose.position.z = 0.0
               t.pose.orientation.w = 1.0
               t.text = rs.name
-              t.scale.z = 0.7
+              t.scale.z = 0.3
               t.color.r = 1.0
               t.color.g = 1.0
               t.color.b = 1.0
