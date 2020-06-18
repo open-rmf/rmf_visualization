@@ -485,7 +485,9 @@ private:
 
     // Find the pose of the markers
     const auto it = trajectory.find(param.start_time);
-    auto begin = it; --begin;
+    auto begin = it;
+    if (begin != trajectory.begin())
+      --begin;
     auto end = it; ++end;
     auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
     Eigen::Vector3d position = motion->compute_position(param.start_time);
@@ -547,38 +549,40 @@ private:
     auto it = trajectory.find(start_time);
     assert(it != trajectory.end());
     assert(trajectory.find(end_time) != trajectory.end());
-    auto begin = it; --begin;
+    auto begin = it;
+    if (begin != trajectory.begin())
+      --begin;
     auto end = it; ++end;
     const auto motion = rmf_traffic::Motion::compute_cubic_splines(begin, end);
-    if (!check_limits(motion->compute_position(start_time),
-      "motion_path_start"))
-      return marker_msg;
+    // if (!check_limits(motion->compute_position(start_time),
+    //   "motion_path_start"))
+    //   return marker_msg;
     marker_msg.points.push_back(
       make_point(motion->compute_position(start_time)));
 
-    // Add segment points untill the last segment
+    // Add segment points except the last segment
     for (; it < trajectory.find(end_time); it++)
     {
       assert(it != trajectory.end());
       const Eigen::Vector3d p = it->position();
-      if (!check_limits(p, "segment_iterator"))
-        return marker_msg;
+      // if (!check_limits(p, "segment_iterator"))
+      //   return marker_msg;
       marker_msg.points.push_back(make_point(p));
     }
 
     // Add either last segment point or position at end_time
-    if (t_finish_time < param.finish_time)
+    if (t_finish_time <= param.finish_time)
     {
-      if (!check_limits(it->position(), "last_segment"))
-        return marker_msg;
+      // if (!check_limits(it->position(), "last_segment"))
+      //   return marker_msg;
       marker_msg.points.push_back(make_point(it->position()));
     }
     else
     {
       const auto motion =
-        rmf_traffic::Motion::compute_cubic_splines(it, trajectory.end());
-      if (!check_limits(motion->compute_position(end_time), "motion_path_end"))
-        return marker_msg;
+        rmf_traffic::Motion::compute_cubic_splines(--it, trajectory.end());
+      // if (!check_limits(motion->compute_position(end_time), "motion_path_end"))
+      //   return marker_msg;
       marker_msg.points.push_back(
         make_point(motion->compute_position(end_time)));
     }
@@ -605,12 +609,15 @@ private:
   Point make_point(const Eigen::Vector3d tp, bool z = false)
   {
     Point p;
-    if (check_limits(tp, "make_point"))
-    {
-      p.x = tp[0];
-      p.y = tp[1];
-      p.z = z ? tp[2] : 0;
-    }
+    // if (check_limits(tp, "make_point"))
+    // {
+    //   p.x = tp[0];
+    //   p.y = tp[1];
+    //   p.z = z ? tp[2] : 0;
+    // }
+    p.x = tp[0];
+    p.y = tp[1];
+    p.z = z ? tp[2] : 0;
     return p;
   }
 
