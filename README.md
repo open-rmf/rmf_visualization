@@ -83,6 +83,8 @@ Sample server response
 {
   "response":"trajectory",
   "values":[{
+    "robot_name":"magni1",
+    "fleet_name:"magni",
     "shape":"circle",
     "dimensions":0.3,
     "id":310,
