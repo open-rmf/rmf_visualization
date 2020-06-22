@@ -17,9 +17,7 @@
 
 #include "Server.hpp"
 
-#include <rmf_traffic/geometry/Circle.hpp>
-#include <rmf_traffic/geometry/Box.hpp>
- #include <rmf_traffic/Motion.hpp>
+#include <rmf_traffic/Motion.hpp>
 
 namespace rmf_schedule_visualizer {
 

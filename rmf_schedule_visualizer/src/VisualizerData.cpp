@@ -77,7 +77,7 @@ void VisualizerDataNode::start(Data _data)
   data->mirror.update();
 
   _conflict_notice_sub = this->create_subscription<ConflictNotice>(
-    rmf_traffic_ros2::ScheduleConflictNoticeTopicName,
+    rmf_traffic_ros2::NegotiationNoticeTopicName,
     rclcpp::QoS(10),
     [&](ConflictNotice::UniquePtr msg)
     {
@@ -86,7 +86,7 @@ void VisualizerDataNode::start(Data _data)
     });
 
   _conflict_conclusion_sub = this->create_subscription<ConflictConclusion>(
-    rmf_traffic_ros2::ScheduleConflictConclusionTopicName,
+    rmf_traffic_ros2::NegotiationConclusionTopicName,
     rclcpp::ServicesQoS(),
     [&](ConflictConclusion::UniquePtr msg)
     {
