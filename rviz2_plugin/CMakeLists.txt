@@ -23,6 +23,8 @@ set(CMAKE_AUTOMOC ON)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rmf_door_msgs REQUIRED)
+find_package(rmf_lift_msgs REQUIRED)
 find_package(rmf_schedule_visualizer_msgs REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
@@ -31,12 +33,18 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Test)
 
 add_definitions(-DQT_NO_KEYWORDS)
 
-add_library(${PROJECT_NAME} SHARED src/SchedulePanel.cpp)
+add_library(${PROJECT_NAME} SHARED 
+  src/SchedulePanel.cpp
+  src/LiftPanel.cpp
+  src/DoorPanel.cpp
+)
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
     ${QT5_LIBRARIES} 
     ${rclcpp_LIBRARIES}
+    ${rmf_door_msgs_LIBRARIES}
+    ${rmf_lift_msgs_LIBRARIES}
     ${rmf_schedule_visualizer_msgs_LIBRARIES}
     rviz_common::rviz_common
     ${rviz_rendering_LIBRARIES}
@@ -49,6 +57,8 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     ${rclcpp_INCLUDE_DIRS}
+    ${rmf_door_msgs_INCLUDE_DIRS}
+    ${rmf_lift_msgs_INCLUDE_DIRS}
     ${rmf_schedule_visualizer_msgs_INCLUDE_DIRS}
     ${rviz_common_INCLUDE_DIRS}
     ${rviz_rendering_INCLUDE_DIRS}
