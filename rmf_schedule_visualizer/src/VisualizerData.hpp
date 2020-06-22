@@ -25,8 +25,8 @@
 #include <rmf_traffic/schedule/Viewer.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 
-#include <rmf_traffic_msgs/msg/schedule_conflict_notice.hpp>
-#include <rmf_traffic_msgs/msg/schedule_conflict_conclusion.hpp>
+#include <rmf_traffic_msgs/msg/negotiation_notice.hpp>
+#include <rmf_traffic_msgs/msg/negotiation_conclusion.hpp>
 
 #include <rmf_schedule_visualizer/CommonData.hpp>
 
@@ -47,8 +47,8 @@ class VisualizerDataNode : public rclcpp::Node
 {
 public:
   using Element = rmf_traffic::schedule::Viewer::View::Element;
-  using ConflictNotice = rmf_traffic_msgs::msg::ScheduleConflictNotice;
-  using ConflictConclusion = rmf_traffic_msgs::msg::ScheduleConflictConclusion;
+  using ConflictNotice = rmf_traffic_msgs::msg::NegotiationNotice;
+  using ConflictConclusion = rmf_traffic_msgs::msg::NegotiationConclusion;
   /// Builder function which returns a pointer to VisualizerNode when
   /// the Mirror Manager is readied and websocket is started.
   /// A nullptr is returned if initialization fails.

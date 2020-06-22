@@ -21,7 +21,6 @@
 #include <rmf_traffic_ros2/schedule/Writer.hpp>
 #include <rmf_traffic/Time.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <rmf_traffic/geometry/Box.hpp>
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 

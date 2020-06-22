@@ -18,7 +18,6 @@
 #include "VisualizerData.hpp"
 #include <rclcpp/rclcpp.hpp>
 
-#include <rmf_traffic/geometry/Box.hpp>
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic/Motion.hpp>
 #include <rmf_traffic/Time.hpp>
