@@ -40,7 +40,7 @@ namespace rviz2_plugin {
 class DoorPanel : public rviz_common::Panel
 {
 
-Q_OBJECT
+  Q_OBJECT
 
 public:
 
@@ -78,7 +78,7 @@ private:
 
   QRadioButton* _supervisor_radio_button;
   QRadioButton* _manual_radio_button;
-  
+
   QPushButton* _send_door_request_button;
 
   std::vector<QLabel*> _state_labels;

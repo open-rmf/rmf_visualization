@@ -32,14 +32,14 @@ LiftPanel::LiftPanel(QWidget* parent)
 {
   _node = std::make_shared<rclcpp::Node>(_session_id + "_node");
   _lift_state_sub = _node->create_subscription<LiftState>(
-      LiftStateTopicName, 10, [&](LiftState::UniquePtr msg)
-      {
-        lift_state_callback(std::move(msg));
-      });
+    LiftStateTopicName, 10, [&](LiftState::UniquePtr msg)
+    {
+      lift_state_callback(std::move(msg));
+    });
   _lift_request_pub = _node->create_publisher<LiftRequest>(
-      LiftRequestTopicName, rclcpp::QoS(10));
+    LiftRequestTopicName, rclcpp::QoS(10));
   _adapter_lift_request_pub = _node->create_publisher<LiftRequest>(
-      AdapterLiftRequestTopicName, rclcpp::QoS(10));
+    AdapterLiftRequestTopicName, rclcpp::QoS(10));
 
   create_layout();
   create_connections();
@@ -47,9 +47,9 @@ LiftPanel::LiftPanel(QWidget* parent)
   _debug_label->setText("Lift panel running...");
 
   _thread = std::thread([&]()
-  { 
-    rclcpp::spin(_node);
-  });
+      {
+        rclcpp::spin(_node);
+      });
 }
 
 //==============================================================================
@@ -85,16 +85,16 @@ void LiftPanel::send_lift_request()
   msg.lift_name = _lift_name_selector->currentText().toStdString();
   msg.request_time = _node->get_clock()->now();
   msg.session_id = _session_id;
-  
+
   if (_end_session_radio_button->isChecked())
     msg.request_type = LiftRequest::REQUEST_END_SESSION;
   else if (_agv_mode_radio_button->isChecked())
     msg.request_type = LiftRequest::REQUEST_AGV_MODE;
   else if (_human_mode_radio_button->isChecked())
     msg.request_type = LiftRequest::REQUEST_HUMAN_MODE;
-  
+
   msg.destination_floor = _destination_floor_line_edit->text().toStdString();
-  
+
   if (_door_closed_radio_button->isChecked())
     msg.door_state = LiftRequest::DOOR_CLOSED;
   else if (_door_open_radio_button->isChecked())
@@ -134,7 +134,7 @@ void LiftPanel::update_state_visualizer()
 {
   std::unique_lock<std::mutex> lift_states_lock(_mutex);
   const auto it = _lift_states.find(
-      _lift_name_selector->currentText().toStdString());
+    _lift_name_selector->currentText().toStdString());
   if (it == _lift_states.end())
     return;
 
@@ -173,16 +173,16 @@ QGroupBox* LiftPanel::create_state_group_box()
   available_modes_label->setToolTip(lift_mode_tooltip());
 
   std::vector<QLabel*> state_field_labels = {
-      new QLabel("time (sec)"),
-      new QLabel("name"),
-      new QLabel("floors"),
-      new QLabel("current floor"),
-      new QLabel("destination floor"),
-      door_state_label,
-      motion_state_label,
-      available_modes_label,
-      new QLabel("current mode"),
-      new QLabel("session ID")
+    new QLabel("time (sec)"),
+    new QLabel("name"),
+    new QLabel("floors"),
+    new QLabel("current floor"),
+    new QLabel("destination floor"),
+    door_state_label,
+    motion_state_label,
+    available_modes_label,
+    new QLabel("current mode"),
+    new QLabel("session ID")
   };
 
   QGridLayout* layout = new QGridLayout;
@@ -191,16 +191,16 @@ QGroupBox* LiftPanel::create_state_group_box()
   {
     layout->addWidget(state_field_labels[i], i, 0, 1, 1);
     state_field_labels[i]->setStyleSheet(
-        "border-width: 1px;"
-        "border-style: solid;"
-        "border-color: transparent darkgray darkgray transparent;"
-        "font: italic;");
+      "border-width: 1px;"
+      "border-style: solid;"
+      "border-color: transparent darkgray darkgray transparent;"
+      "font: italic;");
 
     QLabel* cell_label = new QLabel("");
     cell_label->setStyleSheet(
-        "border-width: 1px;"
-        "border-style: solid;"
-        "border-color: transparent transparent darkgray transparent;");
+      "border-width: 1px;"
+      "border-style: solid;"
+      "border-color: transparent transparent darkgray transparent;");
     _state_labels.push_back(cell_label);
     layout->addWidget(cell_label, i, 1, 1, 4);
   }
@@ -261,7 +261,7 @@ QGroupBox* LiftPanel::create_request_group_box()
   QGridLayout* layout = new QGridLayout;
   layout->addWidget(session_id_label, 0, 0, 1, 1);
   layout->addWidget(
-      new QLabel(QString::fromStdString(_session_id)), 0, 1, 1, 3);
+    new QLabel(QString::fromStdString(_session_id)), 0, 1, 1, 3);
   layout->addWidget(destination_floor_label, 1, 0, 1, 1);
   layout->addWidget(_destination_floor_line_edit, 1, 1, 1, 3);
   layout->addWidget(request_type_group_box, 2, 0, 3, 2);
@@ -304,21 +304,21 @@ void LiftPanel::create_layout()
   layout->addWidget(debug_gb, 13, 0, 1, 1);
   setLayout(layout);
   setStyleSheet(
-      "QGroupBox {"
-      "  font: bold;"
-      "  border: 1px solid silver;"
-      "  border-radius: 6px;"
-      "  margin-top: 6px;"
-      "  padding-top: 10px;"
-      "}"
-      "QGroupBox::title {"
-      "  subcontrol-origin: margin;"
-      "  left: 7px;"
-      "  padding: 0px 5px 0px 5px;"
-      "}"
-      "QRadioButton {"
-      "  font: italic;"
-      "}"
+    "QGroupBox {"
+    "  font: bold;"
+    "  border: 1px solid silver;"
+    "  border-radius: 6px;"
+    "  margin-top: 6px;"
+    "  padding-top: 10px;"
+    "}"
+    "QGroupBox::title {"
+    "  subcontrol-origin: margin;"
+    "  left: 7px;"
+    "  padding: 0px 5px 0px 5px;"
+    "}"
+    "QRadioButton {"
+    "  font: italic;"
+    "}"
   );
 }
 
@@ -326,13 +326,13 @@ void LiftPanel::create_layout()
 
 void LiftPanel::create_connections()
 {
-  connect(this, SIGNAL(configChanged()), this, 
-      SLOT(update_lift_name_selector()));
+  connect(this, SIGNAL(configChanged()), this,
+    SLOT(update_lift_name_selector()));
   connect(_lift_name_selector,
-      SIGNAL(currentTextChanged(const QString &)), this,
-      SLOT(update_state_visualizer()));
-  connect(_send_lift_request_button, 
-      SIGNAL(clicked()), this, SLOT(send_lift_request()));
+    SIGNAL(currentTextChanged(const QString&)), this,
+    SLOT(update_state_visualizer()));
+  connect(_send_lift_request_button,
+    SIGNAL(clicked()), this, SLOT(send_lift_request()));
 }
 
 //==============================================================================
@@ -343,21 +343,21 @@ void LiftPanel::lift_state_callback(LiftState::UniquePtr msg)
   const std::string incoming_lift_name = msg->lift_name;
 
   LiftState new_msg = *(msg.get());
-  std::string selected_lift_name = 
-      _lift_name_selector->currentText().toStdString();
+  std::string selected_lift_name =
+    _lift_name_selector->currentText().toStdString();
   if (incoming_lift_name == selected_lift_name)
     display_state(new_msg);
 
-  bool new_lift_found = 
-      _lift_states.find(incoming_lift_name) == _lift_states.end();
+  bool new_lift_found =
+    _lift_states.find(incoming_lift_name) == _lift_states.end();
   _lift_states[incoming_lift_name] = new_msg;
 
   lift_states_lock.unlock();
 
   if (new_lift_found)
   {
-    std::string debug_str = 
-        "New lift [" + incoming_lift_name  + "] found, refreshing...";
+    std::string debug_str =
+      "New lift [" + incoming_lift_name  + "] found, refreshing...";
     RCLCPP_INFO(_node->get_logger(), debug_str);
     _debug_label->setText(QString::fromStdString(debug_str));
     Q_EMIT configChanged();
@@ -381,32 +381,33 @@ void LiftPanel::display_state(const LiftState& msg)
     available_modes_str += std::to_string(m) + ", ";
 
   _state_labels[0]->setText(
-      QString::fromStdString(std::to_string(msg.lift_time.sec)));
+    QString::fromStdString(std::to_string(msg.lift_time.sec)));
   _state_labels[1]->setText(
-      QString::fromStdString(msg.lift_name));
+    QString::fromStdString(msg.lift_name));
   _state_labels[2]->setText(
-      QString::fromStdString(floors_str));
+    QString::fromStdString(floors_str));
   _state_labels[3]->setText(
-      QString::fromStdString(msg.current_floor));
+    QString::fromStdString(msg.current_floor));
   _state_labels[4]->setText(
-      QString::fromStdString(msg.destination_floor));
+    QString::fromStdString(msg.destination_floor));
   _state_labels[5]->setText(
-      QString::fromStdString(lift_door_state_string(msg.door_state)));
+    QString::fromStdString(lift_door_state_string(msg.door_state)));
   _state_labels[6]->setText(
-      QString::fromStdString(lift_motion_state_string(msg.motion_state)));
+    QString::fromStdString(lift_motion_state_string(msg.motion_state)));
   _state_labels[7]->setText(
-      QString::fromStdString(available_modes_str));
+    QString::fromStdString(available_modes_str));
   _state_labels[8]->setText(
-      QString::fromStdString(lift_mode_string(msg.current_mode)));
+    QString::fromStdString(lift_mode_string(msg.current_mode)));
   _state_labels[9]->setText(
-      QString::fromStdString(msg.session_id));
+    QString::fromStdString(msg.session_id));
 }
 
 //==============================================================================
 
 std::string LiftPanel::lift_door_state_string(uint8_t state) const
 {
-  switch (state) {
+  switch (state)
+  {
     case LiftState::DOOR_CLOSED:
       return std::string("Closed");
     case LiftState::DOOR_MOVING:
@@ -422,7 +423,8 @@ std::string LiftPanel::lift_door_state_string(uint8_t state) const
 
 std::string LiftPanel::lift_motion_state_string(uint8_t state) const
 {
-  switch (state) {
+  switch (state)
+  {
     case LiftState::MOTION_STOPPED:
       return std::string("Stopped");
     case LiftState::MOTION_UP:
@@ -440,7 +442,8 @@ std::string LiftPanel::lift_motion_state_string(uint8_t state) const
 
 std::string LiftPanel::lift_mode_string(uint8_t mode) const
 {
-  switch (mode) {
+  switch (mode)
+  {
     case LiftState::MODE_UNKNOWN:
       return std::string("Unknown");
     case LiftState::MODE_HUMAN:
@@ -463,12 +466,12 @@ std::string LiftPanel::lift_mode_string(uint8_t mode) const
 QString LiftPanel::door_state_tooltip() const
 {
   std::stringstream ss;
-  ss << std::to_string(LiftState::DOOR_CLOSED) << " - " 
-      << lift_door_state_string(LiftState::DOOR_CLOSED) << std::endl
-      << std::to_string(LiftState::DOOR_MOVING) << " - " 
-      << lift_door_state_string(LiftState::DOOR_MOVING) << std::endl
-      << std::to_string(LiftState::DOOR_OPEN) << " - "
-      << lift_door_state_string(LiftState::DOOR_OPEN) << std::endl;
+  ss << std::to_string(LiftState::DOOR_CLOSED) << " - "
+     << lift_door_state_string(LiftState::DOOR_CLOSED) << std::endl
+     << std::to_string(LiftState::DOOR_MOVING) << " - "
+     << lift_door_state_string(LiftState::DOOR_MOVING) << std::endl
+     << std::to_string(LiftState::DOOR_OPEN) << " - "
+     << lift_door_state_string(LiftState::DOOR_OPEN) << std::endl;
   return QString::fromStdString(ss.str());
 }
 
@@ -478,13 +481,13 @@ QString LiftPanel::motion_state_tooltip() const
 {
   std::stringstream ss;
   ss << std::to_string(LiftState::MOTION_STOPPED) << " - "
-      << lift_motion_state_string(LiftState::MOTION_STOPPED) << std::endl
-      << std::to_string(LiftState::MOTION_UP) << " - "
-      << lift_motion_state_string(LiftState::MOTION_UP) << std::endl
-      << std::to_string(LiftState::MOTION_DOWN) << " - "
-      << lift_motion_state_string(LiftState::MOTION_DOWN) << std::endl
-      << std::to_string(LiftState::MOTION_UNKNOWN) << " - "
-      << lift_motion_state_string(LiftState::MOTION_UNKNOWN) << std::endl;
+     << lift_motion_state_string(LiftState::MOTION_STOPPED) << std::endl
+     << std::to_string(LiftState::MOTION_UP) << " - "
+     << lift_motion_state_string(LiftState::MOTION_UP) << std::endl
+     << std::to_string(LiftState::MOTION_DOWN) << " - "
+     << lift_motion_state_string(LiftState::MOTION_DOWN) << std::endl
+     << std::to_string(LiftState::MOTION_UNKNOWN) << " - "
+     << lift_motion_state_string(LiftState::MOTION_UNKNOWN) << std::endl;
   return QString::fromStdString(ss.str());
 }
 
@@ -494,17 +497,17 @@ QString LiftPanel::lift_mode_tooltip() const
 {
   std::stringstream ss;
   ss << std::to_string(LiftState::MODE_UNKNOWN) << " - "
-      << lift_mode_string(LiftState::MODE_UNKNOWN) << std::endl
-      << std::to_string(LiftState::MODE_HUMAN) << " - "
-      << lift_mode_string(LiftState::MODE_HUMAN) << std::endl
-      << std::to_string(LiftState::MODE_AGV) << " - "
-      << lift_mode_string(LiftState::MODE_AGV) << std::endl
-      << std::to_string(LiftState::MODE_FIRE) << " - "
-      << lift_mode_string(LiftState::MODE_FIRE) << std::endl
-      << std::to_string(LiftState::MODE_OFFLINE) << " - "
-      << lift_mode_string(LiftState::MODE_OFFLINE) << std::endl
-      << std::to_string(LiftState::MODE_EMERGENCY) << " - "
-      << lift_mode_string(LiftState::MODE_EMERGENCY) << std::endl;
+     << lift_mode_string(LiftState::MODE_UNKNOWN) << std::endl
+     << std::to_string(LiftState::MODE_HUMAN) << " - "
+     << lift_mode_string(LiftState::MODE_HUMAN) << std::endl
+     << std::to_string(LiftState::MODE_AGV) << " - "
+     << lift_mode_string(LiftState::MODE_AGV) << std::endl
+     << std::to_string(LiftState::MODE_FIRE) << " - "
+     << lift_mode_string(LiftState::MODE_FIRE) << std::endl
+     << std::to_string(LiftState::MODE_OFFLINE) << " - "
+     << lift_mode_string(LiftState::MODE_OFFLINE) << std::endl
+     << std::to_string(LiftState::MODE_EMERGENCY) << " - "
+     << lift_mode_string(LiftState::MODE_EMERGENCY) << std::endl;
   return QString::fromStdString(ss.str());
 }
 

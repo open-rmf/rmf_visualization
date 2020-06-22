@@ -37,9 +37,9 @@ DoorPanel::DoorPanel(QWidget* parent)
       door_state_callback(std::move(msg));
     });
   _door_request_pub = _node->create_publisher<DoorRequest>(
-      DoorRequestTopicName, rclcpp::QoS(10));
+    DoorRequestTopicName, rclcpp::QoS(10));
   _adapter_door_request_pub = _node->create_publisher<DoorRequest>(
-      AdapterDoorRequestTopicName, rclcpp::QoS(10));
+    AdapterDoorRequestTopicName, rclcpp::QoS(10));
 
   create_layout();
   create_connections();
@@ -47,9 +47,9 @@ DoorPanel::DoorPanel(QWidget* parent)
   _debug_label->setText("Door panel running...");
 
   _thread = std::thread([&]()
-  {
-    rclcpp::spin(_node);
-  });
+      {
+        rclcpp::spin(_node);
+      });
 }
 
 //==============================================================================
@@ -90,7 +90,7 @@ void DoorPanel::send_door_request()
     msg.requested_mode.value = DoorMode::MODE_OPEN;
   else if (_door_closed_radio_button->isChecked())
     msg.requested_mode.value = DoorMode::MODE_CLOSED;
-  
+
   if (_supervisor_radio_button->isChecked())
   {
     _adapter_door_request_pub->publish(msg);
@@ -126,10 +126,10 @@ void DoorPanel::update_state_visualizer()
 {
   std::unique_lock<std::mutex> door_states_lock(_mutex);
   const auto it = _door_states.find(
-      _door_name_selector->currentText().toStdString());
+    _door_name_selector->currentText().toStdString());
   if (it == _door_states.end())
     return;
-  
+
   display_state(it->second);
 }
 
@@ -159,9 +159,9 @@ QGroupBox* DoorPanel::create_state_group_box()
   door_state_mode_label->setToolTip(door_state_mode_tooltip());
 
   std::vector<QLabel*> state_field_labels = {
-      new QLabel("sec"),
-      new QLabel("name"),
-      door_state_mode_label
+    new QLabel("sec"),
+    new QLabel("name"),
+    door_state_mode_label
   };
 
   QGridLayout* layout = new QGridLayout;
@@ -170,16 +170,16 @@ QGroupBox* DoorPanel::create_state_group_box()
   {
     layout->addWidget(state_field_labels[i], i, 0, 1, 1);
     state_field_labels[i]->setStyleSheet(
-        "border-width: 1px; "
-        "border-style: solid; "
-        "border-color: transparent darkgray darkgray transparent; "
-        "font: italic; ");
+      "border-width: 1px; "
+      "border-style: solid; "
+      "border-color: transparent darkgray darkgray transparent; "
+      "font: italic; ");
 
     QLabel* cell_label = new QLabel("");
     cell_label->setStyleSheet(
-        "border-width: 1px; "
-        "border-style: solid; "
-        "border-color: transparent transparent darkgray transparent; ");
+      "border-width: 1px; "
+      "border-style: solid; "
+      "border-color: transparent transparent darkgray transparent; ");
     _state_labels.push_back(cell_label);
     layout->addWidget(cell_label, i, 1, 1, 4);
   }
@@ -223,7 +223,7 @@ QGroupBox* DoorPanel::create_request_group_box()
   QGridLayout* layout = new QGridLayout;
   layout->addWidget(requester_id_label, 0, 0, 1, 1);
   layout->addWidget(
-      new QLabel(QString::fromStdString(_requester_id)), 0, 1, 1, 3);
+    new QLabel(QString::fromStdString(_requester_id)), 0, 1, 1, 3);
   layout->addWidget(door_request_type_group_box, 1, 0, 1, 4);
   layout->addWidget(route_group_box, 2, 0, 1, 4);
   layout->addWidget(_send_door_request_button, 3, 0, 1, 4);
@@ -263,21 +263,21 @@ void DoorPanel::create_layout()
   layout->addWidget(debug_gb, 5, 0, 1, 1);
   setLayout(layout);
   setStyleSheet(
-      "QGroupBox {"
-      "  font: bold;"
-      "  border: 1px solid silver;"
-      "  border-radius: 6px;"
-      "  margin-top: 6px;"
-      "  padding-top: 10px;"
-      "}"
-      "QGroupBox::title {"
-      "  subcontrol-origin: margin;"
-      "  left: 7px;"
-      "  padding: 0px 5px 0px 5px;"
-      "}"
-      "QRadioButton {"
-      "  font: italic;"
-      "}"
+    "QGroupBox {"
+    "  font: bold;"
+    "  border: 1px solid silver;"
+    "  border-radius: 6px;"
+    "  margin-top: 6px;"
+    "  padding-top: 10px;"
+    "}"
+    "QGroupBox::title {"
+    "  subcontrol-origin: margin;"
+    "  left: 7px;"
+    "  padding: 0px 5px 0px 5px;"
+    "}"
+    "QRadioButton {"
+    "  font: italic;"
+    "}"
   );
 }
 
@@ -286,13 +286,13 @@ void DoorPanel::create_layout()
 void DoorPanel::create_connections()
 {
   connect(this, SIGNAL(configChanged()), this,
-      SLOT(update_door_name_selector()));
+    SLOT(update_door_name_selector()));
   connect(_door_name_selector,
-      SIGNAL(currentTextChanged(const QString &)), this,
-      SLOT(update_state_visualizer()));
+    SIGNAL(currentTextChanged(const QString&)), this,
+    SLOT(update_state_visualizer()));
   connect(_send_door_request_button,
-      SIGNAL(clicked()), this,
-      SLOT(send_door_request()));
+    SIGNAL(clicked()), this,
+    SLOT(send_door_request()));
 }
 
 //==============================================================================
@@ -304,20 +304,20 @@ void DoorPanel::door_state_callback(DoorState::UniquePtr msg)
 
   DoorState new_msg = *(msg.get());
   std::string selected_door_name =
-      _door_name_selector->currentText().toStdString();
+    _door_name_selector->currentText().toStdString();
   if (incoming_door_name == selected_door_name)
     display_state(new_msg);
 
   bool new_door_found =
-      _door_states.find(incoming_door_name) == _door_states.end();
+    _door_states.find(incoming_door_name) == _door_states.end();
   _door_states[incoming_door_name] = new_msg;
 
   door_states_lock.unlock();
 
   if (new_door_found)
   {
-    std::string debug_str = 
-        "New door [" + incoming_door_name  + "] found, refreshing...";
+    std::string debug_str =
+      "New door [" + incoming_door_name  + "] found, refreshing...";
     RCLCPP_INFO(_node->get_logger(), debug_str);
     _debug_label->setText(QString::fromStdString(debug_str));
     Q_EMIT configChanged();
@@ -333,11 +333,11 @@ void DoorPanel::door_state_callback(DoorState::UniquePtr msg)
 void DoorPanel::display_state(const DoorState& msg)
 {
   _state_labels[0]->setText(
-      QString::fromStdString(std::to_string(msg.door_time.sec)));
+    QString::fromStdString(std::to_string(msg.door_time.sec)));
   _state_labels[1]->setText(
-      QString::fromStdString(msg.door_name));
+    QString::fromStdString(msg.door_name));
   _state_labels[2]->setText(
-      QString::fromStdString(door_state_mode_string(msg.current_mode.value)));
+    QString::fromStdString(door_state_mode_string(msg.current_mode.value)));
 }
 
 //==============================================================================
@@ -363,11 +363,11 @@ QString DoorPanel::door_state_mode_tooltip() const
 {
   std::stringstream ss;
   ss << std::to_string(DoorMode::MODE_CLOSED) << " - "
-      << door_state_mode_string(DoorMode::MODE_CLOSED) << std::endl
-      << std::to_string(DoorMode::MODE_MOVING) << " - "
-      << door_state_mode_string(DoorMode::MODE_MOVING) << std::endl
-      << std::to_string(DoorMode::MODE_OPEN) << " - "
-      << door_state_mode_string(DoorMode::MODE_OPEN) << std::endl;
+     << door_state_mode_string(DoorMode::MODE_CLOSED) << std::endl
+     << std::to_string(DoorMode::MODE_MOVING) << " - "
+     << door_state_mode_string(DoorMode::MODE_MOVING) << std::endl
+     << std::to_string(DoorMode::MODE_OPEN) << " - "
+     << door_state_mode_string(DoorMode::MODE_OPEN) << std::endl;
   return QString::fromStdString(ss.str());
 }
 

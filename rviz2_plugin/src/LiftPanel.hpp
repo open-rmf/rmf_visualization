@@ -40,7 +40,7 @@ namespace rviz2_plugin {
 class LiftPanel : public rviz_common::Panel
 {
 
-Q_OBJECT
+  Q_OBJECT
 
 public:
 
@@ -69,7 +69,7 @@ private:
   void create_connections();
 
   QComboBox* _lift_name_selector;
-  
+
   QLineEdit* _destination_floor_line_edit;
 
   QRadioButton* _end_session_radio_button;
