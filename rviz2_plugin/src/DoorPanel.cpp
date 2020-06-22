@@ -32,10 +32,10 @@ DoorPanel::DoorPanel(QWidget* parent)
 {
   _node = std::make_shared<rclcpp::Node>(_requester_id + "_node");
   _door_state_sub = _node->create_subscription<DoorState>(
-      DoorStateTopicName, 10, [&](DoorState::UniquePtr msg)
-      {
-        door_state_callback(std::move(msg));
-      });
+    DoorStateTopicName, 10, [&](DoorState::UniquePtr msg)
+    {
+      door_state_callback(std::move(msg));
+    });
   _door_request_pub = _node->create_publisher<DoorRequest>(
       DoorRequestTopicName, rclcpp::QoS(10));
   _adapter_door_request_pub = _node->create_publisher<DoorRequest>(
