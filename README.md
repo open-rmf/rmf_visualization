@@ -1,4 +1,5 @@
 ![](https://github.com/osrf/rmf_schedule_visualizer/workflows/build/badge.svg)
+![](https://github.com/osrf/rmf_schedule_visualizer/workflows/style/badge.svg)
 
 # rmf_schedule_visualizer
 

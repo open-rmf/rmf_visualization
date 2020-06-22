@@ -17,6 +17,10 @@
     <param name="display_names" value ="$(var display_names)"/>
   </node>
 
+  <node pkg="building_systems_visualizer" exec="building_systems_visualizer">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
   <executable cmd="rviz2 -d $(var viz_config_file)" output="both"/>
 </group>
 

@@ -6,4 +6,18 @@
       A panel widget allowing users to adjust parameters in the schedule visualizaer.
     </description>
   </class>
+  <class name="rviz2_plugin/LiftPanel"
+      type="rviz2_plugin::LiftPanel"
+      base_class_type="rviz_common::Panel">
+    <description>
+      A panel widget allowing users to send lift requests and visualize states.
+    </description>
+  </class>
+  <class name="rviz2_plugin/DoorPanel"
+      type="rviz2_plugin::DoorPanel"
+      base_class_type="rviz_common::Panel">
+    <description>
+      A panel widget allowing users to send door requests and visualize states.
+    </description>
+  </class>
 </library>
