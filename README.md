@@ -3,31 +3,44 @@
 
 # rmf_schedule_visualizer
 
-A visualizer for robot trajectories in the `rmf schedule database` and live locations of robots, if available. Users may query trajectories in different maps and view the schedule at a future instance.
+A visualizer for robot trajectories in the `rmf schedule database`, live locations of robots if available and states of building systems such as doors and lifts. Users may query trajectories in different maps and view the schedule at a future instance.
 
 ![](docs/media/visualizer.gif)
 
-# System Requirements
+## System Requirements
 
 The visualizer is developed and tested on
-[Ubuntu 18.04 LTS](http://releases.ubuntu.com/18.04/) with 
-[ROS2 Eloquent](https://index.ros.org/doc/ros2/Installation/#installationguide). It can also be run on the `dashing` distribution of ROS2.
+* [Ubuntu 18.04 LTS](http://releases.ubuntu.com/18.04/) 
+* [ROS2 Eloquent](https://index.ros.org/doc/ros2/Installation/#installationguide).
 
-# Installation 
+## Installation 
+Install RMF dependencies
 ```
-sudo apt-get update 
-sudo apt-get install libeigen3-dev libccd-dev libfcl-dev libyaml-cpp-dev ros-eloquent-rviz2 libwebsocketpp-dev libboost-all-dev -y
+sudo apt update
+sudo apt install -y wget
+echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable bionic main" > /etc/apt/sources.list.d/gazebo-stable.list
+wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
+sudo apt update
+sudo apt install python3-shapely python3-yaml python3-requests \
+libignition-common3-dev libignition-plugin-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-random-dev \
+g++-8 -y
+```
+
+Setup and build workspace
+```
 mkdir -p ~/ws_rmf/src
 cd ~/ws_rmf/src
 git clone https://github.com/osrf/rmf_core.git
 git clone https://github.com/osrf/traffic_editor.git
 git clone https://github.com/osrf/rmf_schedule_visualizer.git
 cd ~/ws_rmf
+rosdep update
+rosdep install --from-paths src --ignore-src --rosdistro eloquent -yr
 source /opt/ros/eloquent/setup.bash
-colcon build
+CXX=g++-8 colcon build --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
 ```
 
-# Running 
+## Run 
 
 To launch the visualizer
 ```
@@ -39,16 +52,19 @@ An active `rmf_traffic_schedule` node is prerequisite for the visualizer to init
 ros2 run rmf_traffic_ros2 rmf_traffic_schedule
 ```
 
-MarkerArray messages are published over three topics,
-1)`/map_markers` visualizes the nav graphs, waypoints and waypoint labels. Requires `Transient Local` durability
-2)`/schedule_markers` visualizes planned trajectory of the robots in the rmf_schedule
-3)`fleet_markers` visualizes the current pose of robots as published over `/fleet_states`
+MarkerArray messages are published over these topics,
+* `/map_markers` visualizes the nav graphs, waypoints and waypoint labels. Topic durability is `Transient Local`.
+* `/schedule_markers` visualizes planned trajectory of the robots in the rmf_schedule along with the robot vicinities. 
+* `/fleet_markers` renders the current pose of robots as purple spheres
+*  `/building_systems_markers` visualize the current states of doors and lifts in the facility. Topic durability is `Transient Local`.
 
-The visualizer will also render navigation graphs that are published by `building_map_server` in the `building_map_tools` package of `traffic_editor`. The live locations of robots as published over`/fleet_states` by various `fleet adapters`are represented by the purple spheres.
+![](docs/media/developer_panels.png)
 
-The visualizer node queries for trajectories in the schedule from the current instance in time until a duration of `query_duration`(s) into the future. The trajectories are also filtered based on a`map_name`. The predicted position of the robot (yellow cylinder) and its conflict-free path (green) are then visualized in RViz2. The schedule can be viewed `start_duration` seconds from the current instance on time by adjusting the slider appropraitely. The default values of `map_name`, `query_duration` and `start_duration` are "B1", 600s and 0s respectively. These values can be modified through the cusom `SchedulePanel` panel GUI in Rviz2. 
+The visualizer node queries for trajectories in the schedule from the current instance in time until a duration of `query_duration`(s) into the future. The trajectories are also filtered based on a`map_name`. The predicted position of the robot (yellow cylinder) and its conflict-free path (green) are then visualized in RViz2. The schedule can be viewed `start_duration` seconds from the current instance on time by adjusting the slider appropraitely. The default values of `map_name`, `query_duration` and `start_duration` are "B1", 600s and 0s respectively. These values can be modified through the cusom `SchedulePanel` panel GUI in Rviz2. A `Door` and `Lift` panel which provide users with manual control over these systems are also included.
 
-# Websocket Server for Custom UIs 
+
+
+## Websocket Server for Custom UIs 
 For developers looking to create custom UIs outside of the ROS2 environment, this repository provides a websocket server to exchange information contained in an active rmf schedule database. This may primarily be used to query for robot trajectories in the schedule along with conflict information if any. The format for various requests and corresponding responses are described below.
 
 To start the websocket server,
@@ -57,9 +73,9 @@ To start the websocket server,
 
 The default port_number of the websocet server is `8006`. 
 
-## Sample Client Requests
+### Sample Client Requests
 
-### Server Time
+#### Server Time
 To receive the current server time in milliseconds
 ```
 {"request":"time","param":{}}
@@ -70,7 +86,7 @@ Sample server response
 {"response":"time","values":[167165000000]}
 ```
 
-### Trajectories in RMF Schedule
+#### Trajectories in RMF Schedule
 To receive a list of active trajectories and conflicts if any between `now` and until a `duration`(milliseconds)
 ```
 {"request":"trajectory","param":{"map_name":"L1","duration":60000, "trim":true}}
