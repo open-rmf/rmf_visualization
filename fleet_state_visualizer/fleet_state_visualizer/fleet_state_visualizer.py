@@ -1,4 +1,6 @@
 import math
+import argparse
+import sys
 
 import rclpy
 from rclpy.node import Node
@@ -8,9 +10,11 @@ from rmf_fleet_msgs.msg import FleetState
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
+from building_map_msgs.msg import BuildingMap
+from rmf_schedule_visualizer_msgs.msg import RvizParam
 
 class FleetStateVisualizer(Node):
-    def __init__(self):
+    def __init__(self, map_name):
         super().__init__('fleet_state_visualizer')
         self.get_logger().info('hello i am fleet state visualizer')
         self.display_names = True
@@ -22,12 +26,45 @@ class FleetStateVisualizer(Node):
             'fleet_states',
             self.fleet_state_callback,
             10)
+
         self.marker_pub = self.create_publisher(
             MarkerArray,
             'fleet_markers',
             qos_profile=qos_profile_system_default)
 
+        self.create_subscription(
+            BuildingMap,
+            'map', self.map_cb,
+            qos_profile=qos_profile_system_default)
+
+        self.create_subscription(
+            RvizParam,
+            'rviz_node/param',
+            self.param_cb,
+            qos_profile=qos_profile_system_default)
+
         self.robot_states = {}
+        self.available_maps = []
+        self.active_markers = {}
+        self.map_name = map_name
+
+    def map_cb(self, msg):
+        print(f'Received building map with {len(msg.levels)} levels')
+        for level in msg.levels:
+            self.available_maps.append(level.name)
+
+    def param_cb(self, msg):
+        if msg.map_name not in self.available_maps:
+            return
+        self.map_name = msg.map_name
+        marker_array = MarkerArray()
+        # deleting previously avtive markers
+        for name, marker in self.active_markers.items():
+            if marker is not None:
+                marker.action = Marker.DELETE
+                marker_array.markers.append(marker)
+        self.active_markers = {}
+        self.marker_pub.publish(marker_array)
 
     def fleet_state_callback(self, msg):
         # print(msg)
@@ -41,6 +78,9 @@ class FleetStateVisualizer(Node):
 
         for key in self.robot_states.keys():
             rs = self.robot_states[key]
+            if rs.location.level_name != self.map_name:
+                continue
+
             m = Marker()
             m.header.frame_id = 'map'
             m.header.stamp = rs.location.t
@@ -120,17 +160,26 @@ class FleetStateVisualizer(Node):
                 t.color.a = 1.0
 
             ma.markers.append(m)
+            self.active_markers[f'{key}_m'] = m
             ma.markers.append(n)
+            self.active_markers[f'{key}_n'] = n
             if (self.display_names):
                 ma.markers.append(t)
+                self.active_markers[f'{key}_t'] = t
 
         self.marker_pub.publish(ma)
         # print(ma)
 
 
-def main():
-    rclpy.init()
-    n = FleetStateVisualizer()
+def main(argv=sys.argv):
+    rclpy.init(args=argv)
+    args_without_ros = rclpy.utilities.remove_ros_args(argv)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--map-name', help='Default map name')
+    args = parser.parse_args(args_without_ros[1:])
+
+    n = FleetStateVisualizer(args.map_name)
     try:
         rclpy.spin(n)
     except KeyboardInterrupt:

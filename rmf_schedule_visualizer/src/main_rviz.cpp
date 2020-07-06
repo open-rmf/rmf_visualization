@@ -699,6 +699,7 @@ private:
           _has_level = true;
           _level = level;
           RCLCPP_INFO(this->get_logger(), "Level cache updated");
+          publish_map_markers();
           break;
         }
       }
@@ -707,9 +708,6 @@ private:
       {
         RCLCPP_INFO(this->get_logger(), "Level cache not updated");
       }
-
-      publish_map_markers();
-
     }
   }
 
