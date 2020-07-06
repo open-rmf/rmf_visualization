@@ -195,9 +195,9 @@ class BuildingSystemsVisualizer(Node):
         if self.lift_states[lift_name].current_floor != self.map_name or \
            self.lift_states[lift_name].motion_state == 1 or \
            self.lift_states[lift_name].motion_state == 2:
-           # lift moving or not on current floor
+            # lift moving or not on current floor
             marker.color.a = 0.2
-        else:  
+        else:
             marker.color.a = 0.8
 
         return marker

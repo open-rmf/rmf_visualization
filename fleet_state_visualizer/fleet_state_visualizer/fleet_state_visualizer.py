@@ -13,6 +13,7 @@ from visualization_msgs.msg import MarkerArray
 from building_map_msgs.msg import BuildingMap
 from rmf_schedule_visualizer_msgs.msg import RvizParam
 
+
 class FleetStateVisualizer(Node):
     def __init__(self, map_name):
         super().__init__('fleet_state_visualizer')
