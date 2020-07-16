@@ -190,7 +190,7 @@ std::string Server::parse_trajectories(
   std::string response;
   auto j_res = _j_res;
   j_res["response"] = "trajectory";
-  j_res["conflicts"] = _visualizer_data_node.get_conflicts();
+  j_res["conflicts"] = _visualizer_data_node.get_server_conflicts();
 
   try
   {

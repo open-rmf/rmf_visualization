@@ -212,4 +212,14 @@ std::unordered_set<uint64_t> VisualizerDataNode::get_conflicts() const
   return conflict_id;
 }
 
+std::vector<std::vector<
+    uint64_t>> VisualizerDataNode::get_server_conflicts() const
+{
+  std::vector<std::vector<uint64_t>> conflicts;
+  for (const auto& conflict : _conflicts)
+    conflicts.push_back(conflict.second);
+
+  return conflicts;
+}
+
 } // namespace rmf_schedule_visualizer
