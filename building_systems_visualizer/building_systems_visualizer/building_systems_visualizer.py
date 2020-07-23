@@ -154,11 +154,11 @@ class BuildingSystemsVisualizer(Node):
         marker.color.a = 0.5
         door_mode = msg.current_mode.value
         if door_mode == 2:
-            marker.text = "Open"
+            marker.text = msg.door_name + ":Open"
         elif door_mode == 1:
-            marker.text = "Moving"
+            marker.text = msg.door_name + ":Moving"
         else:
-            marker.text = "Closed"
+            marker.text = msg.door_name + ":Closed"
 
         return marker
 
