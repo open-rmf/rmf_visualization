@@ -14,6 +14,8 @@
   <exec_depend>rmf_traffic_msgs</exec_depend>
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>building_map_msgs</exec_depend>
+  <exec_depend>rmf_schedule_visualizer_msgs</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

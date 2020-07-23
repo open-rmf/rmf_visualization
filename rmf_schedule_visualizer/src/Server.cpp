@@ -190,7 +190,7 @@ std::string Server::parse_trajectories(
   std::string response;
   auto j_res = _j_res;
   j_res["response"] = "trajectory";
-  j_res["conflicts"] = _visualizer_data_node.get_conflicts();
+  j_res["conflicts"] = _visualizer_data_node.get_server_conflicts();
 
   try
   {
@@ -201,7 +201,8 @@ std::string Server::parse_trajectories(
       auto j_traj = _j_traj;
       j_traj["robot_name"] = element.description.name();
       j_traj["fleet_name"] = element.description.owner();
-      j_traj["id"] = element.route_id;
+      j_traj["id"] = element.participant;
+      j_traj["route_id"] = element.route_id;
       j_traj["shape"] = "circle";
       j_traj["dimensions"] = element.description.profile().footprint()
         ->get_characteristic_length();

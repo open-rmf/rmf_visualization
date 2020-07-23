@@ -66,6 +66,8 @@ public:
 
   std::unordered_set<uint64_t> get_conflicts() const;
 
+  std::vector<std::vector<uint64_t>> get_server_conflicts() const;
+
   rmf_traffic::Time now();
 
   std::mutex& get_mutex();
