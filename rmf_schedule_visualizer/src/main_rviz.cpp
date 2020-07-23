@@ -427,8 +427,8 @@ private:
     marker_msg.pose.orientation.w = quat.w;
 
     // Set the scale of the marker
-    marker_msg.scale.x = radius / 1.0;
-    marker_msg.scale.y = radius / 1.0;
+    marker_msg.scale.x = 2.0 * radius;
+    marker_msg.scale.y = 2.0 * radius;
     marker_msg.scale.z = height;
 
     // Set the color of the marker
