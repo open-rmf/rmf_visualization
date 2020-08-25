@@ -36,7 +36,10 @@ endif()
 #===============================================================================
 #file(GLOB_RECURSE visualizer_srcs "src/*.cpp")
 #add_executable(schedule_visualizer ${visualizer_srcs})
-add_executable(schedule_visualizer src/Server.cpp src/VisualizerData.cpp src/main.cpp)
+add_executable(schedule_visualizer 
+  src/Server.cpp
+  src/VisualizerData.cpp
+  src/main.cpp)
 
 target_link_libraries(schedule_visualizer
   PUBLIC

@@ -22,6 +22,7 @@ set(CMAKE_AUTOMOC ON)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rmf_door_msgs REQUIRED)
 find_package(rmf_lift_msgs REQUIRED)
@@ -29,6 +30,7 @@ find_package(rmf_schedule_visualizer_msgs REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
+find_package(rmf_traffic_ros2 REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Test)
 
 add_definitions(-DQT_NO_KEYWORDS)
@@ -50,6 +52,7 @@ target_link_libraries(${PROJECT_NAME}
     ${rviz_rendering_LIBRARIES}
     ${rviz_default_plugins_LIBRARIES}
     ${Qt5Widgets_LIBRARIES}
+    rmf_traffic_ros2::rmf_traffic_ros2
 )
 
 target_include_directories(${PROJECT_NAME}

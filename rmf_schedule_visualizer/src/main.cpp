@@ -61,8 +61,21 @@ int main(int argc, char* argv[])
   const uint16_t port = port_string.empty() ? 8006 : std::stoul(
     port_string, nullptr, 0);
 
+  std::string retained_history_count_str;
+  uint retained_history_count = 0;
+  if (get_arg(args, "--history", retained_history_count_str,
+    "retained history count", false))
+  {
+    std::stringstream ss;
+    ss << retained_history_count_str;
+    ss >> retained_history_count;
+  }
+
   const auto visualizer_data_node =
     rmf_schedule_visualizer::VisualizerDataNode::make(node_name);
+
+  auto& negotiation = visualizer_data_node->_negotiation;
+  negotiation->set_retained_history_count(retained_history_count);
 
   if (!visualizer_data_node)
   {
@@ -73,7 +86,6 @@ int main(int argc, char* argv[])
   RCLCPP_INFO(
     visualizer_data_node->get_logger(),
     "VisualizerDataNode /" + node_name + " started...");
-
 
   const auto server_ptr = rmf_schedule_visualizer::Server::make(port,
       *visualizer_data_node);

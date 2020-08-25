@@ -73,6 +73,10 @@ To start the websocket server,
 
 The default port_number of the websocet server is `8006`. 
 
+To test negotiation status trajectories, we can setup negotiations to be retained. Add `-history 999` to the following line in `server.xml`:
+
+``` <node pkg="rmf_schedule_visualizer" exec="schedule_visualizer" args="-p $(var port) -history 999"> ```
+
 ### Sample Client Requests
 
 #### Server Time

@@ -87,6 +87,8 @@ private:
   bool parse_request(const server::message_ptr msg, std::string& response);
 
   std::string parse_trajectories(
+    const std::string& response_type,
+    const std::vector<std::vector<uint64_t>>& conflicts,
     const std::vector<Element>& elements,
     const bool trim,
     const RequestParam& request_param);
