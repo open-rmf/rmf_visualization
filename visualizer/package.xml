@@ -13,6 +13,7 @@
   <exec_depend>fleet_state_visualizer</exec_depend>
   <exec_depend>building_systems_visualizer</exec_depend>
   <exec_depend>rviz2_plugin</exec_depend>
+  <exec_depend>launch_xml</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
