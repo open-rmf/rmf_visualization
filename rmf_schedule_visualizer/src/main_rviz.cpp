@@ -55,17 +55,18 @@ public:
   using Level = building_map_msgs::msg::Level;
   using GraphNode = building_map_msgs::msg::GraphNode;
   using Color = std_msgs::msg::ColorRGBA;
+  using VisualizerDataNode = rmf_schedule_visualizer::VisualizerDataNode;
 
   RvizNode(
     std::string node_name,
-    rmf_schedule_visualizer::VisualizerDataNode& visualizer_data_node,
+    std::shared_ptr<VisualizerDataNode> visualizer_data_node,
     std::string map_name,
     double rate = 1.0,
     std::string frame_id = "/map")
   : Node(node_name),
     _rate(rate),
     _frame_id(frame_id),
-    _visualizer_data_node(visualizer_data_node)
+    _visualizer_data_node(std::move(visualizer_data_node))
   {
     // TODO add a constructor for RvizParam
     _rviz_param.map_name = map_name;
@@ -104,7 +105,7 @@ public:
       rclcpp::QoS(10),
       [&](RvizParamMsg::SharedPtr msg)
       {
-        std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+        std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
 
         if (!msg->map_name.empty() && _rviz_param.map_name != msg->map_name)
         {
@@ -140,7 +141,7 @@ public:
       transient_qos_profile,
       [&](BuildingMap::SharedPtr msg)
       {
-        std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+        std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
         RCLCPP_INFO(this->get_logger(), "Received map \""
         + msg->name + "\" containing "
         + std::to_string(msg->levels.size()) + " level(s)");
@@ -165,15 +166,15 @@ private:
 
     // TODO store a cache of trajectories to prevent frequent access.
     // Update cache whenever mirror manager updates
-    std::lock_guard<std::mutex> guard(_visualizer_data_node.get_mutex());
+    std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
 
     RequestParam query_param;
     query_param.map_name = _rviz_param.map_name;
-    query_param.start_time = _visualizer_data_node.now();
+    query_param.start_time = _visualizer_data_node->now();
     query_param.finish_time = query_param.start_time +
       _rviz_param.query_duration;
 
-    _elements = _visualizer_data_node.get_elements(query_param);
+    _elements = _visualizer_data_node->get_elements(query_param);
 
     RequestParam traj_param;
     traj_param.map_name = query_param.map_name;
@@ -239,7 +240,7 @@ private:
         for (auto& marker : array.markers)
         {
           marker.header.stamp = rmf_traffic_ros2::convert(
-            _visualizer_data_node.now());
+            _visualizer_data_node->now());
           marker.action = marker.DELETE;
         }
         return array;
@@ -251,7 +252,7 @@ private:
         Marker label_marker;
         label_marker.header.frame_id = _frame_id; // map
         label_marker.header.stamp = rmf_traffic_ros2::convert(
-          _visualizer_data_node.now());
+          _visualizer_data_node->now());
         label_marker.ns = "labels";
         label_marker.id = count;
         label_marker.type = label_marker.TEXT_VIEW_FACING;
@@ -321,7 +322,7 @@ private:
       Marker node_marker;
       node_marker.header.frame_id = _frame_id; // map
       node_marker.header.stamp = rmf_traffic_ros2::convert(
-        _visualizer_data_node.now());
+        _visualizer_data_node->now());
       node_marker.ns = "map";
       node_marker.id = 0;
       node_marker.type = node_marker.POINTS;
@@ -384,7 +385,7 @@ private:
     Marker marker_msg;
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(
-      _visualizer_data_node.now());
+      _visualizer_data_node->now());
     marker_msg.ns = "trajectory";
     marker_msg.id = id;
     marker_msg.type = marker_msg.CYLINDER;
@@ -625,7 +626,7 @@ private:
 
   bool is_conflict(int64_t id)
   {
-    const auto& conflicts = _visualizer_data_node.get_conflicts();
+    const auto& conflicts = _visualizer_data_node->get_conflicts();
     if (conflicts.find(id) != conflicts.end())
       return true;
     return false;
@@ -742,7 +743,7 @@ private:
   rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_map_sub;
 
-  rmf_schedule_visualizer::VisualizerDataNode& _visualizer_data_node;
+  std::shared_ptr<VisualizerDataNode> _visualizer_data_node;
 
   RvizParam _rviz_param;
 };
@@ -805,7 +806,7 @@ int main(int argc, char* argv[])
 
   auto rviz_node = std::make_shared<RvizNode>(
     "rviz_node",
-    *visualizer_data_node,
+    visualizer_data_node,
     std::move(map_name),
     rate);
 

@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     "VisualizerDataNode /" + node_name + " started...");
 
   const auto server_ptr = rmf_schedule_visualizer::Server::make(port,
-      *visualizer_data_node);
+      visualizer_data_node);
 
   if (!server_ptr)
   {

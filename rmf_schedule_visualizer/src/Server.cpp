@@ -23,7 +23,7 @@ namespace rmf_schedule_visualizer {
 
 std::shared_ptr<Server> Server::make(
   uint16_t port,
-  VisualizerDataNode& visualizer_data_node)
+  std::shared_ptr<VisualizerDataNode> visualizer_data_node)
 {
   std::shared_ptr<Server> server_ptr(new Server(port, visualizer_data_node));
   try
@@ -49,9 +49,10 @@ void Server::run()
 }
 
 /// Constructor with port number and reference to visualizer_data_node
-Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node)
+Server::Server(uint16_t port,
+  std::shared_ptr<VisualizerDataNode> visualizer_data_node)
 : _port(port),
-  _visualizer_data_node(visualizer_data_node)
+  _visualizer_data_node(std::move(visualizer_data_node))
 {
   _server.init_asio();
   _server.set_open_handler(bind(&Server::on_open, this, _1));
@@ -67,7 +68,7 @@ Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node)
     uint64_t conflict_version,
     rmf_traffic::schedule::Negotiation::Table::ViewerPtr table_view)
     {
-      RCLCPP_DEBUG(_visualizer_data_node.get_logger(),
+      RCLCPP_DEBUG(_visualizer_data_node->get_logger(),
         "======== conflict callback version: %llu! ==========",
         conflict_version);
 
@@ -90,13 +91,13 @@ Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node)
         _server.send(connection, conflict_str,
           websocketpp::frame::opcode::text);
     };
-  _visualizer_data_node._negotiation->on_status_update(std::move(
+  _visualizer_data_node->_negotiation->on_status_update(std::move(
       status_update_cb));
 
   auto conclusion_cb = [this](
     uint64_t conflict_version, bool resolved)
     {
-      RCLCPP_DEBUG(_visualizer_data_node.get_logger(),
+      RCLCPP_DEBUG(_visualizer_data_node->get_logger(),
         "======== conflict concluded: %llu resolved: %d ==========",
         conflict_version, resolved ? 1 : 0);
 
@@ -109,20 +110,22 @@ Server::Server(uint16_t port, VisualizerDataNode& visualizer_data_node)
       for (auto connection : _connections)
         _server.send(connection, json_str, websocketpp::frame::opcode::text);
     };
-  _visualizer_data_node._negotiation->on_conclusion(std::move(conclusion_cb));
+  _visualizer_data_node->_negotiation->on_conclusion(std::move(conclusion_cb));
 
 }
 
 void Server::on_open(connection_hdl hdl)
 {
   _connections.insert(hdl);
-  RCLCPP_INFO(_visualizer_data_node.get_logger(), "Connected with a client");
+  RCLCPP_INFO(_visualizer_data_node->get_logger(),
+    "Connected with a client");
 }
 
 void Server::on_close(connection_hdl hdl)
 {
   _connections.erase(hdl);
-  RCLCPP_INFO(_visualizer_data_node.get_logger(), "Disconnected with a client");
+  RCLCPP_INFO(_visualizer_data_node->get_logger(),
+    "Disconnected with a client");
 
 }
 
@@ -132,7 +135,7 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 
   if (msg->get_payload().empty())
   {
-    RCLCPP_INFO(_visualizer_data_node.get_logger(), "Empty request received");
+    RCLCPP_INFO(_visualizer_data_node->get_logger(), "Empty request received");
     return;
   }
 
@@ -140,7 +143,7 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 
   if (ok)
   {
-    RCLCPP_INFO(_visualizer_data_node.get_logger(),
+    RCLCPP_INFO(_visualizer_data_node->get_logger(),
       "Response: %s", response.c_str());
     server::message_ptr response_msg = std::move(msg);
     response_msg->set_payload(response);
@@ -148,7 +151,8 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
   }
   else
   {
-    RCLCPP_INFO(_visualizer_data_node.get_logger(), "Invalid request received");
+    RCLCPP_INFO(_visualizer_data_node->get_logger(),
+      "Invalid request received");
   }
 
 }
@@ -190,20 +194,20 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
       // All checks have passed
       RequestParam request_param;
       request_param.map_name = j_param["map_name"];
-      request_param.start_time = _visualizer_data_node.now();
+      request_param.start_time = _visualizer_data_node->now();
       request_param.finish_time = request_param.start_time +
         duration;
 
-      RCLCPP_INFO(_visualizer_data_node.get_logger(),
+      RCLCPP_INFO(_visualizer_data_node->get_logger(),
         "Trajectory Response recived with map_name [%s] and duration [%s]ms",
         request_param.map_name.c_str(), std::to_string(duration_num).c_str());
 
-      std::lock_guard<std::mutex> lock(_visualizer_data_node.get_mutex());
-      auto elements = _visualizer_data_node.get_elements(request_param);
+      std::lock_guard<std::mutex> lock(_visualizer_data_node->get_mutex());
+      auto elements = _visualizer_data_node->get_elements(request_param);
 
       bool trim = j_param["trim"];
       response = parse_trajectories("trajectory",
-          _visualizer_data_node.get_server_conflicts(), elements, trim,
+          _visualizer_data_node->get_server_conflicts(), elements, trim,
           request_param);
 
       return true;
@@ -216,21 +220,21 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
       json j_res = _j_res;
       j_res["response"] = "time";
       j_res["values"].push_back(
-        _visualizer_data_node.now().time_since_epoch().count());
+        _visualizer_data_node->now().time_since_epoch().count());
       response = j_res.dump();
       return true;
     }
 
     else if (j["request"] == "negotiation_trajectory")
     {
-      RCLCPP_INFO(_visualizer_data_node.get_logger(),
+      RCLCPP_INFO(_visualizer_data_node->get_logger(),
         "Received Negotiation Trajectory request");
 
       uint64_t conflict_version = j["param"]["conflict_version"];
       std::vector<uint64_t> sequence = j["param"]["sequence"];
 
       auto trajectory_elements =
-        _visualizer_data_node.get_negotiation_trajectories(conflict_version,
+        _visualizer_data_node->get_negotiation_trajectories(conflict_version,
           sequence);
       const auto now = std::chrono::steady_clock::now();
 
@@ -254,7 +258,7 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
 
   catch (const std::exception& e)
   {
-    RCLCPP_ERROR(_visualizer_data_node.get_logger(),
+    RCLCPP_ERROR(_visualizer_data_node->get_logger(),
       "Error: %s", std::to_string(*e.what()).c_str());
     return false;
   }
@@ -354,7 +358,7 @@ std::string Server::parse_trajectories(
 
   catch (const std::exception& e)
   {
-    RCLCPP_ERROR(_visualizer_data_node.get_logger(),
+    RCLCPP_ERROR(_visualizer_data_node->get_logger(),
       "Error: %s", std::to_string(*e.what()).c_str());
     return "";
   }

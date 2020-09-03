@@ -50,7 +50,7 @@ public:
   /// A nullptr is returned if initialization fails.
   static std::shared_ptr<Server> make(
     uint16_t port,
-    VisualizerDataNode& visualizer_data_node);
+    std::shared_ptr<VisualizerDataNode> visualizer_data_node);
 
   ~Server();
 
@@ -76,7 +76,8 @@ private:
   void run();
 
   /// Constructor with port number
-  Server(uint16_t port, VisualizerDataNode& visualizer_data_node);
+  Server(uint16_t port,
+    std::shared_ptr<VisualizerDataNode> visualizer_data_node);
 
   void on_open(connection_hdl hdl);
 
@@ -97,7 +98,7 @@ private:
   con_list _connections;
   uint16_t _port;
   std::thread _server_thread;
-  VisualizerDataNode& _visualizer_data_node;
+  std::shared_ptr<VisualizerDataNode> _visualizer_data_node;
   bool _is_initialized = false;
   std::unique_ptr<Data> data;
 
