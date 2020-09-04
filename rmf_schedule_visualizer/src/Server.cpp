@@ -143,7 +143,7 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 
   if (ok)
   {
-    RCLCPP_INFO(_visualizer_data_node->get_logger(),
+    RCLCPP_DEBUG(_visualizer_data_node->get_logger(),
       "Response: %s", response.c_str());
     server::message_ptr response_msg = std::move(msg);
     response_msg->set_payload(response);
@@ -198,8 +198,8 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
       request_param.finish_time = request_param.start_time +
         duration;
 
-      RCLCPP_INFO(_visualizer_data_node->get_logger(),
-        "Trajectory Response recived with map_name [%s] and duration [%s]ms",
+      RCLCPP_DEBUG(_visualizer_data_node->get_logger(),
+        "Trajectory Request recived with map_name [%s] and duration [%s]ms",
         request_param.map_name.c_str(), std::to_string(duration_num).c_str());
 
       std::lock_guard<std::mutex> lock(_visualizer_data_node->get_mutex());
@@ -227,7 +227,7 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
 
     else if (j["request"] == "negotiation_trajectory")
     {
-      RCLCPP_INFO(_visualizer_data_node->get_logger(),
+      RCLCPP_DEBUG(_visualizer_data_node->get_logger(),
         "Received Negotiation Trajectory request");
 
       uint64_t conflict_version = j["param"]["conflict_version"];
