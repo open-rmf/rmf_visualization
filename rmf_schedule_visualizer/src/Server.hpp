@@ -85,7 +85,8 @@ private:
 
   void on_message(connection_hdl hdl, server::message_ptr msg);
 
-  bool parse_request(const server::message_ptr msg, std::string& response);
+  bool parse_request(connection_hdl hdl, const server::message_ptr msg,
+    std::string& response);
 
   std::string parse_trajectories(
     const std::string& response_type,
@@ -96,6 +97,7 @@ private:
 
   server _server;
   con_list _connections;
+  con_list _negotiation_subscribed_connections;
   uint16_t _port;
   std::thread _server_thread;
   std::shared_ptr<VisualizerDataNode> _visualizer_data_node;

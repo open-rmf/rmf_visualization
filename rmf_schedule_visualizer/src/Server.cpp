@@ -87,7 +87,7 @@ Server::Server(uint16_t port,
         negotiation_json["sequence"].push_back(versionedkey.participant);
 
       std::string conflict_str = negotiation_json.dump();
-      for (auto connection : _connections)
+      for (auto connection : _negotiation_subscribed_connections)
         _server.send(connection, conflict_str,
           websocketpp::frame::opcode::text);
     };
@@ -107,7 +107,7 @@ Server::Server(uint16_t port,
       json_msg["resolved"] = resolved;
 
       std::string json_str = json_msg.dump();
-      for (auto connection : _connections)
+      for (auto connection : _negotiation_subscribed_connections)
         _server.send(connection, json_str, websocketpp::frame::opcode::text);
     };
   _visualizer_data_node->_negotiation->on_conclusion(std::move(conclusion_cb));
@@ -124,6 +124,7 @@ void Server::on_open(connection_hdl hdl)
 void Server::on_close(connection_hdl hdl)
 {
   _connections.erase(hdl);
+  _negotiation_subscribed_connections.erase(hdl);
   RCLCPP_INFO(_visualizer_data_node->get_logger(),
     "Disconnected with a client");
 
@@ -139,7 +140,7 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
     return;
   }
 
-  auto ok = parse_request(msg, response);
+  auto ok = parse_request(hdl, msg, response);
 
   if (ok)
   {
@@ -157,7 +158,8 @@ void Server::on_message(connection_hdl hdl, server::message_ptr msg)
 
 }
 
-bool Server::parse_request(server::message_ptr msg, std::string& response)
+bool Server::parse_request(connection_hdl hdl, server::message_ptr msg,
+  std::string& response)
 {
   using namespace std::chrono_literals;
 
@@ -168,10 +170,7 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
   {
     json j = json::parse(msg_payload);
 
-    if (j.size() != 2)
-      return false;
-
-    if (j.count("request") != 1 || j.count("param") != 1)
+    if (j.count("request") != 1)
       return false;
 
     if (j["request"] == "trajectory")
@@ -221,6 +220,16 @@ bool Server::parse_request(server::message_ptr msg, std::string& response)
       j_res["response"] = "time";
       j_res["values"].push_back(
         _visualizer_data_node->now().time_since_epoch().count());
+      response = j_res.dump();
+      return true;
+    }
+
+    else if (j["request"] == "negotiation_update_subscribe")
+    {
+      _negotiation_subscribed_connections.insert(hdl);
+      json j_res = json();
+      j_res["response"] = "negotiation_update_subscribe";
+      j_res["result"] = true;
       response = j_res.dump();
       return true;
     }
