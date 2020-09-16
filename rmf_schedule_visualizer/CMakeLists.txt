@@ -18,9 +18,11 @@ find_package(ament_cmake REQUIRED)
 find_package(rmf_traffic REQUIRED)
 find_package(rmf_traffic_ros2 REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(OpenCV REQUIRED )
 find_package(websocketpp REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system date_time regex random)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(rmf_traffic_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
@@ -68,8 +70,10 @@ target_link_libraries(rviz2
     rmf_traffic_ros2::rmf_traffic_ros2
     rmf_traffic::rmf_traffic
     ${rclcpp_LIBRARIES}
+    ${OpenCV_LIBRARIES}
     ${visualization_msgs_LIBRARIES}
     ${geometry_msgs_LIBRARIES}
+    ${nav_msgs_LIBRARIES}
     Boost::system
     Boost::date_time
     Boost::regex
@@ -84,8 +88,10 @@ target_include_directories(rviz2
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     ${rclcpp_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
     ${visualization_msgs_INCLUDE_DIRS}
     ${geometry_msgs_INCLUDE_DIRS}
+    ${nav_msgs_INCLUDE_DIRS}
     ${rmf_schedule_visualizer_msgs_INCLUDE_DIRS}
     ${building_map_msgs_INCLUDE_DIRS}
 )
