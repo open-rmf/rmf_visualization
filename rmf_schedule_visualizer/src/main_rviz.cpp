@@ -729,12 +729,14 @@ private:
   {
     if (_level.images.size() == 0)
       return;
-    
+
     auto floorplan_img = _level.images[0]; // only use the first img
     RCLCPP_INFO(this->get_logger(),
-       "Loading floorplan Image: " + floorplan_img.name + floorplan_img.encoding);    
+      "Loading floorplan Image: " + floorplan_img.name +
+      floorplan_img.encoding);
     std::cout<<""<<std::endl; // flush RCLCPP_INFO printout, fixed in foxy
-    cv::Mat img = cv::imdecode(cv::Mat(floorplan_img.data), cv::IMREAD_GRAYSCALE);
+    cv::Mat img =
+      cv::imdecode(cv::Mat(floorplan_img.data), cv::IMREAD_GRAYSCALE);
 
     OccupancyGrid floorplan_msg;
     floorplan_msg.info.resolution = floorplan_img.scale;
@@ -744,10 +746,9 @@ private:
     floorplan_msg.info.origin.position.x = floorplan_img.x_offset;
     floorplan_msg.info.origin.position.y = floorplan_img.y_offset;
     floorplan_msg.info.origin.position.z = -0.01;
-    
-    float yaw = floorplan_img.yaw;
+
     Eigen::Quaternionf q = Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX())
-      * Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
+      * Eigen::AngleAxisf(floorplan_img.yaw, Eigen::Vector3f::UnitZ());
     floorplan_msg.info.origin.orientation.x = q.x();
     floorplan_msg.info.origin.orientation.y = q.y();
     floorplan_msg.info.origin.orientation.z = q.z();
