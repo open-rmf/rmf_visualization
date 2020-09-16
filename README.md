@@ -23,7 +23,7 @@ sudo apt install -y wget
 echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable bionic main" > /etc/apt/sources.list.d/gazebo-stable.list
 wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
 sudo apt update
-sudo apt install python3-shapely python3-yaml python3-requests \
+sudo apt install python3-shapely python3-yaml python3-requests libopencv-dev \
 libignition-common3-dev libignition-plugin-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-random-dev \
 g++-8 -y
 ```
