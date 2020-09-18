@@ -293,6 +293,7 @@ std::string Server::parse_trajectories(
       const auto& trajectory = element.route.trajectory();
 
       auto j_traj = _j_traj;
+      j_traj["map_name"] = element.route.map();
       j_traj["robot_name"] = element.description.name();
       j_traj["fleet_name"] = element.description.owner();
       j_traj["id"] = element.participant;
