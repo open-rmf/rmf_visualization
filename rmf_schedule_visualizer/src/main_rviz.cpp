@@ -38,7 +38,6 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui/highgui.hpp>
 
 #include <mutex>
 #include <unordered_map>
@@ -734,7 +733,7 @@ private:
     RCLCPP_INFO(this->get_logger(),
       "Loading floorplan Image: " + floorplan_img.name +
       floorplan_img.encoding);
-    std::cout<<""<<std::endl; // flush RCLCPP_INFO printout, fixed in foxy
+    std::cout<<std::endl; // flush RCLCPP_INFO printout, fixed in foxy
     cv::Mat img =
       cv::imdecode(cv::Mat(floorplan_img.data), cv::IMREAD_GRAYSCALE);
 
