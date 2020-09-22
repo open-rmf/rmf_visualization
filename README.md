@@ -1,7 +1,7 @@
-|       | Ubuntu 18.04                                                                               | Ubuntu 20.04                                                                           |
-|-------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| Build | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/build_eloquent/badge.svg ) | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/build_foxy/badge.svg ) |
-| Style | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/style/badge.svg )          |                                                                                        |
+|       | Ubuntu 20.04                                                                              |
+|-------|-------------------------------------------------------------------------------------------|
+| Build | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/build_foxy/badge.svg )     |
+| Style | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/style/badge.svg )          |
 
 # rmf_schedule_visualizer
 
