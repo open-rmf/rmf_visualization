@@ -1,7 +1,7 @@
-|       | Ubuntu 18.04                                                                               | Ubuntu 20.04                                                                           |
-|-------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| Build | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/build_eloquent/badge.svg ) | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/build_foxy/badge.svg ) |
-| Style | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/style/badge.svg )          |                                                                                        |
+|       | Ubuntu 20.04                                                                              |
+|-------|-------------------------------------------------------------------------------------------|
+| Build | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/build_foxy/badge.svg )     |
+| Style | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/style/badge.svg )          |
 
 # rmf_schedule_visualizer
 
@@ -13,7 +13,7 @@ A visualizer for robot trajectories in the `rmf schedule database`, live locatio
 
 The visualizer is developed and tested on
 * [Ubuntu 18.04 LTS](http://releases.ubuntu.com/18.04/) 
-* [ROS2 Eloquent](https://index.ros.org/doc/ros2/Installation/#installationguide).
+* [ROS2 Foxy](https://index.ros.org/doc/ros2/Installation/#installationguide).
 
 ## Installation 
 Install RMF dependencies
@@ -37,8 +37,8 @@ git clone https://github.com/osrf/traffic_editor.git
 git clone https://github.com/osrf/rmf_schedule_visualizer.git
 cd ~/ws_rmf
 rosdep update
-rosdep install --from-paths src --ignore-src --rosdistro eloquent -yr
-source /opt/ros/eloquent/setup.bash
+rosdep install --from-paths src --ignore-src --rosdistro foxy -yr
+source /opt/ros/foxy/setup.bash
 CXX=g++-8 colcon build --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
 ```
 
