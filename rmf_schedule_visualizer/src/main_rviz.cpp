@@ -733,7 +733,6 @@ private:
     RCLCPP_INFO(this->get_logger(),
       "Loading floorplan Image: " + floorplan_img.name +
       floorplan_img.encoding);
-    std::cout<<std::endl; // flush RCLCPP_INFO printout, fixed in foxy
     cv::Mat img =
       cv::imdecode(cv::Mat(floorplan_img.data), cv::IMREAD_GRAYSCALE);
 
