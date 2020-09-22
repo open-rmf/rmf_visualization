@@ -20,6 +20,10 @@
   <depend>rmf_schedule_visualizer_msgs</depend>
   <depend>building_map_msgs</depend>
   <depend>boost</depend>
+  <depend>libboost-date-time-dev</depend>
+  <depend>libboost-regex-dev</depend>
+  <depend>libboost-random-dev</depend>
+  <depend>libboost-system-dev</depend>
   <depend>rosidl_default_generators</depend>
   <depend>builtin_interfaces</depend>
   <depend>eigen</depend>
