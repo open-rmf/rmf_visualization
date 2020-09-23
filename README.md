@@ -11,8 +11,8 @@ A visualizer for robot trajectories in the `rmf schedule database`, live locatio
 
 ## System Requirements
 
-The visualizer is developed and tested on
-* [Ubuntu 18.04 LTS](http://releases.ubuntu.com/18.04/) 
+The RMF schedule visualizer is supported on
+* [Ubuntu 20.04 LTS](http://releases.ubuntu.com/20.04/) 
 * [ROS2 Foxy](https://index.ros.org/doc/ros2/Installation/#installationguide).
 
 ## Installation 
@@ -20,12 +20,11 @@ Install RMF dependencies
 ```
 sudo apt update
 sudo apt install -y wget
-echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable bionic main" > /etc/apt/sources.list.d/gazebo-stable.list
-wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
+sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
 sudo apt update
 sudo apt install python3-shapely python3-yaml python3-requests \
-libignition-common3-dev libignition-plugin-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-random-dev \
-g++-8 -y
+-y
 ```
 
 Setup and build workspace
@@ -39,7 +38,7 @@ cd ~/ws_rmf
 rosdep update
 rosdep install --from-paths src --ignore-src --rosdistro foxy -yr
 source /opt/ros/foxy/setup.bash
-CXX=g++-8 colcon build --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
 ```
 
 ## Run 
