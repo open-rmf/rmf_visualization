@@ -2,8 +2,11 @@
 Changelog for package visualizer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2020-09-24)
+------------------
+* Websocket server for negotiation visualizer (`#69 <https://github.com/osrf/rmf_schedule_visualizer/issues/69>`_)
+* Improve lift and door marker display for multi-level nav-graphs (`#58 <https://github.com/osrf/rmf_schedule_visualizer/issues/58>`_)
+* Contributors: Kevin_Skywalker, Michael X. Grey, Teo Koon Peng, ddengster
 
 1.0.0 (2020-06-22)
 ------------------

@@ -2,13 +2,12 @@
 Changelog for package rviz2_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
+1.1.0 (2020-09-24)
 -----------
-
-1.1.0 (2020-09-23)
-------------------
 * Use relative library path for plugin. [#62](https://github.com/osrf/rmf_schedule_visualizer/pull/62)
+* Websocket server for negotiation visualizer (`#69 <https://github.com/osrf/rmf_schedule_visualizer/issues/69>`_)
 * Foxy warning fix: Change deprecated ament_export_interfaces to ament_export_targets. [#74](https://github.com/osrf/rmf_schedule_visualizer/pull/74)
+* Contributors: Geoffrey Biggs, Michael X. Grey, ddengster
 
 1.0.0 (2020-06-22)
 ------------------

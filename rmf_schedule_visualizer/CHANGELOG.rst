@@ -5,7 +5,7 @@ Changelog for package rmf_schedule_visualizer
 Forthcoming
 -----------
 
-1.1.0 (2020-09-23)
+1.1.0 (2020-09-24)
 ------------------
 * Map markers are only published if a valid Map name is supplied via the SchedulePanel. [#58](https://github.com/osrf/rmf_schedule_visualizer/pull/58)
 * Updated dependencies. [#59, #60, #61, #71](https://github.com/osrf/rmf_schedule_visualizer/pull/59)
@@ -17,6 +17,7 @@ Forthcoming
 * Negotiation updates for websocket server are subscribed connections. [#75](https://github.com/osrf/rmf_schedule_visualizer/pull/75)
 * Added server_keephistory.xml to launch a server that retains its negotiation history. [#77](https://github.com/osrf/rmf_schedule_visualizer/pull/77)
 * Floorplan images are published as OccupancyMaps. [#78](https://github.com/osrf/rmf_schedule_visualizer/pull/78)
+* Contributors: Grey, Kevin_Skywalker, Michael X. Grey, Yadu, Yadunund, ddeng, ddengster
 
 1.0.0 (2020-06-22)
 ------------------
