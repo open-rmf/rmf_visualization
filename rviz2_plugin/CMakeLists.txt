@@ -39,6 +39,7 @@ add_library(${PROJECT_NAME} SHARED
   src/SchedulePanel.cpp
   src/LiftPanel.cpp
   src/DoorPanel.cpp
+  src/NegotiationModel.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
