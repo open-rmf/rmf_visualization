@@ -15,7 +15,7 @@
  *
 */
 
-#include "VisualizerData.hpp"
+#include <rmf_schedule_visualizer/VisualizerData.hpp>
 #include "Server.hpp"
 
 #include <rclcpp/rclcpp.hpp>

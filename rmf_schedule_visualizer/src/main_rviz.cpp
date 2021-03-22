@@ -15,7 +15,9 @@
  *
 */
 
-#include "VisualizerData.hpp"
+#include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
+#include <rmf_schedule_visualizer/Server.hpp>
+
 #include <rclcpp/rclcpp.hpp>
 
 #include <rmf_traffic/geometry/Circle.hpp>
@@ -61,18 +63,18 @@ public:
   using Level = building_map_msgs::msg::Level;
   using GraphNode = building_map_msgs::msg::GraphNode;
   using Color = std_msgs::msg::ColorRGBA;
-  using VisualizerDataNode = rmf_schedule_visualizer::VisualizerDataNode;
+  using ScheduleDataNode = rmf_schedule_visualizer::ScheduleDataNode;
 
   RvizNode(
     std::string node_name,
-    std::shared_ptr<VisualizerDataNode> visualizer_data_node,
+    std::shared_ptr<ScheduleDataNode> schedule_data_node,
     std::string map_name,
     double rate = 1.0,
     std::string frame_id = "/map")
   : Node(node_name),
     _rate(rate),
     _frame_id(frame_id),
-    _visualizer_data_node(std::move(visualizer_data_node))
+    _schedule_data_node(std::move(schedule_data_node))
   {
     // TODO add a constructor for RvizParam
     _rviz_param.map_name = map_name;
@@ -116,7 +118,7 @@ public:
       rclcpp::QoS(10),
       [&](RvizParamMsg::SharedPtr msg)
       {
-        std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
+        std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
 
         if (!msg->map_name.empty() && _rviz_param.map_name != msg->map_name)
         {
@@ -152,7 +154,7 @@ public:
       transient_qos_profile,
       [&](BuildingMap::SharedPtr msg)
       {
-        std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
+        std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
         RCLCPP_INFO(this->get_logger(), "Received map \""
         + msg->name + "\" containing "
         + std::to_string(msg->levels.size()) + " level(s)");
@@ -177,15 +179,15 @@ private:
 
     // TODO store a cache of trajectories to prevent frequent access.
     // Update cache whenever mirror manager updates
-    std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
+    std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
 
     RequestParam query_param;
     query_param.map_name = _rviz_param.map_name;
-    query_param.start_time = _visualizer_data_node->now();
+    query_param.start_time = _schedule_data_node->now();
     query_param.finish_time = query_param.start_time +
       _rviz_param.query_duration;
 
-    _elements = _visualizer_data_node->get_elements(query_param);
+    _elements = _schedule_data_node->get_elements(query_param);
 
     RequestParam traj_param;
     traj_param.map_name = query_param.map_name;
@@ -251,7 +253,7 @@ private:
         for (auto& marker : array.markers)
         {
           marker.header.stamp = rmf_traffic_ros2::convert(
-            _visualizer_data_node->now());
+            _schedule_data_node->now());
           marker.action = marker.DELETE;
         }
         return array;
@@ -263,7 +265,7 @@ private:
         Marker label_marker;
         label_marker.header.frame_id = _frame_id; // map
         label_marker.header.stamp = rmf_traffic_ros2::convert(
-          _visualizer_data_node->now());
+          _schedule_data_node->now());
         label_marker.ns = "labels";
         label_marker.id = count;
         label_marker.type = label_marker.TEXT_VIEW_FACING;
@@ -333,7 +335,7 @@ private:
       Marker node_marker;
       node_marker.header.frame_id = _frame_id; // map
       node_marker.header.stamp = rmf_traffic_ros2::convert(
-        _visualizer_data_node->now());
+        _schedule_data_node->now());
       node_marker.ns = "map";
       node_marker.id = 0;
       node_marker.type = node_marker.POINTS;
@@ -396,7 +398,7 @@ private:
     Marker marker_msg;
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(
-      _visualizer_data_node->now());
+      _schedule_data_node->now());
     marker_msg.ns = "trajectory";
     marker_msg.id = id;
     marker_msg.type = marker_msg.CYLINDER;
@@ -637,7 +639,7 @@ private:
 
   bool is_conflict(int64_t id)
   {
-    const auto& conflicts = _visualizer_data_node->get_conflicts();
+    const auto& conflicts = _schedule_data_node->get_conflict_ids();
     if (conflicts.find(id) != conflicts.end())
       return true;
     return false;
@@ -796,7 +798,7 @@ private:
   rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_map_sub;
 
-  std::shared_ptr<VisualizerDataNode> _visualizer_data_node;
+  std::shared_ptr<ScheduleDataNode> _schedule_data_node;
 
   RvizParam _rviz_param;
 };
@@ -841,25 +843,56 @@ int main(int argc, char* argv[])
   get_arg(args, "-r", rate_string, "rate", false);
   double rate = rate_string.empty() ? 1.0 : std::stod(rate_string);
 
+  std::string port_string;
+  get_arg(args, "-p", port_string, "port", false);
+  const uint16_t port = port_string.empty() ? 8006 : std::stoul(
+    port_string, nullptr, 0);
+
+  std::string retained_history_count_str;
+  uint retained_history_count = 0;
+  if (get_arg(args, "--history", retained_history_count_str,
+    "retained history count", false))
+  {
+    std::stringstream ss;
+    ss << retained_history_count_str;
+    ss >> retained_history_count;
+  }
+
   std::string map_name = "B1";
   get_arg(args, "-m", map_name, "map name", false);
 
-  const auto visualizer_data_node =
-    rmf_schedule_visualizer::VisualizerDataNode::make(node_name, 120s);
+  const auto schedule_data_node =
+    rmf_schedule_visualizer::ScheduleDataNode::make(node_name, 120s);
 
-  if (!visualizer_data_node)
+  if (!schedule_data_node)
   {
     std::cerr << "Failed to initialize the visualizer node" << std::endl;
     return 1;
   }
 
+  auto negotiation = schedule_data_node->get_negotiation();
+  negotiation->set_retained_history_count(retained_history_count);
+
   RCLCPP_INFO(
-    visualizer_data_node->get_logger(),
-    "VisualizerDataNode /" + node_name + " started...");
+    schedule_data_node->get_logger(),
+    "ScheduleDataNode /" + node_name + " started...");
+
+  const auto server_ptr = rmf_schedule_visualizer::Server::make(port,
+      schedule_data_node);
+
+  if (!server_ptr)
+  {
+    std::cerr << "Failed to initialize the websocket server" << std::endl;
+    return 1;
+  }
+
+  RCLCPP_INFO(
+    schedule_data_node->get_logger(),
+    "Websocket server started on port: " + std::to_string(port));
 
   auto rviz_node = std::make_shared<RvizNode>(
     "rviz_node",
-    visualizer_data_node,
+    schedule_data_node,
     std::move(map_name),
     rate);
 
@@ -867,12 +900,12 @@ int main(int argc, char* argv[])
     rclcpp::executor::ExecutorArgs(), 2
   };
 
-  executor.add_node(visualizer_data_node);
+  executor.add_node(schedule_data_node);
   executor.add_node(rviz_node);
 
   executor.spin();
   RCLCPP_INFO(
-    visualizer_data_node->get_logger(),
+    schedule_data_node->get_logger(),
     "Closing down");
 
   rclcpp::shutdown();

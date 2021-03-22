@@ -15,8 +15,8 @@
  *
 */
 
-#ifndef RMF_SCHEDULE_VISUALIZER__SRC__SERVER_HPP
-#define RMF_SCHEDULE_VISUALIZER__SRC__SERVER_HPP
+#ifndef RMF_SCHEDULE_VISUALIZER__SERVER_HPP
+#define RMF_SCHEDULE_VISUALIZER__SERVER_HPP
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
@@ -27,7 +27,7 @@
 
 #include <json.hpp>
 
-#include "VisualizerData.hpp"
+#include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
 
 #include <rmf_traffic/Trajectory.hpp>
 #include <rmf_schedule_visualizer/CommonData.hpp>
@@ -50,7 +50,7 @@ public:
   /// A nullptr is returned if initialization fails.
   static std::shared_ptr<Server> make(
     uint16_t port,
-    std::shared_ptr<VisualizerDataNode> visualizer_data_node);
+    std::shared_ptr<ScheduleDataNode> visualizer_data_node);
 
   ~Server();
 
@@ -77,7 +77,7 @@ private:
 
   /// Constructor with port number
   Server(uint16_t port,
-    std::shared_ptr<VisualizerDataNode> visualizer_data_node);
+    std::shared_ptr<ScheduleDataNode> visualizer_data_node);
 
   void on_open(connection_hdl hdl);
 
@@ -100,7 +100,7 @@ private:
   con_list _negotiation_subscribed_connections;
   uint16_t _port;
   std::thread _server_thread;
-  std::shared_ptr<VisualizerDataNode> _visualizer_data_node;
+  std::shared_ptr<ScheduleDataNode> _schedule_data_node;
   bool _is_initialized = false;
   std::unique_ptr<Data> data;
 
@@ -113,4 +113,4 @@ private:
 
 } // namespace rmf_schedule_visualizer
 
-#endif // RMF_SCHEDULE_VISUALIZER__SRC__SERVER_HPP
+#endif // RMF_SCHEDULE_VISUALIZER__SERVER_HPP
