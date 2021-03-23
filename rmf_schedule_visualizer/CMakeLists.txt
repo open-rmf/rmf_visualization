@@ -69,36 +69,9 @@ ament_export_dependencies(
   websocketpp)
 
 #===============================================================================
-#file(GLOB_RECURSE visualizer_srcs "src/*.cpp")
-#add_executable(schedule_visualizer ${visualizer_srcs})
-# add_executable(schedule_visualizer 
-#   src/Server.cpp
-#   src/VisualizerData.cpp
-#   src/main.cpp)
+add_executable(schedule_visualizer src/main.cpp)
 
-# target_link_libraries(schedule_visualizer
-#   PUBLIC
-#     rmf_traffic_ros2::rmf_traffic_ros2
-#     rmf_traffic::rmf_traffic
-#     ${rclcpp_LIBRARIES}
-#     Boost::system
-#     Boost::date_time
-#     Boost::regex
-#     Boost::random
-#     ${rmf_traffic_msgs_LIBRARIES}
-# )
-
-# target_include_directories(schedule_visualizer
-#   PUBLIC
-#     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-#     ${rclcpp_INCLUDE_DIRS}
-#     ${WEBSOCKETPP_INCLUDE_DIR}
-# )
-#===============================================================================
-add_executable(rviz2 src/main_rviz.cpp)
-
-target_link_libraries(rviz2
+target_link_libraries(schedule_visualizer
   PRIVATE
     rmf_schedule_visualizer
     ${OpenCV_LIBRARIES}
@@ -109,7 +82,7 @@ target_link_libraries(rviz2
     ${building_map_msgs_LIBRARIES}
 )
 
-target_include_directories(rviz2
+target_include_directories(schedule_visualizer
   PUBLIC
     ${OpenCV_INCLUDE_DIRS}
     ${visualization_msgs_INCLUDE_DIRS}
@@ -120,7 +93,6 @@ target_include_directories(rviz2
 )
 
 #===============================================================================
-
 install(
   DIRECTORY include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -132,7 +104,7 @@ install(
 )
 
 install(
-  TARGETS rmf_schedule_visualizer rviz2
+  TARGETS rmf_schedule_visualizer schedule_visualizer
   EXPORT rmf_schedule_visualizer
   RUNTIME DESTINATION lib/${PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
