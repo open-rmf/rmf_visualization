@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Open Source Robotics Foundation
+ * Copyright (C) 2021 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <std_msgs/msg/string.hpp>
-
 namespace rmf_schedule_visualizer {
 
 //==============================================================================
@@ -38,6 +36,10 @@ public:
 
   using ConflictNotice = rmf_traffic_msgs::msg::NegotiationNotice;
   using ConflictConclusion = rmf_traffic_msgs::msg::NegotiationConclusion;
+
+  Implementation() {}
+
+  Implementation(const Implementation&) {}
 
   struct Data
   {
@@ -80,7 +82,7 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
     schedule_data->create_subscription<ConflictNotice>(
       rmf_traffic_ros2::NegotiationNoticeTopicName,
       rclcpp::QoS(10),
-      [&](ConflictNotice::UniquePtr msg)
+      [schedule_data](ConflictNotice::UniquePtr msg)
       {
         std::lock_guard<std::mutex> guard(schedule_data->_pimpl->mutex);
         schedule_data->_pimpl->conflicts[msg->conflict_version] = msg->participants;
@@ -90,7 +92,7 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
     schedule_data->create_subscription<ConflictConclusion>(
       rmf_traffic_ros2::NegotiationConclusionTopicName,
       rclcpp::ServicesQoS(),
-      [&](ConflictConclusion::UniquePtr msg)
+      [schedule_data](ConflictConclusion::UniquePtr msg)
       {
         std::lock_guard<std::mutex> guard(schedule_data->_pimpl->mutex);
         schedule_data->_pimpl->conflicts.erase(msg->conflict_version);
@@ -129,7 +131,7 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
 //==============================================================================
 ScheduleDataNode::ScheduleDataNode(std::string node_name)
 : Node(node_name),
-  _pimpl(rmf_utils::make_unique_impl<Implementation>())
+  _pimpl(rmf_utils::make_impl<Implementation>(Implementation{}))
 {
   // Do nothing
 }

@@ -16,7 +16,7 @@
 */
 
 #include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
-#include <rmf_schedule_visualizer/Server.hpp>
+#include <rmf_schedule_visualizer/TrajectoryServer.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -74,7 +74,7 @@ public:
   : Node(node_name),
     _rate(rate),
     _frame_id(frame_id),
-    _schedule_data_node(std::move(schedule_data_node))
+    _schedule_data_node(schedule_data_node)
   {
     // TODO add a constructor for RvizParam
     _rviz_param.map_name = map_name;
@@ -877,7 +877,8 @@ int main(int argc, char* argv[])
     schedule_data_node->get_logger(),
     "ScheduleDataNode /" + node_name + " started...");
 
-  const auto server_ptr = rmf_schedule_visualizer::Server::make(port,
+  const auto server_ptr = rmf_schedule_visualizer::TrajectoryServer::make(
+      port,
       schedule_data_node);
 
   if (!server_ptr)

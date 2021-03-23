@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Open Source Robotics Foundation
+ * Copyright (C) 2021 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  *
 */
-
 
 #ifndef RMF_SCHEDULE_VISUALIZER__VISUALIZERDATA_HPP
 #define RMF_SCHEDULE_VISUALIZER__VISUALIZERDATA_HPP
@@ -35,6 +34,7 @@
 #include <mutex>
 #include <vector>
 #include <unordered_set>
+#include <memory>
 
 namespace rmf_schedule_visualizer {
 
@@ -83,8 +83,10 @@ public:
 
 private:
   ScheduleDataNode(std::string _node_name);
-  rmf_utils::unique_impl_ptr<Implementation> _pimpl;
+  rmf_utils::impl_ptr<Implementation> _pimpl;
 };
+
+using ScheduleDataNodePtr = std::shared_ptr<ScheduleDataNode>;
 
 } // namespace rmf_schedule_visualizer
 
