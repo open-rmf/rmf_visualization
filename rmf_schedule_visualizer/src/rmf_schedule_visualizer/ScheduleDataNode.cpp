@@ -38,7 +38,6 @@ public:
   using ConflictConclusion = rmf_traffic_msgs::msg::NegotiationConclusion;
 
   Implementation() {}
-
   Implementation(const Implementation&) {}
 
   struct Data
@@ -61,7 +60,8 @@ public:
     rmf_traffic::schedule::Version,
     std::vector<rmf_traffic::schedule::ParticipantId>> conflicts;
 
-  std::shared_ptr<rmf_traffic_ros2::schedule::Negotiation> negotiation = nullptr;
+  std::shared_ptr<rmf_traffic_ros2::schedule::Negotiation> negotiation =
+    nullptr;
 
   void start(Data data);
 };
@@ -85,7 +85,8 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
       [schedule_data](ConflictNotice::UniquePtr msg)
       {
         std::lock_guard<std::mutex> guard(schedule_data->_pimpl->mutex);
-        schedule_data->_pimpl->conflicts[msg->conflict_version] = msg->participants;
+        schedule_data->_pimpl->conflicts[msg->conflict_version] =
+          msg->participants;
       });
 
   schedule_data->_pimpl->conflict_conclusion_sub =
@@ -113,7 +114,8 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
 
     if (ready)
     {
-      schedule_data->_pimpl->start(Implementation::Data{mirror_mgr_future.get()});
+      schedule_data->_pimpl->start(
+        Implementation::Data{mirror_mgr_future.get()});
       // retrieve/construct mirrors, snapshots and negotiation object
       schedule_data->_pimpl->negotiation = std::make_shared<Negotiation>(
         *schedule_data, schedule_data->_pimpl->data->mirror.snapshot_handle());
@@ -246,7 +248,8 @@ auto ScheduleDataNode::get_negotiation_trajectories(
 }
 
 //==============================================================================
-std::shared_ptr<ScheduleDataNode::Negotiation> ScheduleDataNode::get_negotiation()
+std::shared_ptr<ScheduleDataNode::Negotiation>
+ScheduleDataNode::get_negotiation()
 {
   return _pimpl->negotiation;
 }

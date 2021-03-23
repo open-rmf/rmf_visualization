@@ -29,8 +29,14 @@ class TrajectoryServer
 public:
 
   /// Builder function which returns a pointer to the TrajectoryServer
-  /// after the websocket has successfully started.
+  /// after the websocket server has successfully started.
   /// A nullptr is returned if initialization fails.
+  ///
+  /// \param[in] port
+  ///   The port number to run the websocket server on
+  ///
+  /// \param[in] schedule_data_node
+  ///   A shared pointer to a ScheduleDataNode
   static std::shared_ptr<TrajectoryServer> make(
     uint16_t port,
     ScheduleDataNodePtr schedule_data_node);

@@ -881,8 +881,8 @@ int main(int argc, char* argv[])
     node_name + " started...");
 
   const auto server_ptr = rmf_schedule_visualizer::TrajectoryServer::make(
-      port,
-      schedule_data_node);
+    port,
+    schedule_data_node);
 
   if (!server_ptr)
   {

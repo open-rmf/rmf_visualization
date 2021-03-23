@@ -30,9 +30,6 @@
 #include <thread>
 #include <functional>
 
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp/node.hpp>
-
 namespace rmf_schedule_visualizer {
 
 //==============================================================================
@@ -47,7 +44,6 @@ public:
   using Element = rmf_traffic::schedule::Viewer::View::Element;
 
   Implementation() {}
-
   Implementation(const Implementation&) {}
 
   std::shared_ptr<Server> server;
@@ -86,7 +82,7 @@ auto TrajectoryServer::Implementation::on_open(connection_hdl hdl) -> void
 {
   connections.insert(hdl);
   RCLCPP_INFO(schedule_data_node->get_logger(),
-    "Connected with a client");
+    "[TrajectoryServer] Connected with a client");
 }
 
 //==============================================================================
@@ -95,7 +91,7 @@ auto TrajectoryServer::Implementation::on_close(connection_hdl hdl) -> void
   connections.erase(hdl);
   negotiation_subscribed_connections.erase(hdl);
   RCLCPP_INFO(schedule_data_node->get_logger(),
-    "Disconnected with a client");
+    "[TrajectoryServer] Disconnected with a client");
 
 }
 
@@ -109,7 +105,7 @@ auto TrajectoryServer::Implementation::on_message(
   {
     RCLCPP_INFO(
       schedule_data_node->get_logger(),
-      "Empty request received. Ignoring...");
+      "[TrajectoryServer] Empty request received. Ignoring...");
     return;
   }
 
@@ -126,7 +122,7 @@ auto TrajectoryServer::Implementation::on_message(
   else
   {
     RCLCPP_INFO(schedule_data_node->get_logger(),
-      "Invalid request received");
+      "[TrajectoryServer] Invalid request received");
   }
 
 }
@@ -371,11 +367,14 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   using websocketpp::lib::bind;
   server_ptr->_pimpl->server->init_asio();
   server_ptr->_pimpl->server->set_open_handler(bind(
-      &TrajectoryServer::Implementation::on_open, std::ref(server_ptr->_pimpl), _1));
+      &TrajectoryServer::Implementation::on_open, std::ref(
+        server_ptr->_pimpl), _1));
   server_ptr->_pimpl->server->set_close_handler(bind(
-      &TrajectoryServer::Implementation::on_close, std::ref(server_ptr->_pimpl), _1));
+      &TrajectoryServer::Implementation::on_close, std::ref(
+        server_ptr->_pimpl), _1));
   server_ptr->_pimpl->server->set_message_handler(bind(
-      &TrajectoryServer::Implementation::on_message, std::ref(server_ptr->_pimpl), _1, _2));
+      &TrajectoryServer::Implementation::on_message, std::ref(
+        server_ptr->_pimpl), _1, _2));
 
   try
   {
@@ -417,7 +416,8 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
         negotiation_json["sequence"].push_back(versionedkey.participant);
 
       std::string conflict_str = negotiation_json.dump();
-      for (auto connection : server_ptr->_pimpl->negotiation_subscribed_connections)
+      for (auto connection :
+        server_ptr->_pimpl->negotiation_subscribed_connections)
         server_ptr->_pimpl->server->send(
           connection, conflict_str, websocketpp::frame::opcode::text);
     };
@@ -438,7 +438,8 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
       json_msg["resolved"] = resolved;
 
       std::string json_str = json_msg.dump();
-      for (auto connection : server_ptr->_pimpl->negotiation_subscribed_connections)
+      for (auto connection :
+        server_ptr->_pimpl->negotiation_subscribed_connections)
         server_ptr->_pimpl->server->send(
           connection, json_str, websocketpp::frame::opcode::text);
     };
