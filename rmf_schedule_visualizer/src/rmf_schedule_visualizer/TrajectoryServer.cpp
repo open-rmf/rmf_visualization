@@ -72,7 +72,7 @@ public:
   bool parse_request(connection_hdl hdl, const Server::message_ptr msg,
     std::string& response);
 
-  const std::string& parse_trajectories(
+  const std::string parse_trajectories(
     const std::string& response_type,
     const std::vector<std::vector<uint64_t>>& conflicts,
     const std::vector<Element>& elements,
@@ -251,7 +251,7 @@ auto TrajectoryServer::Implementation::parse_request(
 }
 
 //==============================================================================
-const std::string& TrajectoryServer::Implementation::parse_trajectories(
+const std::string TrajectoryServer::Implementation::parse_trajectories(
   const std::string& response_type,
   const std::vector<std::vector<uint64_t>>& conflicts,
   const std::vector<Element>& elements,
