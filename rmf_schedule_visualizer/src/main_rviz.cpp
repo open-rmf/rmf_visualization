@@ -49,7 +49,8 @@
 
 using namespace std::chrono_literals;
 
-class RvizNode : public rclcpp::Node
+//==============================================================================
+class ScheduleMarkerPublisher : public rclcpp::Node
 {
 public:
   using Marker = visualization_msgs::msg::Marker;
@@ -65,7 +66,7 @@ public:
   using Color = std_msgs::msg::ColorRGBA;
   using ScheduleDataNode = rmf_schedule_visualizer::ScheduleDataNode;
 
-  RvizNode(
+  ScheduleMarkerPublisher(
     std::string node_name,
     std::shared_ptr<ScheduleDataNode> schedule_data_node,
     std::string map_name,
@@ -89,7 +90,7 @@ public:
       std::chrono::duration<double, std::ratio<1>>(period));
     _timer =
       this->create_wall_timer(_timer_period,
-        std::bind(&RvizNode::timer_callback, this));
+        std::bind(&ScheduleMarkerPublisher::timer_callback, this));
 
     // Create publisher for schedule markers
     _schedule_markers_pub = this->create_publisher<MarkerArray>(
@@ -803,6 +804,7 @@ private:
   RvizParam _rviz_param;
 };
 
+//==============================================================================
 bool get_arg(
   const std::vector<std::string>& args,
   const std::string& key,
@@ -831,12 +833,13 @@ bool get_arg(
   return true;
 }
 
+//==============================================================================
 int main(int argc, char* argv[])
 {
   const std::vector<std::string> args =
     rclcpp::init_and_remove_ros_arguments(argc, argv);
 
-  std::string node_name = "viz";
+  std::string node_name = "rmf_schedule_visualizer_data_node";
   get_arg(args, "-n", node_name, "node name", false);
 
   std::string rate_string;
@@ -862,7 +865,7 @@ int main(int argc, char* argv[])
   get_arg(args, "-m", map_name, "map name", false);
 
   const auto schedule_data_node =
-    rmf_schedule_visualizer::ScheduleDataNode::make(node_name, 120s);
+    rmf_schedule_visualizer::ScheduleDataNode::make(node_name, 60s);
 
   if (!schedule_data_node)
   {
@@ -875,7 +878,7 @@ int main(int argc, char* argv[])
 
   RCLCPP_INFO(
     schedule_data_node->get_logger(),
-    "ScheduleDataNode /" + node_name + " started...");
+    node_name + " started...");
 
   const auto server_ptr = rmf_schedule_visualizer::TrajectoryServer::make(
       port,
@@ -890,21 +893,21 @@ int main(int argc, char* argv[])
   RCLCPP_INFO(
     schedule_data_node->get_logger(),
     "Websocket server started on port: " + std::to_string(port));
-
-  auto rviz_node = std::make_shared<RvizNode>(
-    "rviz_node",
+  
+  auto rviz_node = std::make_shared<ScheduleMarkerPublisher>(
+    "rmf_schedule_visualizer_marker_publisher",
     schedule_data_node,
     std::move(map_name),
     rate);
 
   rclcpp::executors::MultiThreadedExecutor executor{
-    rclcpp::executor::ExecutorArgs(), 2
+    rclcpp::executor::ExecutorArgs(), 3
   };
 
   executor.add_node(schedule_data_node);
   executor.add_node(rviz_node);
-
   executor.spin();
+
   RCLCPP_INFO(
     schedule_data_node->get_logger(),
     "Closing down");

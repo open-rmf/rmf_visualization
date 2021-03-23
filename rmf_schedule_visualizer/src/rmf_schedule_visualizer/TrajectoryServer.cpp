@@ -29,7 +29,6 @@
 #include <exception>
 #include <thread>
 #include <functional>
-#include <iostream>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node.hpp>
@@ -56,6 +55,7 @@ public:
   Connections negotiation_subscribed_connections;
   std::thread server_thread;
   ScheduleDataNodePtr schedule_data_node;
+  bool initialized = false;
 
   // Templates used for response generation
   const Json _j_res = { {"response", {}}, {"values", {}}, {"conflicts", {}}};
@@ -84,15 +84,9 @@ public:
 //==============================================================================
 auto TrajectoryServer::Implementation::on_open(connection_hdl hdl) -> void
 {
-  std::cout << "Here 1" << std::endl;
   connections.insert(hdl);
-  std::cout << "Here 2" << std::endl;
-  auto logger = schedule_data_node->get_logger();
-  std::cout << "Here 2.5" << std::endl;
   RCLCPP_INFO(schedule_data_node->get_logger(),
     "Connected with a client");
-  std::cout << "Here 3" << std::endl;
-
 }
 
 //==============================================================================
@@ -377,11 +371,11 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   using websocketpp::lib::bind;
   server_ptr->_pimpl->server->init_asio();
   server_ptr->_pimpl->server->set_open_handler(bind(
-      &TrajectoryServer::Implementation::on_open, server_ptr->_pimpl, _1));
+      &TrajectoryServer::Implementation::on_open, std::ref(server_ptr->_pimpl), _1));
   server_ptr->_pimpl->server->set_close_handler(bind(
-      &TrajectoryServer::Implementation::on_close, server_ptr->_pimpl, _1));
+      &TrajectoryServer::Implementation::on_close, std::ref(server_ptr->_pimpl), _1));
   server_ptr->_pimpl->server->set_message_handler(bind(
-      &TrajectoryServer::Implementation::on_message, server_ptr->_pimpl, _1, _2));
+      &TrajectoryServer::Implementation::on_message, std::ref(server_ptr->_pimpl), _1, _2));
 
   try
   {
@@ -452,6 +446,7 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   server_ptr->_pimpl->schedule_data_node->get_negotiation()->on_conclusion(
     std::move(conclusion_cb));
 
+  server_ptr->_pimpl->initialized = true;
   return server_ptr;
 }
 
