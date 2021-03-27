@@ -14,9 +14,9 @@ from rmf_door_msgs.msg import DoorMode
 from rmf_lift_msgs.msg import LiftRequest
 from rmf_lift_msgs.msg import LiftState
 
-from building_map_msgs.msg import BuildingMap
-from building_map_msgs.msg import Level
-from building_map_msgs.msg import Door
+from rmf_building_map_msgs.msg import BuildingMap
+from rmf_building_map_msgs.msg import Level
+from rmf_building_map_msgs.msg import Door
 
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray

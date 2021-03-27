@@ -29,9 +29,9 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
 
-#include <building_map_msgs/msg/building_map.hpp>
-#include <building_map_msgs/msg/level.hpp>
-#include <building_map_msgs/msg/graph_node.hpp>
+#include <rmf_building_map_msgs/msg/building_map.hpp>
+#include <rmf_building_map_msgs/msg/level.hpp>
+#include <rmf_building_map_msgs/msg/graph_node.hpp>
 
 #include <geometry_msgs/msg/point.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
@@ -57,9 +57,9 @@ public:
   using RequestParam = rmf_schedule_visualizer::RequestParam;
   using Element = rmf_traffic::schedule::Viewer::View::Element;
   using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
-  using BuildingMap = building_map_msgs::msg::BuildingMap;
-  using Level = building_map_msgs::msg::Level;
-  using GraphNode = building_map_msgs::msg::GraphNode;
+  using BuildingMap = rmf_building_map_msgs::msg::BuildingMap;
+  using Level = rmf_building_map_msgs::msg::Level;
+  using GraphNode = rmf_building_map_msgs::msg::GraphNode;
   using Color = std_msgs::msg::ColorRGBA;
   using VisualizerDataNode = rmf_schedule_visualizer::VisualizerDataNode;
 
