@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Open Source Robotics Foundation
+ * Copyright (C) 2021 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,39 +15,43 @@
  *
 */
 
-#include "VisualizerData.hpp"
-#include <rclcpp/rclcpp.hpp>
-
-#include <rmf_traffic/geometry/Circle.hpp>
-#include <rmf_traffic/Motion.hpp>
-#include <rmf_traffic/Time.hpp>
-#include <rmf_traffic_ros2/Time.hpp>
-#include <rmf_traffic_ros2/StandardNames.hpp>
-
-#include <geometry_msgs/msg/point.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
-#include <visualization_msgs/msg/marker.hpp>
-#include "rmf_schedule_visualizer_msgs/msg/rviz_param.hpp"
-
-#include <rmf_building_map_msgs/msg/building_map.hpp>
-#include <rmf_building_map_msgs/msg/level.hpp>
-#include <rmf_building_map_msgs/msg/graph_node.hpp>
-
-#include <geometry_msgs/msg/point.hpp>
-#include <std_msgs/msg/color_rgba.hpp>
+#ifndef SRC__SCHEDULEMARKERPUBLISHER_HPP
+#define SRC__SCHEDULEMARKERPUBLISHER_HPP
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgcodecs.hpp>
+
+#include <rclcpp/rclcpp.hpp>
+
+#include <rmf_schedule_visualizer/CommonData.hpp>
+#include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
+
+#include <rmf_traffic/geometry/Circle.hpp>
+#include <rmf_traffic/schedule/Viewer.hpp>
+#include <rmf_traffic/Motion.hpp>
+#include <rmf_traffic/Time.hpp>
+
+#include <rmf_traffic_ros2/StandardNames.hpp>
+#include <rmf_traffic_ros2/Time.hpp>
+
+#include <rmf_building_map_msgs/msg/building_map.hpp>
+#include <rmf_building_map_msgs/msg/graph_node.hpp>
+#include <rmf_building_map_msgs/msg/level.hpp>
+#include <geometry_msgs/msg/point.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <rmf_schedule_visualizer_msgs/msg/rviz_param.hpp>
+#include <std_msgs/msg/color_rgba.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 
-#include "nav_msgs/msg/occupancy_grid.hpp"
-
 using namespace std::chrono_literals;
 
-class RvizNode : public rclcpp::Node
+//==============================================================================
+class ScheduleMarkerPublisher : public rclcpp::Node
 {
 public:
   using Marker = visualization_msgs::msg::Marker;
@@ -61,18 +65,18 @@ public:
   using Level = rmf_building_map_msgs::msg::Level;
   using GraphNode = rmf_building_map_msgs::msg::GraphNode;
   using Color = std_msgs::msg::ColorRGBA;
-  using VisualizerDataNode = rmf_schedule_visualizer::VisualizerDataNode;
+  using ScheduleDataNode = rmf_schedule_visualizer::ScheduleDataNode;
 
-  RvizNode(
+  ScheduleMarkerPublisher(
     std::string node_name,
-    std::shared_ptr<VisualizerDataNode> visualizer_data_node,
+    std::shared_ptr<ScheduleDataNode> schedule_data_node,
     std::string map_name,
     double rate = 1.0,
     std::string frame_id = "/map")
   : Node(node_name),
     _rate(rate),
     _frame_id(frame_id),
-    _visualizer_data_node(std::move(visualizer_data_node))
+    _schedule_data_node(schedule_data_node)
   {
     // TODO add a constructor for RvizParam
     _rviz_param.map_name = map_name;
@@ -87,7 +91,7 @@ public:
       std::chrono::duration<double, std::ratio<1>>(period));
     _timer =
       this->create_wall_timer(_timer_period,
-        std::bind(&RvizNode::timer_callback, this));
+        std::bind(&ScheduleMarkerPublisher::timer_callback, this));
 
     // Create publisher for schedule markers
     _schedule_markers_pub = this->create_publisher<MarkerArray>(
@@ -116,7 +120,7 @@ public:
       rclcpp::QoS(10),
       [&](RvizParamMsg::SharedPtr msg)
       {
-        std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
+        std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
 
         if (!msg->map_name.empty() && _rviz_param.map_name != msg->map_name)
         {
@@ -152,7 +156,7 @@ public:
       transient_qos_profile,
       [&](BuildingMap::SharedPtr msg)
       {
-        std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
+        std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
         RCLCPP_INFO(this->get_logger(), "Received map \""
         + msg->name + "\" containing "
         + std::to_string(msg->levels.size()) + " level(s)");
@@ -177,15 +181,15 @@ private:
 
     // TODO store a cache of trajectories to prevent frequent access.
     // Update cache whenever mirror manager updates
-    std::lock_guard<std::mutex> guard(_visualizer_data_node->get_mutex());
+    std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
 
     RequestParam query_param;
     query_param.map_name = _rviz_param.map_name;
-    query_param.start_time = _visualizer_data_node->now();
+    query_param.start_time = _schedule_data_node->now();
     query_param.finish_time = query_param.start_time +
       _rviz_param.query_duration;
 
-    _elements = _visualizer_data_node->get_elements(query_param);
+    _elements = _schedule_data_node->get_elements(query_param);
 
     RequestParam traj_param;
     traj_param.map_name = query_param.map_name;
@@ -251,7 +255,7 @@ private:
         for (auto& marker : array.markers)
         {
           marker.header.stamp = rmf_traffic_ros2::convert(
-            _visualizer_data_node->now());
+            _schedule_data_node->now());
           marker.action = marker.DELETE;
         }
         return array;
@@ -263,7 +267,7 @@ private:
         Marker label_marker;
         label_marker.header.frame_id = _frame_id; // map
         label_marker.header.stamp = rmf_traffic_ros2::convert(
-          _visualizer_data_node->now());
+          _schedule_data_node->now());
         label_marker.ns = "labels";
         label_marker.id = count;
         label_marker.type = label_marker.TEXT_VIEW_FACING;
@@ -333,7 +337,7 @@ private:
       Marker node_marker;
       node_marker.header.frame_id = _frame_id; // map
       node_marker.header.stamp = rmf_traffic_ros2::convert(
-        _visualizer_data_node->now());
+        _schedule_data_node->now());
       node_marker.ns = "map";
       node_marker.id = 0;
       node_marker.type = node_marker.POINTS;
@@ -396,7 +400,7 @@ private:
     Marker marker_msg;
     marker_msg.header.frame_id = _frame_id; // map
     marker_msg.header.stamp = rmf_traffic_ros2::convert(
-      _visualizer_data_node->now());
+      _schedule_data_node->now());
     marker_msg.ns = "trajectory";
     marker_msg.id = id;
     marker_msg.type = marker_msg.CYLINDER;
@@ -637,7 +641,7 @@ private:
 
   bool is_conflict(int64_t id)
   {
-    const auto& conflicts = _visualizer_data_node->get_conflicts();
+    const auto& conflicts = _schedule_data_node->get_conflict_ids();
     if (conflicts.find(id) != conflicts.end())
       return true;
     return false;
@@ -796,84 +800,9 @@ private:
   rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
   rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_map_sub;
 
-  std::shared_ptr<VisualizerDataNode> _visualizer_data_node;
+  std::shared_ptr<ScheduleDataNode> _schedule_data_node;
 
   RvizParam _rviz_param;
 };
 
-bool get_arg(
-  const std::vector<std::string>& args,
-  const std::string& key,
-  std::string& value,
-  const std::string& desc,
-  const bool mandatory = true)
-{
-  const auto key_arg = std::find(args.begin(), args.end(), key);
-  if (key_arg == args.end())
-  {
-    if (mandatory)
-    {
-      std::cerr << "You must specify a " << desc <<" using the " << key
-                << " argument!" << std::endl;
-    }
-    return false;
-  }
-  else if (key_arg+1 == args.end())
-  {
-    std::cerr << "The " << key << " argument must be followed by a " << desc
-              << "!" << std::endl;
-    return false;
-  }
-
-  value = *(key_arg+1);
-  return true;
-}
-
-int main(int argc, char* argv[])
-{
-  const std::vector<std::string> args =
-    rclcpp::init_and_remove_ros_arguments(argc, argv);
-
-  std::string node_name = "viz";
-  get_arg(args, "-n", node_name, "node name", false);
-
-  std::string rate_string;
-  get_arg(args, "-r", rate_string, "rate", false);
-  double rate = rate_string.empty() ? 1.0 : std::stod(rate_string);
-
-  std::string map_name = "B1";
-  get_arg(args, "-m", map_name, "map name", false);
-
-  const auto visualizer_data_node =
-    rmf_schedule_visualizer::VisualizerDataNode::make(node_name, 120s);
-
-  if (!visualizer_data_node)
-  {
-    std::cerr << "Failed to initialize the visualizer node" << std::endl;
-    return 1;
-  }
-
-  RCLCPP_INFO(
-    visualizer_data_node->get_logger(),
-    "VisualizerDataNode /" + node_name + " started...");
-
-  auto rviz_node = std::make_shared<RvizNode>(
-    "rviz_node",
-    visualizer_data_node,
-    std::move(map_name),
-    rate);
-
-  rclcpp::executors::MultiThreadedExecutor executor{
-    rclcpp::executor::ExecutorArgs(), 2
-  };
-
-  executor.add_node(visualizer_data_node);
-  executor.add_node(rviz_node);
-
-  executor.spin();
-  RCLCPP_INFO(
-    visualizer_data_node->get_logger(),
-    "Closing down");
-
-  rclcpp::shutdown();
-}
+#endif // SRC__SCHEDULEMARKERPUBLISHER_HPP
