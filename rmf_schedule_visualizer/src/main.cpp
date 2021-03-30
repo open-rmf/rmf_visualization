@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Open Source Robotics Foundation
+ * Copyright (C) 2021 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
  *
 */
 
-#include "VisualizerData.hpp"
-#include "Server.hpp"
+#include "ScheduleMarkerPublisher.hpp"
 
-#include <rclcpp/rclcpp.hpp>
+#include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
+#include <rmf_schedule_visualizer/TrajectoryServer.hpp>
 
+//==============================================================================
 bool get_arg(
   const std::vector<std::string>& args,
   const std::string& key,
@@ -48,13 +49,18 @@ bool get_arg(
   return true;
 }
 
+//==============================================================================
 int main(int argc, char* argv[])
 {
   const std::vector<std::string> args =
     rclcpp::init_and_remove_ros_arguments(argc, argv);
 
-  std::string node_name = "viz";
+  std::string node_name = "rmf_schedule_visualizer_data_node";
   get_arg(args, "-n", node_name, "node name", false);
+
+  std::string rate_string;
+  get_arg(args, "-r", rate_string, "rate", false);
+  double rate = rate_string.empty() ? 1.0 : std::stod(rate_string);
 
   std::string port_string;
   get_arg(args, "-p", port_string, "port", false);
@@ -71,24 +77,28 @@ int main(int argc, char* argv[])
     ss >> retained_history_count;
   }
 
-  const auto visualizer_data_node =
-    rmf_schedule_visualizer::VisualizerDataNode::make(node_name);
+  std::string map_name = "B1";
+  get_arg(args, "-m", map_name, "map name", false);
 
-  auto& negotiation = visualizer_data_node->_negotiation;
-  negotiation->set_retained_history_count(retained_history_count);
+  const auto schedule_data_node =
+    rmf_schedule_visualizer::ScheduleDataNode::make(node_name, 60s);
 
-  if (!visualizer_data_node)
+  if (!schedule_data_node)
   {
     std::cerr << "Failed to initialize the visualizer node" << std::endl;
     return 1;
   }
 
-  RCLCPP_INFO(
-    visualizer_data_node->get_logger(),
-    "VisualizerDataNode /" + node_name + " started...");
+  auto negotiation = schedule_data_node->get_negotiation();
+  negotiation->set_retained_history_count(retained_history_count);
 
-  const auto server_ptr = rmf_schedule_visualizer::Server::make(port,
-      visualizer_data_node);
+  RCLCPP_INFO(
+    schedule_data_node->get_logger(),
+    node_name + " started...");
+
+  const auto server_ptr = rmf_schedule_visualizer::TrajectoryServer::make(
+    port,
+    schedule_data_node);
 
   if (!server_ptr)
   {
@@ -97,13 +107,25 @@ int main(int argc, char* argv[])
   }
 
   RCLCPP_INFO(
-    visualizer_data_node->get_logger(),
+    schedule_data_node->get_logger(),
     "Websocket server started on port: " + std::to_string(port));
+  
+  auto schedule_marker_publisher = std::make_shared<ScheduleMarkerPublisher>(
+    "rmf_schedule_visualizer_marker_publisher",
+    schedule_data_node,
+    std::move(map_name),
+    rate);
 
-  rclcpp::spin(visualizer_data_node);
+  rclcpp::executors::MultiThreadedExecutor executor{
+    rclcpp::executor::ExecutorArgs(), 2
+  };
+
+  executor.add_node(schedule_data_node);
+  executor.add_node(schedule_marker_publisher);
+  executor.spin();
 
   RCLCPP_INFO(
-    visualizer_data_node->get_logger(),
+    schedule_data_node->get_logger(),
     "Closing down");
 
   rclcpp::shutdown();
