@@ -10,7 +10,7 @@ from rmf_fleet_msgs.msg import FleetState
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
-from building_map_msgs.msg import BuildingMap
+from rmf_building_map_msgs.msg import BuildingMap
 from rmf_schedule_visualizer_msgs.msg import RvizParam
 
 
