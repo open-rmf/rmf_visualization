@@ -28,7 +28,7 @@ find_package(rmf_traffic_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rmf_schedule_visualizer_msgs REQUIRED)
-find_package(building_map_msgs REQUIRED)
+find_package(rmf_building_map_msgs REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -79,7 +79,7 @@ target_link_libraries(schedule_visualizer
     ${geometry_msgs_LIBRARIES}
     ${nav_msgs_LIBRARIES}
     ${rmf_schedule_visualizer_msgs_LIBRARIES}
-    ${building_map_msgs_LIBRARIES}
+    ${rmf_building_map_msgs_LIBRARIES}
 )
 
 target_include_directories(schedule_visualizer
@@ -89,7 +89,7 @@ target_include_directories(schedule_visualizer
     ${geometry_msgs_INCLUDE_DIRS}
     ${nav_msgs_INCLUDE_DIRS}
     ${rmf_schedule_visualizer_msgs_INCLUDE_DIRS}
-    ${building_map_msgs_INCLUDE_DIRS}
+    ${rmf_building_map_msgs_INCLUDE_DIRS}
 )
 
 #===============================================================================

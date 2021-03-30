@@ -15,20 +15,20 @@
  *
 */
 
-#include <rmf_schedule_visualizer/TrajectoryServer.hpp>
-#include <rmf_schedule_visualizer/CommonData.hpp>
-
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
-
 #include <json.hpp>
+
+#include <rmf_schedule_visualizer/CommonData.hpp>
+#include <rmf_schedule_visualizer/TrajectoryServer.hpp>
 
 #include <rmf_traffic/Motion.hpp>
 #include <rmf_traffic/Trajectory.hpp>
 
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
+
 #include <exception>
-#include <thread>
 #include <functional>
+#include <thread>
 
 namespace rmf_schedule_visualizer {
 

@@ -15,17 +15,17 @@
  *
 */
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
 
+#include <rmf_traffic_msgs/msg/negotiation_conclusion.hpp>
+#include <rmf_traffic_msgs/msg/negotiation_notice.hpp>
+
+#include <rmf_traffic_ros2/schedule/MirrorManager.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 #include <rmf_traffic_ros2/Time.hpp>
 #include <rmf_traffic_ros2/Trajectory.hpp>
-#include <rmf_traffic_ros2/schedule/MirrorManager.hpp>
-
-#include <rmf_traffic_msgs/msg/negotiation_notice.hpp>
-#include <rmf_traffic_msgs/msg/negotiation_conclusion.hpp>
-
-#include <rclcpp/rclcpp.hpp>
 
 namespace rmf_schedule_visualizer {
 
@@ -71,33 +71,9 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
   const std::string& node_name,
   rmf_traffic::Duration wait_time)
 {
-  using ConflictNotice = rmf_traffic_msgs::msg::NegotiationNotice;
-  using ConflictConclusion = rmf_traffic_msgs::msg::NegotiationConclusion;
-
   const auto start_time = std::chrono::steady_clock::now();
   std::shared_ptr<ScheduleDataNode> schedule_data(
     new ScheduleDataNode(std::move(node_name)));
-
-  schedule_data->_pimpl->conflict_notice_sub =
-    schedule_data->create_subscription<ConflictNotice>(
-      rmf_traffic_ros2::NegotiationNoticeTopicName,
-      rclcpp::QoS(10),
-      [schedule_data](ConflictNotice::UniquePtr msg)
-      {
-        std::lock_guard<std::mutex> guard(schedule_data->_pimpl->mutex);
-        schedule_data->_pimpl->conflicts[msg->conflict_version] =
-          msg->participants;
-      });
-
-  schedule_data->_pimpl->conflict_conclusion_sub =
-    schedule_data->create_subscription<ConflictConclusion>(
-      rmf_traffic_ros2::NegotiationConclusionTopicName,
-      rclcpp::ServicesQoS(),
-      [schedule_data](ConflictConclusion::UniquePtr msg)
-      {
-        std::lock_guard<std::mutex> guard(schedule_data->_pimpl->mutex);
-        schedule_data->_pimpl->conflicts.erase(msg->conflict_version);
-      });  
 
   // Creating a mirror manager that queries over all
   // Spacetime in the database schedule
@@ -110,9 +86,8 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
   {
     rclcpp::spin_some(schedule_data);
     using namespace std::chrono_literals;
-    bool ready = (mirror_mgr_future.wait_for(0s) == std::future_status::ready);
 
-    if (ready)
+    if (mirror_mgr_future.wait_for(0s) == std::future_status::ready)
     {
       schedule_data->_pimpl->start(
         Implementation::Data{mirror_mgr_future.get()});
@@ -135,7 +110,26 @@ ScheduleDataNode::ScheduleDataNode(std::string node_name)
 : Node(node_name),
   _pimpl(rmf_utils::make_impl<Implementation>(Implementation{}))
 {
-  // Do nothing
+  this->_pimpl->conflict_notice_sub =
+    this->create_subscription<Implementation::ConflictNotice>(
+      rmf_traffic_ros2::NegotiationNoticeTopicName,
+      rclcpp::QoS(10),
+      [this](Implementation::ConflictNotice::UniquePtr msg)
+      {
+        std::lock_guard<std::mutex> guard(this->_pimpl->mutex);
+        this->_pimpl->conflicts[msg->conflict_version] =
+          msg->participants;
+      });
+
+  this->_pimpl->conflict_conclusion_sub =
+    this->create_subscription<Implementation::ConflictConclusion>(
+      rmf_traffic_ros2::NegotiationConclusionTopicName,
+      rclcpp::ServicesQoS(),
+      [this](Implementation::ConflictConclusion::UniquePtr msg)
+      {
+        std::lock_guard<std::mutex> guard(this->_pimpl->mutex);
+        this->_pimpl->conflicts.erase(msg->conflict_version);
+      });  
 }
 
 //==============================================================================

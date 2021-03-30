@@ -18,23 +18,23 @@
 #ifndef RMF_SCHEDULE_VISUALIZER__VISUALIZERDATA_HPP
 #define RMF_SCHEDULE_VISUALIZER__VISUALIZERDATA_HPP
 
-#include <rmf_traffic_ros2/schedule/Negotiation.hpp>
+#include <rclcpp/node.hpp>
 
-#include <rmf_traffic/Trajectory.hpp>
+#include <rmf_schedule_visualizer/CommonData.hpp>
+
 #include <rmf_traffic/schedule/Viewer.hpp>
+#include <rmf_traffic/Trajectory.hpp>
+
+#include <rmf_traffic_ros2/schedule/Negotiation.hpp>
 #include <rmf_traffic_ros2/StandardNames.hpp>
 
 #include <rmf_utils/impl_ptr.hpp>
 
-#include <rmf_schedule_visualizer/CommonData.hpp>
-
-#include <rclcpp/node.hpp>
-
-#include <set>
 #include <mutex>
-#include <vector>
-#include <unordered_set>
 #include <memory>
+#include <set>
+#include <unordered_set>
+#include <vector>
 
 namespace rmf_schedule_visualizer {
 
@@ -57,7 +57,7 @@ public:
     const std::string& node_name,
     rmf_traffic::Duration wait_time = std::chrono::seconds(10));
 
-  /// Query the shcedule database for elements
+  /// Query the schedule database for elements
   std::vector<Element> get_elements(const RequestParam& request_param) const;
 
   /// Get the ids of all participants that have active conflicts
@@ -82,7 +82,7 @@ public:
   class Implementation;
 
 private:
-  ScheduleDataNode(std::string _node_name);
+  ScheduleDataNode(std::string node_name);
   rmf_utils::impl_ptr<Implementation> _pimpl;
 };
 
