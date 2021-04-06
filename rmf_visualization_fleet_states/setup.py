@@ -1,11 +1,11 @@
 from setuptools import setup
 
-package_name = 'fleet_state_visualizer'
+package_name = 'rmf_visualization_fleet_states'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=['fleet_state_visualizer'],
+    packages=['rmf_visualization_fleet_states'],
     py_modules=[],
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -25,14 +25,14 @@ setup(
         'Programming Language :: Python',
         'Topic :: Software Development',
     ],
-    description='fleet_state_visualizer',
+    description='rmf_visualization_fleet_states',
     license='Apache License, Version 2.0',
     tests_require=['pytest'],
     scripts=[],
     entry_points={
         'console_scripts': [
-            'fleet_state_visualizer = \
-                fleet_state_visualizer.fleet_state_visualizer:main',
+            'rmf_visualization_fleet_states = \
+                rmf_visualization_fleet_states.rmf_visualization_fleet_states:main',
         ],
     },
 )

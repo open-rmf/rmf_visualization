@@ -11,7 +11,7 @@ from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
 from rmf_building_map_msgs.msg import BuildingMap
-from rmf_schedule_visualizer_msgs.msg import RvizParam
+from rmf_visualization_msgs.msg import RvizParam
 
 
 class FleetStateVisualizer(Node):

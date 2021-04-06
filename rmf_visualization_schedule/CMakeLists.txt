@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(rmf_schedule_visualizer)
+project(rmf_visualization_schedule)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
 # Default to C++17

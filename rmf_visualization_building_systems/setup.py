@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'building_systems_visualizer'
+package_name = 'rmf_visualization_building_systems'
 
 setup(
     name=package_name,
@@ -20,8 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'building_systems_visualizer = \
-                building_systems_visualizer.building_systems_visualizer:main'
+            'rmf_visualization_building_systems = \
+                rmf_visualization_building_systems.rmf_visualization_building_systems:main'
         ],
     },
 )
