@@ -20,7 +20,6 @@ find_package(rmf_traffic_ros2 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(OpenCV REQUIRED )
 find_package(websocketpp REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system date_time regex random)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
@@ -44,10 +43,6 @@ target_link_libraries(rmf_schedule_visualizer
     rmf_traffic_ros2::rmf_traffic_ros2
     rmf_traffic::rmf_traffic
     ${rclcpp_LIBRARIES}
-    Boost::system
-    Boost::date_time
-    Boost::regex
-    Boost::random
     ${websocketpp_LIBRARIES}
     ${rmf_traffic_msgs_LIBRARIES}
 )

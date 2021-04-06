@@ -45,7 +45,7 @@ colcon build --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
 
 To launch the visualizer
 ```
-ros2 launch visualizer visualizer.xml
+ros2 launch visualizer visualizer.launch.xml
 ```
 
 An active `rmf_traffic_schedule` node is prerequisite for the visualizer to initialize. If a schedule node is not running, it can be started with the command. Note: More than one schedule node must not be running at any given instance. 
@@ -68,15 +68,7 @@ The visualizer node queries for trajectories in the schedule from the current in
 ## Websocket Server for Custom UIs 
 For developers looking to create custom UIs outside of the ROS2 environment, this repository provides a websocket server to exchange information contained in an active rmf schedule database. This may primarily be used to query for robot trajectories in the schedule along with conflict information if any. The format for various requests and corresponding responses are described below.
 
-To start the websocket server,
-
-```ros2 launch visualizer server.xml```
-
-The default port_number of the websocet server is `8006`. 
-
-To test negotiation status trajectories, we can setup negotiations to be retained. Add `-history 999` to the following line in `server.xml`:
-
-``` <node pkg="rmf_schedule_visualizer" exec="schedule_visualizer" args="-p $(var port) -history 999"> ```
+The websocket server starts up when `visualizer.xml.launch` is launched. 
 
 ### Sample Client Requests
 
