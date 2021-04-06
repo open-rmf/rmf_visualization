@@ -2,6 +2,12 @@
 Changelog for package visualizer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.0 (2021-04-XX)
+------------------
+* Renamed visualizer.xml to visualizer.launch.xml [#6](https://github.com/open-rmf/rmf_visualization/pull/3)
+* Removed server.xml [#7](https://github.com/open-rmf/rmf_visualization/pull/7)
+
+
 1.1.0 (2020-09-24)
 ------------------
 * Websocket server for negotiation visualizer (`#69 <https://github.com/osrf/rmf_schedule_visualizer/issues/69>`_)
