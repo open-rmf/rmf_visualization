@@ -15,8 +15,8 @@
  *
 */
 
-#ifndef RVIZ2_PLUGIN__SRC__DOORPANEL_HPP
-#define RVIZ2_PLUGIN__SRC__DOORPANEL_HPP
+#ifndef RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__DOORPANEL_HPP
+#define RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__DOORPANEL_HPP
 
 #include <mutex>
 #include <thread>
@@ -35,7 +35,7 @@
 
 #include <rviz_common/panel.hpp>
 
-namespace rviz2_plugin {
+namespace rmf_visualization_rviz2_plugins {
 
 class DoorPanel : public rviz_common::Panel
 {
@@ -105,6 +105,6 @@ private:
 
 };
 
-} // namespace rviz2_plugin
+} // namespace rmf_visualization_rviz2_plugins
 
-#endif // RVIZ2_PLUGIN__SRC__DOORPANEL_HPP
+#endif // RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__DOORPANEL_HPP

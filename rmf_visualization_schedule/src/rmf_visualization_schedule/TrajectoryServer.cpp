@@ -17,8 +17,8 @@
 
 #include <json.hpp>
 
-#include <rmf_schedule_visualizer/CommonData.hpp>
-#include <rmf_schedule_visualizer/TrajectoryServer.hpp>
+#include <rmf_visualization_schedule/CommonData.hpp>
+#include <rmf_visualization_schedule/TrajectoryServer.hpp>
 
 #include <rmf_traffic/Motion.hpp>
 #include <rmf_traffic/Trajectory.hpp>
@@ -30,7 +30,7 @@
 #include <functional>
 #include <thread>
 
-namespace rmf_schedule_visualizer {
+namespace rmf_visualization_schedule {
 
 //==============================================================================
 class TrajectoryServer::Implementation
@@ -476,4 +476,4 @@ TrajectoryServer::~TrajectoryServer()
   }
 }
 
-} //namespace rmf_schedule_visualizer
+} //namespace rmf_visualization_schedule

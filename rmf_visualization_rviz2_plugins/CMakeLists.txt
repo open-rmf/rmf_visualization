@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(rviz2_plugin)
+project(rmf_visualization_rviz2_plugins)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -26,7 +26,7 @@ find_package(Eigen3 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rmf_door_msgs REQUIRED)
 find_package(rmf_lift_msgs REQUIRED)
-find_package(rmf_schedule_visualizer_msgs REQUIRED)
+find_package(rmf_visualization_msgs REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
@@ -48,7 +48,7 @@ target_link_libraries(${PROJECT_NAME}
     ${rclcpp_LIBRARIES}
     ${rmf_door_msgs_LIBRARIES}
     ${rmf_lift_msgs_LIBRARIES}
-    ${rmf_schedule_visualizer_msgs_LIBRARIES}
+    ${rmf_visualization_msgs_LIBRARIES}
     rviz_common::rviz_common
     ${rviz_rendering_LIBRARIES}
     ${rviz_default_plugins_LIBRARIES}
@@ -63,7 +63,7 @@ target_include_directories(${PROJECT_NAME}
     ${rclcpp_INCLUDE_DIRS}
     ${rmf_door_msgs_INCLUDE_DIRS}
     ${rmf_lift_msgs_INCLUDE_DIRS}
-    ${rmf_schedule_visualizer_msgs_INCLUDE_DIRS}
+    ${rmf_visualization_msgs_INCLUDE_DIRS}
     ${rviz_common_INCLUDE_DIRS}
     ${rviz_rendering_INCLUDE_DIRS}
     ${rviz_default_plugins_INCLUDE_DIRS}
@@ -95,9 +95,5 @@ install(
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
 )
-
-#install(FILES
-#  plugin_description.xml
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 ament_package()

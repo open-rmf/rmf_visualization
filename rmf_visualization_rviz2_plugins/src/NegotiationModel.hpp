@@ -1,5 +1,5 @@
-#ifndef _NEGOTIATION_MODEL_H_
-#define _NEGOTIATION_MODEL_H_
+#ifndef RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__NEGOTIATION_MODEL_HPP
+#define RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__NEGOTIATION_MODEL_HPP
 
 #include <vector>
 #include <map>
@@ -25,4 +25,4 @@ private:
   QString render_participants(uint64_t conflict_version);
 };
 
-#endif
+#endif // RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__NEGOTIATION_MODEL_HPP

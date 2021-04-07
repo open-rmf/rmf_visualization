@@ -1,11 +1,11 @@
-#ifndef RMF_SCHEDULE_VISUALIZER__COMMONDATA_HPP
-#define RMF_SCHEDULE_VISUALIZER__COMMONDATA_HPP
+#ifndef RMF_VISUALIZATION_SCHEDULE__COMMONDATA_HPP
+#define RMF_VISUALIZATION_SCHEDULE__COMMONDATA_HPP
 
 #include <rmf_traffic/Time.hpp>
 #include <string>
 #include <memory>
 
-namespace rmf_schedule_visualizer {
+namespace rmf_visualization_schedule {
 
 struct RequestParam
 {
@@ -16,6 +16,6 @@ struct RequestParam
 
 using RequestParamPtr = std::shared_ptr<RequestParam>;
 
-} // namespace rmf_schedule_visualizer
+} // namespace rmf_visualization_schedule
 
-#endif //RMF_SCHEDULE_VISUALIZER__COMMONDATA_HPP
+#endif //RMF_VISUALIZATION_SCHEDULE__COMMONDATA_HPP

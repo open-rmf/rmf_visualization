@@ -5,7 +5,7 @@
   <arg name="use_sim_time" default="false"/>
   <arg name="rate" default="10"/>
   <arg name="map_name" default="B1"/>
-  <arg name="viz_config_file" default="$(find-pkg-share rmf_schedule_visualizer)/config/rmf.rviz"/>
+  <arg name="viz_config_file" default="$(find-pkg-share rmf_visualization_schedule)/config/rmf.rviz"/>
   <arg name="display_names" default="true"/>
   <arg name="websocket_port" default="8006"/>
   <arg name="headless" default="false" description="Do not launch rviz2"/>

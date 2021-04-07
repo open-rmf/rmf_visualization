@@ -17,8 +17,8 @@
 
 #include "ScheduleMarkerPublisher.hpp"
 
-#include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
-#include <rmf_schedule_visualizer/TrajectoryServer.hpp>
+#include <rmf_visualization_schedule/ScheduleDataNode.hpp>
+#include <rmf_visualization_schedule/TrajectoryServer.hpp>
 
 //==============================================================================
 bool get_arg(
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   const std::vector<std::string> args =
     rclcpp::init_and_remove_ros_arguments(argc, argv);
 
-  std::string node_name = "rmf_schedule_visualizer_data_node";
+  std::string node_name = "rmf_visualization_schedule_data_node";
   get_arg(args, "-n", node_name, "node name", false);
 
   std::string rate_string;
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
   get_arg(args, "-m", map_name, "map name", false);
 
   const auto schedule_data_node =
-    rmf_schedule_visualizer::ScheduleDataNode::make(node_name, 60s);
+    rmf_visualization_schedule::ScheduleDataNode::make(node_name, 60s);
 
   if (!schedule_data_node)
   {
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
     schedule_data_node->get_logger(),
     node_name + " started...");
 
-  const auto server_ptr = rmf_schedule_visualizer::TrajectoryServer::make(
+  const auto server_ptr = rmf_visualization_schedule::TrajectoryServer::make(
     port,
     schedule_data_node);
 
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
     "Websocket server started on port: " + std::to_string(port));
   
   auto schedule_marker_publisher = std::make_shared<ScheduleMarkerPublisher>(
-    "rmf_schedule_visualizer_marker_publisher",
+    "rmf_visualization_schedule_marker_publisher",
     schedule_data_node,
     std::move(map_name),
     rate);

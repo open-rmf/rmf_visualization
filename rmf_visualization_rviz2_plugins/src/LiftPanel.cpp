@@ -22,7 +22,7 @@
 #include "LiftPanel.hpp"
 #include "StandardNames.hpp"
 
-namespace rviz2_plugin {
+namespace rmf_visualization_rviz2_plugins {
 
 //==============================================================================
 
@@ -513,7 +513,7 @@ QString LiftPanel::lift_mode_tooltip() const
 
 //==============================================================================
 
-} // namespace rviz2_plugin
+} // namespace rmf_visualization_rviz2_plugins
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS(rviz2_plugin::LiftPanel, rviz_common::Panel)
+PLUGINLIB_EXPORT_CLASS(rmf_visualization_rviz2_plugins::LiftPanel, rviz_common::Panel)

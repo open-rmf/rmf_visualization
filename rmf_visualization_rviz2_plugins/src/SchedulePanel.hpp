@@ -15,14 +15,14 @@
  *
 */
 
-#ifndef RVIZ2_PLUGIN__SRC__SCHEDULEPANEL_HPP
-#define RVIZ2_PLUGIN__SRC__SCHEDULEPANEL_HPP
+#ifndef RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__SCHEDULEPANEL_HPP
+#define RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__SCHEDULEPANEL_HPP
 
 #include <rclcpp/rclcpp.hpp>
 
 #include <rviz_common/panel.hpp>
 
-#include <rmf_schedule_visualizer_msgs/msg/rviz_param.hpp>
+#include <rmf_visualization_msgs/msg/rviz_param.hpp>
 
 #include <rmf_traffic_msgs/msg/negotiation_refusal.hpp>
 #include <rmf_traffic_msgs/msg/negotiation_conclusion.hpp>
@@ -36,9 +36,9 @@
 
 #include "NegotiationModel.hpp"
 
-namespace rviz2_plugin {
+namespace rmf_visualization_rviz2_plugins {
 
-using  RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
+using  RvizParamMsg = rmf_visualization_msgs::msg::RvizParam;
 using  NegotiationNotice = rmf_traffic_msgs::msg::NegotiationNotice;
 using  NegotiationConclusion = rmf_traffic_msgs::msg::NegotiationConclusion;
 using  NegotiationRefusal = rmf_traffic_msgs::msg::NegotiationRefusal;
@@ -104,6 +104,6 @@ private:
   NegotiationModel* _nego_model;
 };
 
-} // namespace rviz2_plugin
+} // namespace rmf_visualization_rviz2_plugins
 
-#endif // RVIZ2_PLUGIN__SRC__SCHEDULEPANEL_HPP
+#endif // RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__SCHEDULEPANEL_HPP

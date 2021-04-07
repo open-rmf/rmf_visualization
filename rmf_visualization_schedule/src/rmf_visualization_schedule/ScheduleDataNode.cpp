@@ -17,7 +17,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
+#include <rmf_visualization_schedule/ScheduleDataNode.hpp>
 
 #include <rmf_traffic_msgs/msg/negotiation_conclusion.hpp>
 #include <rmf_traffic_msgs/msg/negotiation_notice.hpp>
@@ -27,7 +27,7 @@
 #include <rmf_traffic_ros2/Time.hpp>
 #include <rmf_traffic_ros2/Trajectory.hpp>
 
-namespace rmf_schedule_visualizer {
+namespace rmf_visualization_schedule {
 
 //==============================================================================
 class ScheduleDataNode::Implementation
@@ -249,4 +249,4 @@ ScheduleDataNode::get_negotiation()
 }
 
 
-} // namespace rmf_schedule_visualizer
+} // namespace rmf_visualization_schedule

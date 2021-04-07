@@ -23,8 +23,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <rmf_schedule_visualizer/CommonData.hpp>
-#include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
+#include <rmf_visualization_schedule/CommonData.hpp>
+#include <rmf_visualization_schedule/ScheduleDataNode.hpp>
 
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic/schedule/Viewer.hpp>
@@ -39,7 +39,7 @@
 #include <rmf_building_map_msgs/msg/level.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
-#include <rmf_schedule_visualizer_msgs/msg/rviz_param.hpp>
+#include <rmf_visualization_msgs/msg/rviz_param.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
@@ -58,14 +58,14 @@ public:
   using MarkerArray = visualization_msgs::msg::MarkerArray;
   using OccupancyGrid = nav_msgs::msg::OccupancyGrid;
   using Point = geometry_msgs::msg::Point;
-  using RequestParam = rmf_schedule_visualizer::RequestParam;
+  using RequestParam = rmf_visualization_schedule::RequestParam;
   using Element = rmf_traffic::schedule::Viewer::View::Element;
-  using RvizParamMsg = rmf_schedule_visualizer_msgs::msg::RvizParam;
+  using RvizParamMsg = rmf_visualization_msgs::msg::RvizParam;
   using BuildingMap = rmf_building_map_msgs::msg::BuildingMap;
   using Level = rmf_building_map_msgs::msg::Level;
   using GraphNode = rmf_building_map_msgs::msg::GraphNode;
   using Color = std_msgs::msg::ColorRGBA;
-  using ScheduleDataNode = rmf_schedule_visualizer::ScheduleDataNode;
+  using ScheduleDataNode = rmf_visualization_schedule::ScheduleDataNode;
 
   ScheduleMarkerPublisher(
     std::string node_name,

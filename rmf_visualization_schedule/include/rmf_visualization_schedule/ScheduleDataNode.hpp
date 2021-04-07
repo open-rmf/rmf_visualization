@@ -15,12 +15,12 @@
  *
 */
 
-#ifndef RMF_SCHEDULE_VISUALIZER__VISUALIZERDATA_HPP
-#define RMF_SCHEDULE_VISUALIZER__VISUALIZERDATA_HPP
+#ifndef RMF_VISUALIZATION_SCHEDULE__SCHEDULEDATANODE_HPP
+#define RMF_VISUALIZATION_SCHEDULE__SCHEDULEDATANODE_HPP
 
 #include <rclcpp/node.hpp>
 
-#include <rmf_schedule_visualizer/CommonData.hpp>
+#include <rmf_visualization_schedule/CommonData.hpp>
 
 #include <rmf_traffic/schedule/Viewer.hpp>
 #include <rmf_traffic/Trajectory.hpp>
@@ -36,7 +36,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace rmf_schedule_visualizer {
+namespace rmf_visualization_schedule {
 
 class ScheduleDataNode : public rclcpp::Node
 {
@@ -88,6 +88,6 @@ private:
 
 using ScheduleDataNodePtr = std::shared_ptr<ScheduleDataNode>;
 
-} // namespace rmf_schedule_visualizer
+} // namespace rmf_visualization_schedule
 
-#endif // RMF_SCHEDULE_VISUALIZER__VISUALIZERDATA_HPP
+#endif // RMF_VISUALIZATION_SCHEDULE__SCHEDULEDATANODE_HPP

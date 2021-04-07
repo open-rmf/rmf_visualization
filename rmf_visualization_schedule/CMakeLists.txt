@@ -26,7 +26,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(rmf_traffic_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
-find_package(rmf_schedule_visualizer_msgs REQUIRED)
+find_package(rmf_visualization_msgs REQUIRED)
 find_package(rmf_building_map_msgs REQUIRED)
 
 if(BUILD_TESTING)
@@ -35,10 +35,10 @@ if(BUILD_TESTING)
 endif()
 
 #===============================================================================
-file(GLOB_RECURSE core_lib_srcs "src/rmf_schedule_visualizer/*.cpp")
-add_library(rmf_schedule_visualizer SHARED ${core_lib_srcs})
+file(GLOB_RECURSE core_lib_srcs "src/rmf_visualization_schedule/*.cpp")
+add_library(rmf_visualization_schedule SHARED ${core_lib_srcs})
 
-target_link_libraries(rmf_schedule_visualizer
+target_link_libraries(rmf_visualization_schedule
   PUBLIC
     rmf_traffic_ros2::rmf_traffic_ros2
     rmf_traffic::rmf_traffic
@@ -47,7 +47,7 @@ target_link_libraries(rmf_schedule_visualizer
     ${rmf_traffic_msgs_LIBRARIES}
 )
 
-target_include_directories(rmf_schedule_visualizer
+target_include_directories(rmf_visualization_schedule
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -55,7 +55,7 @@ target_include_directories(rmf_schedule_visualizer
     ${WEBSOCKETPP_INCLUDE_DIR}
 )
 
-ament_export_targets(rmf_schedule_visualizer HAS_LIBRARY_TARGET)
+ament_export_targets(rmf_visualization_schedule HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   rmf_traffic
   rmf_traffic_ros2
@@ -68,12 +68,12 @@ add_executable(schedule_visualizer src/main.cpp)
 
 target_link_libraries(schedule_visualizer
   PRIVATE
-    rmf_schedule_visualizer
+  rmf_visualization_schedule
     ${OpenCV_LIBRARIES}
     ${visualization_msgs_LIBRARIES}
     ${geometry_msgs_LIBRARIES}
     ${nav_msgs_LIBRARIES}
-    ${rmf_schedule_visualizer_msgs_LIBRARIES}
+    ${rmf_visualization_msgs_LIBRARIES}
     ${rmf_building_map_msgs_LIBRARIES}
 )
 
@@ -83,7 +83,7 @@ target_include_directories(schedule_visualizer
     ${visualization_msgs_INCLUDE_DIRS}
     ${geometry_msgs_INCLUDE_DIRS}
     ${nav_msgs_INCLUDE_DIRS}
-    ${rmf_schedule_visualizer_msgs_INCLUDE_DIRS}
+    ${rmf_visualization_msgs_INCLUDE_DIRS}
     ${rmf_building_map_msgs_INCLUDE_DIRS}
 )
 
@@ -99,8 +99,8 @@ install(
 )
 
 install(
-  TARGETS rmf_schedule_visualizer schedule_visualizer
-  EXPORT rmf_schedule_visualizer
+  TARGETS rmf_visualization_schedule schedule_visualizer
+  EXPORT rmf_visualization_schedule
   RUNTIME DESTINATION lib/${PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

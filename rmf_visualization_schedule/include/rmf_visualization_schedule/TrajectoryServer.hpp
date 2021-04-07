@@ -15,14 +15,14 @@
  *
 */
 
-#ifndef RMF_SCHEDULE_VISUALIZER__TRAJECTORYSERVER_HPP
-#define RMF_SCHEDULE_VISUALIZER__TRAJECTORYSERVER_HPP
+#ifndef RMF_VISUALIZATION_SCHEDULE__TRAJECTORYSERVER_HPP
+#define RMF_VISUALIZATION_SCHEDULE__TRAJECTORYSERVER_HPP
 
-#include <rmf_schedule_visualizer/ScheduleDataNode.hpp>
+#include <rmf_visualization_schedule/ScheduleDataNode.hpp>
 
 #include <memory>
 
-namespace rmf_schedule_visualizer {
+namespace rmf_visualization_schedule {
 
 class TrajectoryServer
 {
@@ -51,6 +51,6 @@ private:
 
 };
 
-} // namespace rmf_schedule_visualizer
+} // namespace rmf_visualization_schedule
 
-#endif // RMF_SCHEDULE_VISUALIZER__TRAJECTORYSERVER_HPP
+#endif // RMF_VISUALIZATION_SCHEDULE__TRAJECTORYSERVER_HPP

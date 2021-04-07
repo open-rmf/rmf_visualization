@@ -20,7 +20,7 @@
 
 #include <string>
 
-namespace rviz2_plugin {
+namespace rmf_visualization_rviz2_plugins {
 
 const std::string LiftPanelSessionId = "lift_panel_session";
 const std::string AdapterLiftRequestTopicName = "adapter_lift_requests";
@@ -32,6 +32,6 @@ const std::string AdapterDoorRequestTopicName = "adapter_door_requests";
 const std::string DoorRequestTopicName = "door_requests";
 const std::string DoorStateTopicName = "door_states";
 
-} // namespace rviz2_plugin
+} // namespace rmf_visualization_rviz2_plugins
 
-#endif // RVIZ2_PLUGIN__SRC__STANDARDNAMES_HPP
+#endif // RMF_VISUALIZATION_RVIZ2_PLUGINS__SRC__STANDARDNAMES_HPP
