@@ -3,7 +3,7 @@
 <package format="3">
   <name>rmf_visualization_rviz2_plugins</name>
   <version>1.1.0</version>
-  <description>A package to create a custom plugins for rviz2</description>
+  <description>A package to create custom plugins for rviz2</description>
   <maintainer email="yadunund@openrobotics.org">yadu</maintainer>
   <license>Apache License 2.0</license>
 
