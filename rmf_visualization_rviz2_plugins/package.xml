@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>rmf_visualization_rviz2_plugins</name>
+  <version>1.1.0</version>
+  <description>A package to create custom plugins for rviz2</description>
+  <maintainer email="yadunund@openrobotics.org">yadu</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rmf_door_msgs</depend>
+  <depend>rmf_lift_msgs</depend>
+  <depend>rmf_visualization_msgs</depend>
+  <depend>rmf_traffic_ros2</depend>
+  <depend>rviz_common</depend>
+  <depend>rviz_rendering</depend>
+  <depend>rviz_default_plugins</depend>
+  <depend>pluginlib</depend>
+  <depend>resource_retriever</depend>
+
+  <build_depend>eigen</build_depend>
+  <build_depend>qtbase5-dev</build_depend>
+  <exec_depend>libqt5-core</exec_depend>
+  <exec_depend>libqt5-gui</exec_depend>
+  <exec_depend>libqt5-widgets</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

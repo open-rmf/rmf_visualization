@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>rmf_visualization</name>
+  <version>1.1.0</version>
+  <description>Package containing a single launch file to bringup various visualizations</description>
+  <maintainer email="yadunund@openrobotics.org">yadu</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>rmf_visualization_schedule</exec_depend>
+  <exec_depend>rmf_visualization_fleet_states</exec_depend>
+  <exec_depend>rmf_visualization_fleet_building_systems</exec_depend>
+  <exec_depend>rmf_visualization_rviz2_plugins</exec_depend>
+  <exec_depend>launch_xml</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

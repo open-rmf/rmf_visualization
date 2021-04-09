@@ -1,0 +1,33 @@
+<?xml version = '1.0' ?>
+
+<launch>
+
+  <arg name="use_sim_time" default="false"/>
+  <arg name="rate" default="10"/>
+  <arg name="map_name" default="B1"/>
+  <arg name="viz_config_file" default="$(find-pkg-share rmf_visualization_schedule)/config/rmf.rviz"/>
+  <arg name="display_names" default="true"/>
+  <arg name="websocket_port" default="8006"/>
+  <arg name="headless" default="false" description="Do not launch rviz2"/>
+
+  <group>
+    <node pkg="rmf_visualization_schedule" exec="schedule_visualizer" args="-r $(var rate) -m $(var map_name) -p $(var websocket_port) --history 50">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+    </node>
+
+    <node pkg="rmf_visualization_fleet_states" exec="rmf_visualization_fleet_states" args="-m $(var map_name)">
+      <param name="display_names" value ="$(var display_names)"/>
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+    </node>
+
+    <node pkg="rmf_visualization_building_systems" exec="rmf_visualization_building_systems" args="-m $(var map_name)">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+    </node>
+  </group>
+
+  <group unless="$(var headless)">
+    <executable cmd="rviz2 -d $(var viz_config_file)" output="both"/>
+  </group>
+
+</launch>

@@ -1,0 +1,23 @@
+<library path="rmf_visualization_rviz2_plugins">
+  <class name="rmf_visualization_rviz2_plugins/SchedulePanel"
+         type="rmf_visualization_rviz2_plugins::SchedulePanel"
+         base_class_type="rviz_common::Panel">
+    <description>
+      A panel widget allowing users to adjust parameters in the schedule visualizaer.
+    </description>
+  </class>
+  <class name="rmf_visualization_rviz2_plugins/LiftPanel"
+      type="rmf_visualization_rviz2_plugins::LiftPanel"
+      base_class_type="rviz_common::Panel">
+    <description>
+      A panel widget allowing users to send lift requests and visualize states.
+    </description>
+  </class>
+  <class name="rmf_visualization_rviz2_plugins/DoorPanel"
+      type="rmf_visualization_rviz2_plugins::DoorPanel"
+      base_class_type="rviz_common::Panel">
+    <description>
+      A panel widget allowing users to send door requests and visualize states.
+    </description>
+  </class>
+</library>
