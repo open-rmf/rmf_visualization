@@ -16,6 +16,7 @@
 */
 
 #include <json.hpp>
+#include <jwt-cpp/jwt.h>
 
 #include <rmf_schedule_visualizer/CommonData.hpp>
 #include <rmf_schedule_visualizer/TrajectoryServer.hpp>
@@ -80,6 +81,42 @@ public:
 //==============================================================================
 auto TrajectoryServer::Implementation::on_open(connection_hdl hdl) -> void
 {
+  // validate jwt only if public key is given (when running with dashboard)
+  // if not, run as usual
+  if (std::getenv("JWT_PUBLIC_KEY"))
+  {
+    std::string public_key = std::getenv("JWT_PUBLIC_KEY");
+    std::string get_resource = server->get_con_from_hdl(hdl)->get_resource();
+    std::size_t pos;
+    std::string client_token;
+    
+    // don't verify when url params is empty
+    if (get_resource != "/") 
+    {
+      // url should come with /?token=<user_jwt_token>
+      std::string params = "token=";
+      pos = get_resource.find(params);
+      client_token = get_resource.substr(pos + params.length());
+
+      auto decoded = jwt::decode(client_token);   
+      auto verifier = jwt::verify()
+        .allow_algorithm(jwt::algorithm::rs256{public_key, ""});
+
+      // throws an error is token cannot be verified
+      verifier.verify(decoded);
+
+      RCLCPP_INFO(
+        schedule_data_node->get_logger(),
+        "Public key exist, token validated, continue with start up");
+    }
+  }
+  else 
+  {
+    RCLCPP_INFO(
+      schedule_data_node->get_logger(),
+      "No public key provided, continuing as per normal");
+  }
+
   connections.insert(hdl);
   RCLCPP_INFO(schedule_data_node->get_logger(),
     "[TrajectoryServer] Connected with a client");
@@ -375,7 +412,7 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   server_ptr->_pimpl->server->set_message_handler(bind(
       &TrajectoryServer::Implementation::on_message, std::ref(
         server_ptr->_pimpl), _1, _2));
-
+        
   try
   {
     // Start the websocket server
