@@ -29,6 +29,8 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rmf_schedule_visualizer_msgs REQUIRED)
 find_package(rmf_building_map_msgs REQUIRED)
 
+add_subdirectory(jwt-cpp)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
@@ -45,6 +47,7 @@ target_link_libraries(rmf_schedule_visualizer
     ${rclcpp_LIBRARIES}
     ${websocketpp_LIBRARIES}
     ${rmf_traffic_msgs_LIBRARIES}
+    jwt-cpp
 )
 
 target_include_directories(rmf_schedule_visualizer
@@ -75,6 +78,7 @@ target_link_libraries(schedule_visualizer
     ${nav_msgs_LIBRARIES}
     ${rmf_schedule_visualizer_msgs_LIBRARIES}
     ${rmf_building_map_msgs_LIBRARIES}
+    jwt-cpp
 )
 
 target_include_directories(schedule_visualizer
