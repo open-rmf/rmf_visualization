@@ -89,26 +89,31 @@ auto TrajectoryServer::Implementation::on_open(connection_hdl hdl) -> void
     std::string get_resource = server->get_con_from_hdl(hdl)->get_resource();
     std::size_t pos;
     std::string client_token;
-    
-    // don't verify when url params is empty
+
+    // url should come with /?token=<user_jwt_token>
+    std::string params = "token=";
+    // handle empty tokens
     if (get_resource != "/") 
     {
-      // url should come with /?token=<user_jwt_token>
-      std::string params = "token=";
       pos = get_resource.find(params);
       client_token = get_resource.substr(pos + params.length());
-
-      auto decoded = jwt::decode(client_token);   
-      auto verifier = jwt::verify()
-        .allow_algorithm(jwt::algorithm::rs256{public_key, ""});
-
-      // throws an error is token cannot be verified
-      verifier.verify(decoded);
-
-      RCLCPP_INFO(
-        schedule_data_node->get_logger(),
-        "Public key exist, token validated, continue with start up");
     }
+    else
+    {
+      RCLCPP_ERROR(schedule_data_node->get_logger(),
+      "Error: No token provided");
+    }
+
+    auto decoded = jwt::decode(client_token);   
+    auto verifier = jwt::verify()
+      .allow_algorithm(jwt::algorithm::rs256{public_key, ""});
+
+    // throws an error is token cannot be verified or is empty
+    verifier.verify(decoded);
+
+    RCLCPP_INFO(
+      schedule_data_node->get_logger(),
+      "Public key exist, token validated, continue with start up");
   }
   else 
   {
