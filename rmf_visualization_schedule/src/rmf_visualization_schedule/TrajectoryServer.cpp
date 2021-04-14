@@ -119,6 +119,7 @@ auto TrajectoryServer::Implementation::on_message(
   if (std::getenv("JWT_PUBLIC_KEY")) 
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
+<<<<<<< HEAD
 
     try 
     {
@@ -134,6 +135,15 @@ auto TrajectoryServer::Implementation::on_message(
     // will throw an error and prevent request from being process if token or key is invalid
     auto verifier = jwt::verify()
       .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
+=======
+    token = Json::parse(msg->get_payload())["token"];
+
+    auto decoded = jwt::decode(token);
+
+    // will throw an error and prevent request from being process
+    auto verifier = jwt::verify()
+    .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
+>>>>>>> retrieve token in message payload
   }
   else 
   {
