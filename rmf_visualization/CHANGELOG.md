@@ -1,4 +1,4 @@
-Changelog for package rmf_visualization
+## Changelog for package rmf_visualization
 
 1.2.0 (2021-04-XX)
 ------------------

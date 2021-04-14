@@ -1,4 +1,4 @@
-## Changelog for package rmf_schedule_visualizer
+## Changelog for package rmf_visualization_schedule
 
 Forthcoming
 -----------
