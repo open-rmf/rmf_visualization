@@ -115,6 +115,7 @@ auto TrajectoryServer::Implementation::on_message(
   // validate jwt only if public key is given (when running with dashboard)
   std::string public_key;
   std::string token;
+  bool is_verified = true;
 
   if (std::getenv("JWT_PUBLIC_KEY")) 
   {
@@ -123,17 +124,17 @@ auto TrajectoryServer::Implementation::on_message(
     try 
     {
       token = Json::parse(msg->get_payload())["token"];
+      auto decoded = jwt::decode(token);
+
+      // will throw an error and prevent request from being process if token or key is invalid
+      auto verifier = jwt::verify()
+        .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
     }
     catch (std::exception& e)
     {
-      std::cerr << "No token provided: " << e.what() << std::endl;
+      is_verified = false;
+      std::cerr << "Error: " << e.what() << std::endl;
     }
-
-    auto decoded = jwt::decode(token);
-
-    // will throw an error and prevent request from being process if token or key is invalid
-    auto verifier = jwt::verify()
-      .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
   }
   else 
   {
@@ -142,7 +143,7 @@ auto TrajectoryServer::Implementation::on_message(
       "No public key provided, continuing as per normal");
   }
 
-  if (ok)
+  if (ok && is_verified)
   {
     RCLCPP_DEBUG(schedule_data_node->get_logger(),
       "Response: %s", response.c_str());
