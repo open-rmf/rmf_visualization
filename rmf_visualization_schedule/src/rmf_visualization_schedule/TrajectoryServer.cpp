@@ -81,47 +81,6 @@ public:
 //==============================================================================
 auto TrajectoryServer::Implementation::on_open(connection_hdl hdl) -> void
 {
-  // validate jwt only if public key is given (when running with dashboard)
-  // if not, run as usual
-  if (std::getenv("JWT_PUBLIC_KEY"))
-  {
-    std::string public_key = std::getenv("JWT_PUBLIC_KEY");
-    std::string get_resource = server->get_con_from_hdl(hdl)->get_resource();
-    std::size_t pos;
-    std::string client_token;
-
-    // url should come with /?token=<user_jwt_token>
-    std::string params = "token=";
-    // handle empty tokens
-    if (get_resource != "/") 
-    {
-      pos = get_resource.find(params);
-      client_token = get_resource.substr(pos + params.length());
-    }
-    else
-    {
-      RCLCPP_ERROR(schedule_data_node->get_logger(),
-      "Error: No token provided");
-    }
-
-    auto decoded = jwt::decode(client_token);   
-    auto verifier = jwt::verify()
-      .allow_algorithm(jwt::algorithm::rs256{public_key, ""});
-
-    // throws an error is token cannot be verified or is empty
-    verifier.verify(decoded);
-
-    RCLCPP_INFO(
-      schedule_data_node->get_logger(),
-      "Public key exist, token validated, continue with start up");
-  }
-  else 
-  {
-    RCLCPP_INFO(
-      schedule_data_node->get_logger(),
-      "No public key provided, continuing as per normal");
-  }
-
   connections.insert(hdl);
   RCLCPP_INFO(schedule_data_node->get_logger(),
     "[TrajectoryServer] Connected with a client");
@@ -152,6 +111,28 @@ auto TrajectoryServer::Implementation::on_message(
   }
 
   bool ok = parse_request(hdl, msg, response);
+
+  // validate jwt only if public key is given (when running with dashboard)
+  std::string public_key;
+  std::string token;
+
+  if (std::getenv("JWT_PUBLIC_KEY")) 
+  {
+    public_key = std::getenv("JWT_PUBLIC_KEY");
+    token = Json::parse(msg->get_payload())["token"];
+
+    auto decoded = jwt::decode(token);
+
+    // will throw an error and prevent request from being process
+    auto verifier = jwt::verify()
+    .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
+  }
+  else 
+  {
+    RCLCPP_INFO(
+      schedule_data_node->get_logger(),
+      "No public key provided, continuing as per normal");
+  }
 
   if (ok)
   {
