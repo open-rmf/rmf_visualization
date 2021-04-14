@@ -120,18 +120,20 @@ auto TrajectoryServer::Implementation::on_message(
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
 
-    if (Json::parse(msg->get_payload()).count("token") == 0)
+    try 
     {
-      RCLCPP_ERROR(schedule_data_node->get_logger(),
-        "No token provided in payload, unable to verify user");
+      token = Json::parse(msg->get_payload())["token"];
     }
-    token = Json::parse(msg->get_payload())["token"];
+    catch (std::exception& e)
+    {
+      std::cerr << "No token provided: " << e.what() << std::endl;
+    }
 
     auto decoded = jwt::decode(token);
 
-    // will throw an error and prevent request from being process if token is not provided or invalid
+    // will throw an error and prevent request from being process if token or key is invalid
     auto verifier = jwt::verify()
-    .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
+      .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
   }
   else 
   {
