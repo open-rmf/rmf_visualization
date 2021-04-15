@@ -387,7 +387,7 @@ const std::string TrajectoryServer::Implementation::parse_trajectories(
   return response;
 }
 
-// =============
+//==============================================================================
 auto TrajectoryServer::Implementation::send_error_message(
   connection_hdl hdl, Server::message_ptr msg,
   std::string& response, std::shared_ptr<Server> server) -> void
