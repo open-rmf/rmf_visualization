@@ -59,6 +59,7 @@ public:
   const Json _j_traj =
   { {"id", {}}, {"shape", {}}, {"dimensions", {}}, {"segments", {}}};
   const Json _j_seg = { {"x", {}}, {"v", {}}, {"t", {}}};
+  const Json _j_err = { {"error", {}}};
 
   void on_open(connection_hdl hdl);
 
@@ -68,6 +69,8 @@ public:
 
   bool parse_request(connection_hdl hdl, const Server::message_ptr msg,
     std::string& response);
+
+  void send_error_message(connection_hdl hdl, const Server::message_ptr msg, std::string& response, std::shared_ptr<Server> server);
 
   const std::string parse_trajectories(
     const std::string& response_type,
@@ -101,6 +104,7 @@ auto TrajectoryServer::Implementation::on_message(
   connection_hdl hdl, Server::message_ptr msg) -> void
 {
   std::string response = "";
+  std::string err_response = "";
 
   if (msg->get_payload().empty())
   {
@@ -133,6 +137,7 @@ auto TrajectoryServer::Implementation::on_message(
     catch (std::exception& e)
     {
       is_verified = false;
+      send_error_message(hdl, msg, err_response, server);
       std::cerr << "Error: " << e.what() << std::endl;
     }
   }
@@ -380,6 +385,19 @@ const std::string TrajectoryServer::Implementation::parse_trajectories(
 
   response = j_res.dump();
   return response;
+}
+
+// =============
+auto TrajectoryServer::Implementation::send_error_message(
+  connection_hdl hdl, Server::message_ptr msg,
+  std::string& response, std::shared_ptr<Server> server) -> void
+{
+  auto j_err = _j_err;
+  j_err["error"] = "Error: invalid or wrong token";
+  Server::message_ptr err_msg = std::move(msg);
+  response = j_err.dump();
+  err_msg->set_payload(response);
+  server->send(hdl, err_msg);
 }
 
 //==============================================================================
