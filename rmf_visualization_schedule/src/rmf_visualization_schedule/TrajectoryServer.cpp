@@ -70,7 +70,12 @@ public:
   bool parse_request(connection_hdl hdl, const Server::message_ptr msg,
     std::string& response);
 
-  void send_error_message(connection_hdl hdl, const Server::message_ptr msg, std::string& response, std::shared_ptr<Server> server);
+  void send_error_message(
+    connection_hdl hdl, 
+    const Server::message_ptr msg, 
+    std::string& response, 
+    std::shared_ptr<Server> server,
+    std::string err_excp);
 
   const std::string parse_trajectories(
     const std::string& response_type,
@@ -130,14 +135,15 @@ auto TrajectoryServer::Implementation::on_message(
       token = Json::parse(msg->get_payload())["token"];
       auto decoded = jwt::decode(token);
 
-      // will throw an error and prevent request from being process if token or key is invalid
       auto verifier = jwt::verify()
         .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
+      verifier.verify(decoded);
     }
     catch (std::exception& e)
     {
       is_verified = false;
-      send_error_message(hdl, msg, err_response, server);
+      std::string err_excp = e.what();
+      send_error_message(hdl, msg, err_response, server, err_excp);
       std::cerr << "Error: " << e.what() << std::endl;
     }
   }
@@ -390,10 +396,10 @@ const std::string TrajectoryServer::Implementation::parse_trajectories(
 //==============================================================================
 auto TrajectoryServer::Implementation::send_error_message(
   connection_hdl hdl, Server::message_ptr msg,
-  std::string& response, std::shared_ptr<Server> server) -> void
+  std::string& response, std::shared_ptr<Server> server, std::string err_excp) -> void
 {
   auto j_err = _j_err;
-  j_err["error"] = "Error: invalid or wrong token";
+  j_err["error"] = err_excp;
   Server::message_ptr err_msg = std::move(msg);
   response = j_err.dump();
   err_msg->set_payload(response);
