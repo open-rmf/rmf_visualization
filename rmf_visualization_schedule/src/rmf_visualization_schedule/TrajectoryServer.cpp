@@ -147,12 +147,6 @@ auto TrajectoryServer::Implementation::on_message(
       std::cerr << "Error: " << e.what() << std::endl;
     }
   }
-  else 
-  {
-    RCLCPP_INFO(
-      schedule_data_node->get_logger(),
-      "No public key provided, continuing as per normal");
-  }
 
   if (ok && is_verified)
   {
