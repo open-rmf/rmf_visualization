@@ -33,7 +33,7 @@ using namespace std::chrono_literals;
 
 SchedulePanel::SchedulePanel(QWidget* parent)
 : rviz_common::Panel(parent),
-  _param_topic("/rviz_node/param"),
+  _param_topic("/rmf_visualization/parameter"),
   _map_name("B1"),
   _finish_duration("600"),
   _start_duration_value(0)
