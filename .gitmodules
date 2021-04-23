@@ -1,0 +1,3 @@
+[submodule "rmf_visualization_schedule/jwt-cpp"]
+	path = rmf_visualization_schedule/jwt-cpp
+	url = https://github.com/Thalhammer/jwt-cpp.git
