@@ -28,7 +28,7 @@ Panels:
     Finish: 600
     Map: B1
     Name: SchedulePanel
-    Topic: /rmf_visualization/parameter
+    Topic: /rmf_visualization/parameters
 Visualization Manager:
   Class: ""
   Displays:
