@@ -309,8 +309,11 @@ const std::string TrajectoryServer::Implementation::parse_trajectories(
       j_traj["id"] = element.participant;
       j_traj["route_id"] = element.route_id;
       j_traj["shape"] = "circle";
-      j_traj["dimensions"] = element.description.profile().footprint()
-        ->get_characteristic_length();
+
+      // TODO (ddengster): account for multiple geometries
+      auto footprints = element.description.profile().footprint();
+      if (!footprints.empty())
+        j_traj["dimensions"] = footprints[0]->get_characteristic_length();
 
       auto add_segment = [&](rmf_traffic::Time finish_time,
           Eigen::Vector3d finish_position,

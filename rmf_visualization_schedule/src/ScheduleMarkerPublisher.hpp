@@ -469,9 +469,13 @@ private:
     const RequestParam& param,
     const Eigen::Vector3d& position)
   {
+    // TODO: account for multiple geometries
+    const auto footprints = element.description.profile().footprint();
+    assert(!footprints.empty());
+
     const double r_footprint =
       static_cast<const rmf_traffic::geometry::Circle&>(
-      element.description.profile().footprint()->source()).get_radius();
+      footprints[0]->source()).get_radius();
 
     return make_location_marker(element,
         param, position, r_footprint, 1.0, 0, make_color(1.0, 1.0, 0, 0.7));
@@ -482,9 +486,13 @@ private:
     const RequestParam& param,
     const Eigen::Vector3d& position)
   {
+    // TODO: account for multiple geometries
+    const auto vicinities = element.description.profile().vicinity();
+    assert(!vicinities.empty());
+
     const double r_vicinity =
       static_cast<const rmf_traffic::geometry::Circle&>(
-      element.description.profile().vicinity()->source()).get_radius();
+      vicinities[0]->source()).get_radius();
 
     return make_location_marker(element,
         param, position, r_vicinity, 0.5, 1, make_color(0.5, 1.0, 0.9, 0.5));
