@@ -116,7 +116,7 @@ public:
     auto sub_param_opt = rclcpp::SubscriptionOptions();
     sub_param_opt.callback_group = _cb_group_param_sub;
     _param_sub = this->create_subscription<RvizParamMsg>(
-      "rmf_visualization/parameter",
+      "rmf_visualization/parameters",
       rclcpp::QoS(10),
       [&](RvizParamMsg::SharedPtr msg)
       {
