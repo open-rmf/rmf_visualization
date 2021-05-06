@@ -16,6 +16,7 @@
 */
 
 #include <json.hpp>
+#include <jwt-cpp/jwt.h>
 
 #include <rmf_visualization_schedule/CommonData.hpp>
 #include <rmf_visualization_schedule/TrajectoryServer.hpp>
@@ -58,6 +59,7 @@ public:
   const Json _j_traj =
   { {"id", {}}, {"shape", {}}, {"dimensions", {}}, {"segments", {}}};
   const Json _j_seg = { {"x", {}}, {"v", {}}, {"t", {}}};
+  const Json _j_err = { {"error", {}}};
 
   void on_open(connection_hdl hdl);
 
@@ -67,6 +69,13 @@ public:
 
   bool parse_request(connection_hdl hdl, const Server::message_ptr msg,
     std::string& response);
+
+  void send_error_message(
+    connection_hdl hdl, 
+    const Server::message_ptr msg, 
+    std::string& response, 
+    std::shared_ptr<Server> server,
+    std::string err_excp);
 
   const std::string parse_trajectories(
     const std::string& response_type,
@@ -100,6 +109,7 @@ auto TrajectoryServer::Implementation::on_message(
   connection_hdl hdl, Server::message_ptr msg) -> void
 {
   std::string response = "";
+  std::string err_response = "";
 
   if (msg->get_payload().empty())
   {
@@ -111,7 +121,34 @@ auto TrajectoryServer::Implementation::on_message(
 
   bool ok = parse_request(hdl, msg, response);
 
-  if (ok)
+  // validate jwt only if public key is given (when running with dashboard)
+  std::string public_key;
+  std::string token;
+  bool is_verified = true;
+
+  if (std::getenv("JWT_PUBLIC_KEY")) 
+  {
+    public_key = std::getenv("JWT_PUBLIC_KEY");
+
+    try 
+    {
+      token = Json::parse(msg->get_payload())["token"];
+      auto decoded = jwt::decode(token);
+
+      auto verifier = jwt::verify()
+        .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
+      verifier.verify(decoded);
+    }
+    catch (std::exception& e)
+    {
+      is_verified = false;
+      std::string err_excp = e.what();
+      send_error_message(hdl, msg, err_response, server, err_excp);
+      std::cerr << "Error: " << e.what() << std::endl;
+    }
+  }
+
+  if (ok && is_verified)
   {
     RCLCPP_DEBUG(schedule_data_node->get_logger(),
       "Response: %s", response.c_str());
@@ -351,6 +388,19 @@ const std::string TrajectoryServer::Implementation::parse_trajectories(
 }
 
 //==============================================================================
+auto TrajectoryServer::Implementation::send_error_message(
+  connection_hdl hdl, Server::message_ptr msg,
+  std::string& response, std::shared_ptr<Server> server, std::string err_excp) -> void
+{
+  auto j_err = _j_err;
+  j_err["error"] = err_excp;
+  Server::message_ptr err_msg = std::move(msg);
+  response = j_err.dump();
+  err_msg->set_payload(response);
+  server->send(hdl, err_msg);
+}
+
+//==============================================================================
 std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   uint16_t port,
   ScheduleDataNodePtr schedule_data_node)
@@ -375,7 +425,7 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   server_ptr->_pimpl->server->set_message_handler(bind(
       &TrajectoryServer::Implementation::on_message, std::ref(
         server_ptr->_pimpl), _1, _2));
-
+        
   try
   {
     // Start the websocket server

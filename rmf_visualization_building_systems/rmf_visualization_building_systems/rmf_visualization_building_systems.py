@@ -63,7 +63,7 @@ class BuildingSystemsVisualizer(Node):
 
         self.create_subscription(
             RvizParam,
-            'rviz_node/param',
+            'rmf_visualization/parameters',
             self.param_cb,
             qos_profile=qos_profile_system_default)
 

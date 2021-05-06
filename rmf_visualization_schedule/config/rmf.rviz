@@ -24,11 +24,11 @@ Panels:
     Splitter Ratio: 0.5
   - Class: rviz_common/Selection
     Name: Selection
-  - Class: rviz2_plugin/SchedulePanel
+  - Class: rmf_visualization_rviz2_plugins/SchedulePanel
     Finish: 600
     Map: B1
     Name: SchedulePanel
-    Topic: /rviz_node/param
+    Topic: /rmf_visualization/parameters
 Visualization Manager:
   Class: ""
   Displays:
