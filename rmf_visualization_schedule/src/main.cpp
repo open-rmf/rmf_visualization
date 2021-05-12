@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
   RCLCPP_INFO(
     schedule_data_node->get_logger(),
     "Websocket server started on port: " + std::to_string(port));
-  
+
   auto schedule_marker_publisher = std::make_shared<ScheduleMarkerPublisher>(
     "rmf_visualization_schedule_marker_publisher",
     schedule_data_node,
