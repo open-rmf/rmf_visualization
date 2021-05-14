@@ -47,12 +47,21 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rmf_visualization_msgs REQUIRED)
 find_package(rmf_building_map_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 add_subdirectory(jwt-cpp)
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
+find_package(rmf_cmake_uncrustify QUIET)
+if(BUILD_TESTING AND rmf_cmake_uncrustify_FOUND)
+  find_file(uncrustify_config_file 
+    NAMES "rmf_code_style.cfg"
+    PATHS "${rmf_utils_DIR}/../../../share/rmf_utils/")
+
+  rmf_uncrustify(
+    ARGN include/rmf_visualization_schedule src test
+    CONFIG_FILE ${uncrustify_config_file}
+    MAX_LINE_LENGTH 80
+  )
 endif()
 
 #===============================================================================

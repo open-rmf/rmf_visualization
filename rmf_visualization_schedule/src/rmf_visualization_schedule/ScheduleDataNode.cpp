@@ -112,24 +112,24 @@ ScheduleDataNode::ScheduleDataNode(std::string node_name)
 {
   this->_pimpl->conflict_notice_sub =
     this->create_subscription<Implementation::ConflictNotice>(
-      rmf_traffic_ros2::NegotiationNoticeTopicName,
-      rclcpp::QoS(10),
-      [this](Implementation::ConflictNotice::UniquePtr msg)
-      {
-        std::lock_guard<std::mutex> guard(this->_pimpl->mutex);
-        this->_pimpl->conflicts[msg->conflict_version] =
-          msg->participants;
-      });
+    rmf_traffic_ros2::NegotiationNoticeTopicName,
+    rclcpp::QoS(10),
+    [this](Implementation::ConflictNotice::UniquePtr msg)
+    {
+      std::lock_guard<std::mutex> guard(this->_pimpl->mutex);
+      this->_pimpl->conflicts[msg->conflict_version] =
+      msg->participants;
+    });
 
   this->_pimpl->conflict_conclusion_sub =
     this->create_subscription<Implementation::ConflictConclusion>(
-      rmf_traffic_ros2::NegotiationConclusionTopicName,
-      rclcpp::ServicesQoS(),
-      [this](Implementation::ConflictConclusion::UniquePtr msg)
-      {
-        std::lock_guard<std::mutex> guard(this->_pimpl->mutex);
-        this->_pimpl->conflicts.erase(msg->conflict_version);
-      });  
+    rmf_traffic_ros2::NegotiationConclusionTopicName,
+    rclcpp::ServicesQoS(),
+    [this](Implementation::ConflictConclusion::UniquePtr msg)
+    {
+      std::lock_guard<std::mutex> guard(this->_pimpl->mutex);
+      this->_pimpl->conflicts.erase(msg->conflict_version);
+    });
 }
 
 //==============================================================================
@@ -199,7 +199,7 @@ ScheduleDataNode::get_conflict_groups() const
 //==============================================================================
 auto ScheduleDataNode::get_negotiation_trajectories(
   uint64_t conflict_version, const std::vector<uint64_t>& sequence) const
-  -> const std::vector<Element> 
+-> const std::vector<Element>
 {
   std::vector<Element> trajectory_elements;
 

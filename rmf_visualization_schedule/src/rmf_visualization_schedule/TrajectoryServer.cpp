@@ -71,9 +71,9 @@ public:
     std::string& response);
 
   void send_error_message(
-    connection_hdl hdl, 
-    const Server::message_ptr msg, 
-    std::string& response, 
+    connection_hdl hdl,
+    const Server::message_ptr msg,
+    std::string& response,
     std::shared_ptr<Server> server,
     std::string err_excp);
 
@@ -126,11 +126,11 @@ auto TrajectoryServer::Implementation::on_message(
   std::string token;
   bool is_verified = true;
 
-  if (std::getenv("JWT_PUBLIC_KEY")) 
+  if (std::getenv("JWT_PUBLIC_KEY"))
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
 
-    try 
+    try
     {
       token = Json::parse(msg->get_payload())["token"];
       auto decoded = jwt::decode(token);
@@ -390,7 +390,8 @@ const std::string TrajectoryServer::Implementation::parse_trajectories(
 //==============================================================================
 auto TrajectoryServer::Implementation::send_error_message(
   connection_hdl hdl, Server::message_ptr msg,
-  std::string& response, std::shared_ptr<Server> server, std::string err_excp) -> void
+  std::string& response, std::shared_ptr<Server> server,
+  std::string err_excp) -> void
 {
   auto j_err = _j_err;
   j_err["error"] = err_excp;
@@ -425,7 +426,7 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   server_ptr->_pimpl->server->set_message_handler(bind(
       &TrajectoryServer::Implementation::on_message, std::ref(
         server_ptr->_pimpl), _1, _2));
-        
+
   try
   {
     // Start the websocket server
