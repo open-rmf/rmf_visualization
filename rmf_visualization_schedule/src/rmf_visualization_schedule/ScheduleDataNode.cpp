@@ -100,8 +100,8 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
 
   RCLCPP_ERROR(
     schedule_data->get_logger(),
-    "Mirror was not initialized in enough time ["
-    + std::to_string(rmf_traffic::time::to_seconds(wait_time)) + "s]!");
+    "Mirror was not initialized in enough time [%ss]!",
+    std::to_string(rmf_traffic::time::to_seconds(wait_time)).c_str());
   return nullptr;
 }
 
@@ -208,7 +208,7 @@ auto ScheduleDataNode::get_negotiation_trajectories(
   if (!table_view)
   {
     RCLCPP_WARN(
-      this->get_logger(), "table_view for conflict %d not found!",
+      this->get_logger(), "table_view for conflict %ld not found!",
       conflict_version);
     return trajectory_elements;
   }

@@ -318,7 +318,7 @@ void DoorPanel::door_state_callback(DoorState::UniquePtr msg)
   {
     std::string debug_str =
       "New door [" + incoming_door_name  + "] found, refreshing...";
-    RCLCPP_INFO(_node->get_logger(), debug_str);
+    RCLCPP_INFO(_node->get_logger(), debug_str.c_str());
     _debug_label->setText(QString::fromStdString(debug_str));
     Q_EMIT configChanged();
   }
