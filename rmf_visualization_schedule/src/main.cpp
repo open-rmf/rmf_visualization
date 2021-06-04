@@ -20,6 +20,8 @@
 #include <rmf_visualization_schedule/ScheduleDataNode.hpp>
 #include <rmf_visualization_schedule/TrajectoryServer.hpp>
 
+#include <rclcpp/executors.hpp>
+
 //==============================================================================
 bool get_arg(
   const std::vector<std::string>& args,
@@ -94,7 +96,8 @@ int main(int argc, char* argv[])
 
   RCLCPP_INFO(
     schedule_data_node->get_logger(),
-    node_name + " started...");
+    "%s started...",
+    node_name.c_str());
 
   const auto server_ptr = rmf_visualization_schedule::TrajectoryServer::make(
     port,
@@ -108,7 +111,8 @@ int main(int argc, char* argv[])
 
   RCLCPP_INFO(
     schedule_data_node->get_logger(),
-    "Websocket server started on port: " + std::to_string(port));
+    "Websocket server started on port: %d",
+    port);
 
   auto schedule_marker_publisher = std::make_shared<ScheduleMarkerPublisher>(
     "rmf_visualization_schedule_marker_publisher",
@@ -117,7 +121,7 @@ int main(int argc, char* argv[])
     rate);
 
   rclcpp::executors::MultiThreadedExecutor executor{
-    rclcpp::executor::ExecutorArgs(), 2
+    rclcpp::ExecutorOptions(), 2
   };
 
   executor.add_node(schedule_data_node);

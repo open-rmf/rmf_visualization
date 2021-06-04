@@ -449,7 +449,7 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
     rmf_traffic::schedule::Negotiation::Table::ViewerPtr table_view)
     {
       RCLCPP_DEBUG(server_ptr->_pimpl->schedule_data_node->get_logger(),
-        "======== conflict callback version: %llu! ==========",
+        "======== conflict callback version: %lu! ==========",
         conflict_version);
 
       nlohmann::json negotiation_json;
@@ -479,9 +479,11 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   auto conclusion_cb = [server_ptr](
     uint64_t conflict_version, bool resolved)
     {
-      RCLCPP_DEBUG(server_ptr->_pimpl->schedule_data_node->get_logger(),
-        "======== conflict concluded: %llu resolved: %d ==========",
-        conflict_version, resolved ? 1 : 0);
+      RCLCPP_DEBUG(
+        server_ptr->_pimpl->schedule_data_node->get_logger(),
+        "======== conflict concluded: %lu resolved: %d ==========",
+        conflict_version,
+        resolved ? 1 : 0);
 
       nlohmann::json json_msg;
       json_msg["type"] = "negotiation_conclusion";

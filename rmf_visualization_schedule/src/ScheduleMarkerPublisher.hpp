@@ -22,6 +22,7 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/callback_group.hpp>
 
 #include <rmf_visualization_schedule/CommonData.hpp>
 #include <rmf_visualization_schedule/ScheduleDataNode.hpp>
@@ -112,7 +113,7 @@ public:
 
     // Create subscriber for rviz_param in separate thread
     _cb_group_param_sub = this->create_callback_group(
-      rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
+      rclcpp::CallbackGroupType::MutuallyExclusive);
     auto sub_param_opt = rclcpp::SubscriptionOptions();
     sub_param_opt.callback_group = _cb_group_param_sub;
     _param_sub = this->create_subscription<RvizParamMsg>(
@@ -148,7 +149,7 @@ public:
     // Create subcscriber for building_map in separate thread.
     // The subscriber requies QoS profile with transient local durability
     _cb_group_map_sub = this->create_callback_group(
-      rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
+      rclcpp::CallbackGroupType::MutuallyExclusive);
     auto sub_map_opt = rclcpp::SubscriptionOptions();
     sub_map_opt.callback_group = _cb_group_map_sub;
     _map_sub = this->create_subscription<BuildingMap>(
@@ -157,9 +158,11 @@ public:
       [&](BuildingMap::SharedPtr msg)
       {
         std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
-        RCLCPP_INFO(this->get_logger(), "Received map \""
-        + msg->name + "\" containing "
-        + std::to_string(msg->levels.size()) + " level(s)");
+        RCLCPP_INFO(
+          this->get_logger(),
+          "Received map \"%s\" containing %ld level(s)",
+          msg->name.c_str(),
+          msg->levels.size());
         // Cache building map message
         _map_msg = *msg;
         update_level_cache();
@@ -241,8 +244,8 @@ private:
     if (!marker_array.markers.empty())
     {
       RCLCPP_DEBUG(this->get_logger(),
-        "Publishing marker array of size: " +
-        std::to_string(marker_array.markers.size()));
+        "Publishing marker array of size: %ld",
+        marker_array.markers.size());
       _schedule_markers_pub->publish(marker_array);
     }
   }
@@ -734,9 +737,11 @@ private:
       return;
 
     auto floorplan_img = _level.images[0]; // only use the first img
-    RCLCPP_INFO(this->get_logger(),
-      "Loading floorplan Image: " + floorplan_img.name +
-      floorplan_img.encoding);
+    RCLCPP_INFO(
+      this->get_logger(),
+      "Loading floorplan Image: %s %s",
+      floorplan_img.name.c_str(),
+      floorplan_img.encoding.c_str());
     cv::Mat img =
       cv::imdecode(cv::Mat(floorplan_img.data), cv::IMREAD_GRAYSCALE);
 
@@ -796,9 +801,9 @@ private:
   rclcpp::Publisher<MarkerArray>::SharedPtr _map_markers_pub;
   rclcpp::Publisher<OccupancyGrid>::SharedPtr _floorplan_pub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
-  rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_param_sub;
+  rclcpp::CallbackGroup::SharedPtr _cb_group_param_sub;
   rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
-  rclcpp::callback_group::CallbackGroup::SharedPtr _cb_group_map_sub;
+  rclcpp::CallbackGroup::SharedPtr _cb_group_map_sub;
 
   std::shared_ptr<ScheduleDataNode> _schedule_data_node;
 
