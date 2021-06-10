@@ -5,6 +5,7 @@
   <version>1.1.0</version>
   <description>Fleet state visualizer</description>
   <maintainer email="mquigley@openrobotics.org">Morgan Quigley</maintainer>
+  <maintainer email="marco@openrobotics.org">Marco A. Gutiérrez</maintainer>
   <license>Apache License 2.0</license>
 
   <build_depend>rmf_fleet_msgs</build_depend>
