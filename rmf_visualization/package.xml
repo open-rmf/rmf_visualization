@@ -5,6 +5,7 @@
   <version>1.1.0</version>
   <description>Package containing a single launch file to bringup various visualizations</description>
   <maintainer email="yadunund@openrobotics.org">yadu</maintainer>
+  <maintainer email="marco@openrobotics.org">Marco A. Gutiérrez</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
