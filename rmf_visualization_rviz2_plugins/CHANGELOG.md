@@ -1,6 +1,6 @@
 ## Changelog for package rmf_visualization_rviz2_plugins
 
-1.2.0 (2021-04-XX)
+1.2.0 (2021-06-14)
 ------------------
 * Renamed package to `rmf_visualization_rviz2_plugins`: [#8](https://github.com/open-rmf/rmf_visualization/pull/8)
 
