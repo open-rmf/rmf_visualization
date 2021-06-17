@@ -1,6 +1,6 @@
 ## Changelog for package rmf_visualization
 
-1.2.0 (2021-04-XX)
+1.2.0 (2021-06-14)
 ------------------
 * Renamed package to `rmf_visualization` with `visualization.launch.xml` launch file: [#8](https://github.com/open-rmf/rmf_visualization/pull/8)
 * Renamed visualizer.xml to visualizer.launch.xml: [#6](https://github.com/open-rmf/rmf_visualization/pull/3)
