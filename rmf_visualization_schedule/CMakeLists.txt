@@ -11,34 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find_package(Git QUIET)
-# if(GIT_FOUND)
-# Update submodules as needed
-#    option(GIT_SUBMODULE "Check submodules during build" ON)
-#    if(GIT_SUBMODULE)
-#        message(STATUS "Submodule update")
-#        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-#                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-#                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
-#        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-#            message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-#        endif()
-#    endif()
-# endif()
-
-# if(NOT EXISTS "${PROJECT_SOURCE_DIR}/jwt-cpp/CMakeLists.txt")
-#    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-# endif()
-
 include(GNUInstallDirs)
-#include(FindPkgConfig)
-
-#pkg_check_modules(
-# jwt
-# REQUIRED
-# IMPORTED_TARGET
-# libjwt  
-#)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -83,8 +56,6 @@ target_link_libraries(rmf_visualization_schedule
     ${websocketpp_LIBRARIES}
     ${rmf_traffic_msgs_LIBRARIES}
     cpp-jwt::cpp-jwt
-#    jwt-cpp
- #   PkgConfig::jwt
 )
 
 target_include_directories(rmf_visualization_schedule
@@ -115,7 +86,6 @@ target_link_libraries(schedule_visualizer
     ${nav_msgs_LIBRARIES}
     ${rmf_visualization_msgs_LIBRARIES}
     ${rmf_building_map_msgs_LIBRARIES}
-#   jwt-cpp
 )
 
 target_include_directories(schedule_visualizer
