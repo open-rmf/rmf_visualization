@@ -16,9 +16,8 @@
 */
 
 #include <json.hpp>
-// #include <jwt-cpp/jwt.h>
-
-#include <jwt.h>
+#include <jwt/jwt.hpp>
+// #include <jwt.h>
 
 #include <rmf_visualization_schedule/CommonData.hpp>
 #include <rmf_visualization_schedule/TrajectoryServer.hpp>
@@ -127,8 +126,7 @@ auto TrajectoryServer::Implementation::on_message(
   std::string public_key;
   std::string token;
   bool is_verified = true;
-  jwt_t *jwt_obj = NULL;
-
+  
   if (std::getenv("JWT_PUBLIC_KEY"))
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
@@ -136,14 +134,16 @@ auto TrajectoryServer::Implementation::on_message(
     try
     {
       token = Json::parse(msg->get_payload())["token"];
-      const unsigned char *key_dest = reinterpret_cast<const unsigned char *>(public_key.c_str());
-      int decoded = jwt_decode(&jwt_obj, token.c_str(), key_dest, public_key.length());
-      std::cerr << "!!!!!!!!!!!!!!!!!1 look here !!!!!!!!!!!!!!!!!!!!!1" << std::endl;
-      std::cerr << jwt_obj << std::endl;
-      if (jwt_obj == NULL) {
-        std::cerr << "+++++++++++++++++ jwt is null!!!! +++++++++++++++++++++++" << std::endl;
-        std::cerr << decoded << std::endl;
-      }
+      auto decoded = jwt::decode(token, jwt::params::algorithm({"RS256"}), jwt::params::secret(public_key));
+      std::cerr << decoded << std::endl;
+      // const unsigned char *key_dest = reinterpret_cast<const unsigned char *>(public_key.c_str());
+      // int decoded = jwt_decode(&jwt_obj, token.c_str(), key_dest, public_key.length());
+      // std::cerr << "!!!!!!!!!!!!!!!!!1 look here !!!!!!!!!!!!!!!!!!!!!1" << std::endl;
+      // std::cerr << jwt_obj << std::endl;
+      // if (jwt_obj == NULL) {
+      //   std::cerr << "+++++++++++++++++ jwt is null!!!! +++++++++++++++++++++++" << std::endl;
+      //   std::cerr << decoded << std::endl;
+      // }
       // auto verifier = jwt::verify()
       //   .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
       // verifier.verify(decoded);

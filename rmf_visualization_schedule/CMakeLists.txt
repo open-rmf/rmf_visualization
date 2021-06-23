@@ -31,14 +31,14 @@ endif()
 # endif()
 
 include(GNUInstallDirs)
-include(FindPkgConfig)
+#include(FindPkgConfig)
 
-pkg_check_modules(
- jwt
- REQUIRED
- IMPORTED_TARGET
- libjwt  
-)
+#pkg_check_modules(
+# jwt
+# REQUIRED
+# IMPORTED_TARGET
+# libjwt  
+#)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -56,8 +56,7 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rmf_visualization_msgs REQUIRED)
 find_package(rmf_building_map_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
-
-# add_subdirectory(jwt-cpp)
+find_package(cpp-jwt REQUIRED)
 
 find_package(rmf_cmake_uncrustify QUIET)
 if(BUILD_TESTING AND rmf_cmake_uncrustify_FOUND)
@@ -83,8 +82,9 @@ target_link_libraries(rmf_visualization_schedule
     ${rclcpp_LIBRARIES}
     ${websocketpp_LIBRARIES}
     ${rmf_traffic_msgs_LIBRARIES}
+    cpp-jwt::cpp-jwt
 #    jwt-cpp
-    PkgConfig::jwt
+ #   PkgConfig::jwt
 )
 
 target_include_directories(rmf_visualization_schedule
