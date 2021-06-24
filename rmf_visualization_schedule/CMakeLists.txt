@@ -29,7 +29,6 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rmf_visualization_msgs REQUIRED)
 find_package(rmf_building_map_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(cpp-jwt REQUIRED)
 
 find_package(rmf_cmake_uncrustify QUIET)
 if(BUILD_TESTING AND rmf_cmake_uncrustify_FOUND)
@@ -55,7 +54,6 @@ target_link_libraries(rmf_visualization_schedule
     ${rclcpp_LIBRARIES}
     ${websocketpp_LIBRARIES}
     ${rmf_traffic_msgs_LIBRARIES}
-    cpp-jwt::cpp-jwt
 )
 
 target_include_directories(rmf_visualization_schedule
