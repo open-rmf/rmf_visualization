@@ -123,11 +123,9 @@ auto TrajectoryServer::Implementation::on_message(
   std::string public_key;
   std::string token;
   bool is_verified = true;
-  
   if (std::getenv("JWT_PUBLIC_KEY"))
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
-    
     try
     {
       token = Json::parse(msg->get_payload())["token"];
