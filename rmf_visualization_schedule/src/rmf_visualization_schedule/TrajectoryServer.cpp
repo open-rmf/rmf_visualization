@@ -14,6 +14,7 @@
  * limitations under the License.
  *
 */
+#include <json.hpp>
 #include <jwt/jwt.hpp>
 
 #include <rmf_visualization_schedule/CommonData.hpp>
