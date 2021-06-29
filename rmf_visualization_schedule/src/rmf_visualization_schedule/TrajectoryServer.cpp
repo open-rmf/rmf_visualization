@@ -14,9 +14,7 @@
  * limitations under the License.
  *
 */
-
-#include <json.hpp>
-#include <jwt-cpp/jwt.h>
+#include <jwt/jwt.hpp>
 
 #include <rmf_visualization_schedule/CommonData.hpp>
 #include <rmf_visualization_schedule/TrajectoryServer.hpp>
@@ -125,20 +123,14 @@ auto TrajectoryServer::Implementation::on_message(
   std::string public_key;
   std::string token;
   bool is_verified = true;
-
   if (std::getenv("JWT_PUBLIC_KEY"))
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
-
     try
     {
       token = Json::parse(msg->get_payload())["token"];
-      auto decoded = jwt::decode(token);
-
-      auto verifier = jwt::verify()
-        .allow_algorithm(jwt::algorithm::rs256{ public_key, "" });
-      verifier.verify(decoded);
-    }
+      auto decoded = jwt::decode(token, jwt::params::algorithms({"RS256"}), jwt::params::secret(public_key));
+    } 
     catch (std::exception& e)
     {
       is_verified = false;
