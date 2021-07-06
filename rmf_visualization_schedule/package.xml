@@ -24,7 +24,6 @@
   <depend>builtin_interfaces</depend>
   <depend>eigen</depend>
   <depend>libopencv-dev</depend>
-  <depend>nlohmann-json-dev</depend>
   <depend>libssl-dev</depend>
 
   <test_depend>ament_lint_auto</test_depend>
