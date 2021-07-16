@@ -1,74 +1,52 @@
-|       | Ubuntu 20.04                                                                              |
-|-------|-------------------------------------------------------------------------------------------|
-| Build | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/build_foxy/badge.svg )     |
-| Style | ![]( https://github.com/osrf/rmf_schedule_visualizer/workflows/style/badge.svg )          |
-
 # rmf_schedule_visualizer
 
-A visualizer for robot trajectories in the `rmf schedule database`, live locations of robots if available and states of building systems such as doors and lifts. Users may query trajectories in different maps and view the schedule at a future instance.
+![](https://github.com/open-rmf/rmf_visualization/workflows/build/badge.svg)
+[![codecov](https://codecov.io/gh/open-rmf/rmf_visualization/branch/main/graph/badge.svg)](https://codecov.io/gh/open-rmf/rmf_visualization)
+
+This repository contains several packages that aid with visualizing various entities within RMF via RViz.
+* **rmf_visualization_building_systems**: to visualize the locations and states of lifts and doors in the facility.
+* **rmf_visualization_fleet_states**: to visualize the location of robots from various fleets.
+* **rmf_visualization_schedule**: to visualize the trajectories of participants in the RMF schedule database. This package also contains a websocket server that provides information on trajectories when queried.
+* **rmf_visualization_rviz2_plugins**: Rviz plugins for customizing the view of the participant schedules and interacting with building systems.
+* **rmf_visualization**: launch file to bring up the above systems
 
 ![](docs/media/visualizer.gif)
 
-## System Requirements
+## Installation
+It is recommended to follow the instructions [here](https://github.com/open-rmf/rmf#rmf) to setup an RMF workspace with the packages in this repository along with other dependencies.
 
-The RMF schedule visualizer is supported on
-* [Ubuntu 20.04 LTS](http://releases.ubuntu.com/20.04/) 
-* [ROS2 Foxy](https://index.ros.org/doc/ros2/Installation/#installationguide).
-
-## Installation 
-Install RMF dependencies
-```
-sudo apt update
-sudo apt install -y wget
-sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
-wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
-sudo apt update
-sudo apt install python3-shapely python3-yaml python3-requests \
--y
-```
-
-Setup and build workspace
-```
-mkdir -p ~/ws_rmf/src
-cd ~/ws_rmf/src
-git clone https://github.com/osrf/rmf_core.git
-git clone https://github.com/osrf/traffic_editor.git
-git clone https://github.com/osrf/rmf_schedule_visualizer.git
-cd ~/ws_rmf
-rosdep update
-rosdep install --from-paths src --ignore-src --rosdistro foxy -yr
-source /opt/ros/foxy/setup.bash
-colcon build --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
-```
-
-## Run 
+## Run
 
 To launch the visualizer
 ```
-ros2 launch visualizer visualizer.launch.xml
+ros2 launch rmf_visualization visualization.launch.xml
 ```
 
-An active `rmf_traffic_schedule` node is prerequisite for the visualizer to initialize. If a schedule node is not running, it can be started with the command. Note: More than one schedule node must not be running at any given instance. 
+An active `rmf_traffic_schedule` node is prerequisite for the visualizer to initialize. If a schedule node is not running, it can be started with the command
 ```
 ros2 run rmf_traffic_ros2 rmf_traffic_schedule
 ```
+>Note: Only one instance of `rmf_traffic_schedule` must be active at any moment.
 
-MarkerArray messages are published over these topics,
+The various packages publish MarkerArray messages over these topics:
 * `/map_markers` visualizes the nav graphs, waypoints and waypoint labels. Topic durability is `Transient Local`.
-* `/schedule_markers` visualizes planned trajectory of the robots in the rmf_schedule along with the robot vicinities. 
+* `/schedule_markers` visualizes planned trajectory of the robots in the rmf_schedule along with the robot vicinities.
 * `/fleet_markers` renders the current pose of robots as purple spheres
 *  `/building_systems_markers` visualize the current states of doors and lifts in the facility. Topic durability is `Transient Local`.
 
 ![](docs/media/developer_panels.png)
 
-The visualizer node queries for trajectories in the schedule from the current instance in time until a duration of `query_duration`(s) into the future. The trajectories are also filtered based on a`map_name`. The predicted position of the robot (yellow cylinder) and its conflict-free path (green) are then visualized in RViz2. The schedule can be viewed `start_duration` seconds from the current instance on time by adjusting the slider appropraitely. The default values of `map_name`, `query_duration` and `start_duration` are "B1", 600s and 0s respectively. These values can be modified through the cusom `SchedulePanel` panel GUI in Rviz2. A `Door` and `Lift` panel which provide users with manual control over these systems are also included.
+For a given `map_name`, the `rmf_visualization_schedule_data_node` queries for trajectories in the RMF schedule database over a duration that is specified by `start_duration` and `query_duration` parameters.
+The expected location and vicinity of a participant are visualized with concentric yellow and blue circles respectively.
+The expected trajectory for a participant is a green polyline when conflict-free and is red otherwise.
+The `SchedulePanel` in RViz allows users to modify the parameters used to query trajectories in the schedule database.
+`Door` and `Lift` panels allow users to interact with these systems respectively.
+The `rmf.rviz` file is used to save the configuration of RViz along with default values of parameters used in the different panels.
 
-
-
-## Websocket Server for Custom UIs 
+## Websocket Server for Custom UIs
 For developers looking to create custom UIs outside of the ROS2 environment, this repository provides a websocket server to exchange information contained in an active rmf schedule database. This may primarily be used to query for robot trajectories in the schedule along with conflict information if any. The format for various requests and corresponding responses are described below.
 
-The websocket server starts up when `visualizer.xml.launch` is launched. 
+The websocket server starts up when `visualization.launch.xml` is launched.
 
 ### Sample Client Requests
 
@@ -91,13 +69,13 @@ To receive a list of active trajectories and conflicts if any between `now` and 
 
 If `trim` is `false`, data of the complete trajectory is forwarded even if there is only partial overlap in the query duration.
 
-Sample server response 
+Sample server response
 ```
 {
   "response":"trajectory",
   "values":[{
-    "robot_name":"magni1",
-    "fleet_name:"magni",
+    "robot_name":"tinyRobot_1",
+    "fleet_name:"tinyRobot",
     "shape":"circle",
     "dimensions":0.3,
     "id":310,
