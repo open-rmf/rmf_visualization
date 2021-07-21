@@ -20,6 +20,7 @@ find_package(rmf_traffic_ros2 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(OpenCV REQUIRED )
 find_package(websocketpp REQUIRED)
+find_package(OpenSSL REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
@@ -53,6 +54,8 @@ target_link_libraries(rmf_visualization_schedule
     rmf_traffic::rmf_traffic
     ${rclcpp_LIBRARIES}
     ${websocketpp_LIBRARIES}
+    OpenSSL::SSL
+    OpenSSL::Crypto
     ${rmf_traffic_msgs_LIBRARIES}
 )
 
@@ -62,15 +65,18 @@ target_include_directories(rmf_visualization_schedule
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     ${rclcpp_INCLUDE_DIRS}
     ${WEBSOCKETPP_INCLUDE_DIR}
+    ${OpenSSL_INCLUDE_DIR}
 )
 
-ament_export_targets(rmf_visualization_schedule HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   rmf_traffic
   rmf_traffic_ros2
   rclcpp
   rmf_traffic_msgs
-  websocketpp)
+  websocketpp
+  OpenSSL)
+ament_export_include_directories(include)
+ament_export_targets(rmf_visualization_schedule HAS_LIBRARY_TARGET)
 
 #===============================================================================
 add_executable(schedule_visualizer src/main.cpp)
@@ -108,8 +114,15 @@ install(
 )
 
 install(
-  TARGETS rmf_visualization_schedule schedule_visualizer
+  TARGETS rmf_visualization_schedule
   EXPORT rmf_visualization_schedule
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(
+  TARGETS schedule_visualizer
   RUNTIME DESTINATION lib/${PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
