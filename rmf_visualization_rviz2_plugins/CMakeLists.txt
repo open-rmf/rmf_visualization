@@ -33,6 +33,19 @@ find_package(rviz_default_plugins REQUIRED)
 find_package(rmf_traffic_ros2 REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Test)
 
+if(BUILD_TESTING)
+  find_package(rmf_cmake_uncrustify REQUIRED)
+  find_file(uncrustify_config_file
+    NAMES "rmf_code_style.cfg"
+    PATHS "${rmf_utils_DIR}/../../../share/rmf_utils/")
+
+  rmf_uncrustify(
+    src test
+    CONFIG_FILE ${uncrustify_config_file}
+    MAX_LINE_LENGTH 80
+  )
+endif()
+
 add_definitions(-DQT_NO_KEYWORDS)
 
 add_library(${PROJECT_NAME} SHARED 

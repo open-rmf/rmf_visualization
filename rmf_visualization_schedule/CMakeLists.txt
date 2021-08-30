@@ -31,14 +31,14 @@ find_package(rmf_visualization_msgs REQUIRED)
 find_package(rmf_building_map_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-find_package(rmf_cmake_uncrustify QUIET)
-if(BUILD_TESTING AND rmf_cmake_uncrustify_FOUND)
+if(BUILD_TESTING)
+  find_package(rmf_cmake_uncrustify REQUIRED)
   find_file(uncrustify_config_file 
     NAMES "rmf_code_style.cfg"
     PATHS "${rmf_utils_DIR}/../../../share/rmf_utils/")
 
   rmf_uncrustify(
-    ARGN include/rmf_visualization_schedule src test
+    include/rmf_visualization_schedule src test
     CONFIG_FILE ${uncrustify_config_file}
     MAX_LINE_LENGTH 80
   )

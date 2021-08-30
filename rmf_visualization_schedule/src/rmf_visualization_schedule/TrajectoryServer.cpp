@@ -130,8 +130,11 @@ auto TrajectoryServer::Implementation::on_message(
     try
     {
       token = Json::parse(msg->get_payload())["token"];
-      auto decoded = jwt::decode(token, jwt::params::algorithms({"RS256"}), jwt::params::secret(public_key));
-    } 
+      auto decoded = jwt::decode(
+        token,
+        jwt::params::algorithms({"RS256"}),
+        jwt::params::secret(public_key));
+    }
     catch (std::exception& e)
     {
       is_verified = false;

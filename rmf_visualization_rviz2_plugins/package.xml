@@ -27,6 +27,8 @@
   <exec_depend>libqt5-gui</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>
 
+  <test_depend>rmf_cmake_uncrustify</test_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
