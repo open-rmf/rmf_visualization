@@ -376,4 +376,6 @@ QString DoorPanel::door_state_mode_tooltip() const
 } // namespace rmf_visualization_rviz2_plugins
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS(rmf_visualization_rviz2_plugins::DoorPanel, rviz_common::Panel)
+PLUGINLIB_EXPORT_CLASS(
+  rmf_visualization_rviz2_plugins::DoorPanel,
+  rviz_common::Panel)

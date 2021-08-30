@@ -338,4 +338,6 @@ void SchedulePanel::load(const rviz_common::Config& config)
 } // namespace rmf_visualization_rviz2_plugins
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS(rmf_visualization_rviz2_plugins::SchedulePanel, rviz_common::Panel)
+PLUGINLIB_EXPORT_CLASS(
+  rmf_visualization_rviz2_plugins::SchedulePanel,
+  rviz_common::Panel)
