@@ -2,10 +2,12 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rmf_visualization_fleet_states</name>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <description>Fleet state visualizer</description>
   <maintainer email="mquigley@openrobotics.org">Morgan Quigley</maintainer>
+  <maintainer email="yadunund@openrobotics.org">Yadunund</maintainer>
   <maintainer email="marco@openrobotics.org">Marco A. Gutiérrez</maintainer>
+  
   <license>Apache License 2.0</license>
 
   <build_depend>rmf_fleet_msgs</build_depend>

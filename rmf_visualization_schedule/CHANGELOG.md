@@ -1,13 +1,15 @@
 ## Changelog for package rmf_visualization_schedule
 
-Forthcoming
------------
+1.2.1 (2021-09-01)
+------------------
+* Fix style checking in CI: [#37](https://github.com/open-rmf/rmf_visualization/pull/37)
+* Contributors: Grey
+
 1.2.0 (2021-06-14)
 ------------------
 * Public API for creating of ScheduleDataNode and TrajectoryServer. Single schedule_visualizer executable that publishes schedule markers and starts trajectory websocket server: [#6](https://github.com/open-rmf/rmf_visualization/pull/3)
 * Removed dependencies on boost libraries: [#7](https://github.com/open-rmf/rmf_visualization/pull/7)
 * Renamed package to `rmf_visualization_schedule`: [#8](https://github.com/open-rmf/rmf_visualization/pull/8)
-
 
 1.1.0 (2020-09-24)
 ------------------
