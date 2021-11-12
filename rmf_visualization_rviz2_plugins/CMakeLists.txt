@@ -34,12 +34,12 @@ find_package(rmf_traffic_ros2 REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Test)
 
 if(BUILD_TESTING)
-  find_package(rmf_cmake_uncrustify REQUIRED)
+  find_package(ament_cmake_uncrustify REQUIRED)
   find_file(uncrustify_config_file
     NAMES "rmf_code_style.cfg"
     PATHS "${rmf_utils_DIR}/../../../share/rmf_utils/")
 
-  rmf_uncrustify(
+  ament_uncrustify(
     src test
     CONFIG_FILE ${uncrustify_config_file}
     MAX_LINE_LENGTH 80
@@ -48,7 +48,7 @@ endif()
 
 add_definitions(-DQT_NO_KEYWORDS)
 
-add_library(${PROJECT_NAME} SHARED 
+add_library(${PROJECT_NAME} SHARED
   src/SchedulePanel.cpp
   src/LiftPanel.cpp
   src/DoorPanel.cpp
@@ -57,7 +57,7 @@ add_library(${PROJECT_NAME} SHARED
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
-    ${QT5_LIBRARIES} 
+    ${QT5_LIBRARIES}
     ${rclcpp_LIBRARIES}
     ${rmf_door_msgs_LIBRARIES}
     ${rmf_lift_msgs_LIBRARIES}
