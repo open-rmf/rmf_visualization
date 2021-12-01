@@ -60,21 +60,26 @@ class SubmitTrajectoryNode : public rclcpp::Node
 {
 public:
 
-  SubmitTrajectoryNode(
+  SubmitTrajectoryNode(std::string node_name_ = "submit_trajectory_node")
+  : Node(node_name_)
+  {
+    // Do nothing
+  }
+
+  static std::shared_ptr<SubmitTrajectoryNode> make(
     std::string node_name_ = "submit_trajectory_node",
     std::string map_name = "level1",
     rmf_traffic::Duration start_delay = 0s,
     rmf_traffic::Duration duration_ = 60s,
-    Eigen::Vector3d position_ = Eigen::Vector3d{0, 0, 0},
-    Eigen::Vector3d velocity_ = Eigen::Vector3d{0, 0, 0},
+    Eigen::Vector3d position = Eigen::Vector3d{0, 0, 0},
+    Eigen::Vector3d velocity = Eigen::Vector3d{0, 0, 0},
     double radius = 1.0)
-  : Node(node_name_),
-    _position(position_),
-    _velocity(velocity_)
   {
-//    _start_time = std::chrono::steady_clock::now() + start_delay;
-    _start_time = rmf_traffic_ros2::convert(get_clock()->now()) + start_delay;
-    _finish_time = _start_time + duration_;
+    auto node = std::make_shared<SubmitTrajectoryNode>(std::move(node_name_));
+    const auto start_time =
+      rmf_traffic_ros2::convert(node->get_clock()->now()) + start_delay;
+
+    const auto finish_time = start_time + duration_;
 
     auto profile = rmf_traffic::Profile(
       rmf_traffic::geometry::make_final_convex<
@@ -82,31 +87,31 @@ public:
 
     rmf_traffic::Trajectory t;
     t.insert(
-      _start_time,
-      _position,
-      _velocity);
+      start_time,
+      position,
+      velocity);
 
     t.insert(
-      _start_time + 10s,
-      _position + Eigen::Vector3d{10, 0, 0},
-      _velocity);
+      start_time + 10s,
+      position + Eigen::Vector3d{10, 0, 0},
+      velocity);
 
     t.insert(
-      _start_time + 15s,
-      _position + Eigen::Vector3d{10, 0, M_PI_2},
-      _velocity);
+      start_time + 15s,
+      position + Eigen::Vector3d{10, 0, M_PI_2},
+      velocity);
 
     t.insert(
-      _finish_time,
-      _position + Eigen::Vector3d{10, 10, M_PI_2},
-      _velocity);
+      finish_time,
+      position + Eigen::Vector3d{10, 10, M_PI_2},
+      velocity);
 
     rmf_traffic::Route route{std::move(map_name), std::move(t)};
 
-    _writer = rmf_traffic_ros2::schedule::Writer::make(*this);
-    _writer->wait_for_service();
+    node->_writer = rmf_traffic_ros2::schedule::Writer::make(node);
+    node->_writer->wait_for_service();
 
-    _writer->async_make_participant(
+    node->_writer->async_make_participant(
       rmf_traffic::schedule::ParticipantDescription{
         "test",
         "submit_trajectory_node",
@@ -117,14 +122,12 @@ public:
       {
         p.set({std::move(route)});
       });
+
+    return node;
   }
 
 
 private:
-  rmf_traffic::Time _start_time;
-  rmf_traffic::Time _finish_time;
-  Eigen::Vector3d _position;
-  Eigen::Vector3d _velocity;
   rmf_traffic_ros2::schedule::WriterPtr _writer;
 };
 
@@ -166,7 +169,7 @@ int main(int argc, char* argv[])
   Eigen::Vector3d velocity{0, 0, 0};
 
 
-  rclcpp::spin(std::make_shared<SubmitTrajectoryNode>(
+  rclcpp::spin(SubmitTrajectoryNode::make(
       node_name,
       map_name,
       delay,

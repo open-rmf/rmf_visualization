@@ -78,7 +78,7 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
   // Creating a mirror manager that queries over all
   // Spacetime in the database schedule
   auto mirror_mgr_future = rmf_traffic_ros2::schedule::make_mirror(
-    *schedule_data, rmf_traffic::schedule::query_all(),
+    schedule_data, rmf_traffic::schedule::query_all(),
     &schedule_data->_pimpl->mutex);
 
   const auto stop_time = start_time + wait_time;
