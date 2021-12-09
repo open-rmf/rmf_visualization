@@ -155,7 +155,8 @@ auto TrajectoryServer::Implementation::on_message(
   else
   {
     RCLCPP_INFO(schedule_data_node->get_logger(),
-      "[TrajectoryServer] Invalid request received");
+      "[TrajectoryServer] Invalid request received: %s",
+      msg->get_payload().c_str());
   }
 
 }
