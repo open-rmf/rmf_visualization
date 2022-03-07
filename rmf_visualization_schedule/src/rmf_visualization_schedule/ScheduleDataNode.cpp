@@ -215,11 +215,9 @@ auto ScheduleDataNode::get_negotiation_trajectories(
 
   rmf_traffic::RouteId route_id = 0;
   const auto add_route = [&route_id, &table_view, &trajectory_elements]
-      (rmf_traffic::ConstRoutePtr route_ptr,
+      (const rmf_traffic::Route& route,
       rmf_traffic::schedule::ParticipantId id)
     {
-      const auto& route = *(route_ptr);
-
       Element e { id, route_id, route, *table_view->get_description(id) };
       trajectory_elements.push_back(e);
       ++route_id;
@@ -229,8 +227,8 @@ auto ScheduleDataNode::get_negotiation_trajectories(
   if (itin)
   {
     const auto& routes = *itin;
-    for (auto route_ptr : routes)
-      add_route(route_ptr, table_view->participant_id());
+    for (const auto& route : routes)
+      add_route(route, table_view->participant_id());
   }
 
   for (auto proposal : table_view->base_proposals())
