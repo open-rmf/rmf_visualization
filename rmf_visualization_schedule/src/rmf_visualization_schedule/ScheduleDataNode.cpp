@@ -93,7 +93,7 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
         Implementation::Data{mirror_mgr_future.get()});
       // retrieve/construct mirrors, snapshots and negotiation object
       schedule_data->_pimpl->negotiation = std::make_shared<Negotiation>(
-        *schedule_data, schedule_data->_pimpl->data->mirror.snapshot_handle());
+        *schedule_data, schedule_data->_pimpl->data->mirror.view());
       return schedule_data;
     }
   }
@@ -151,7 +151,7 @@ auto ScheduleDataNode::get_elements(
     &request_param.start_time,
     &request_param.finish_time);
 
-  const auto view = _pimpl->data->mirror.viewer().query(query);
+  const auto view = _pimpl->data->mirror.view()->query(query);
 
   for (const auto& element : view)
     elements.push_back(element);
@@ -218,7 +218,7 @@ auto ScheduleDataNode::get_negotiation_trajectories(
       (const rmf_traffic::Route& route,
       rmf_traffic::schedule::ParticipantId id)
     {
-      Element e { id, route_id, route, *table_view->get_description(id) };
+      Element e { id, 0, route_id, route, *table_view->get_description(id) };
       trajectory_elements.push_back(e);
       ++route_id;
     };
