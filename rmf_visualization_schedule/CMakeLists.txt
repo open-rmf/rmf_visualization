@@ -15,8 +15,8 @@ include(GNUInstallDirs)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rmf_traffic REQUIRED)
-find_package(rmf_traffic_ros2 REQUIRED)
+find_package(rmf_traffic 2 REQUIRED)
+find_package(rmf_traffic_ros2 2 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(OpenCV REQUIRED )
 find_package(websocketpp REQUIRED)
