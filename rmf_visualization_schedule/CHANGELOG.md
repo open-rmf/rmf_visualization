@@ -2,7 +2,7 @@
 
 1.3.0 (2022-03-18)
 ------------------
-* Update to traffic dependency API
+* Update to traffic dependency API: [#43](https://github.com/open-rmf/rmf_visualization/pull/43)
 
 1.2.1 (2021-09-01)
 ------------------
