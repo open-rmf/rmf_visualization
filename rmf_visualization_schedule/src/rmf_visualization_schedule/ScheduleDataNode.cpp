@@ -218,7 +218,13 @@ auto ScheduleDataNode::get_negotiation_trajectories(
       (const rmf_traffic::Route& route,
       rmf_traffic::schedule::ParticipantId id)
     {
-      Element e { id, 0, route_id, route, *table_view->get_description(id) };
+      Element e {
+        id,
+        0,
+        route_id,
+        std::make_shared<rmf_traffic::Route>(route),
+        *table_view->get_description(id)
+      };
       trajectory_elements.push_back(e);
       ++route_id;
     };

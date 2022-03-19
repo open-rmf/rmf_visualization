@@ -209,12 +209,12 @@ private:
     {
       active_id.push_back(element.participant);
 
-      if (element.route.trajectory().find(traj_param.start_time) !=
-        element.route.trajectory().end())
+      if (element.route->trajectory().find(traj_param.start_time) !=
+        element.route->trajectory().end())
       {
         add_location_markers(marker_array.markers, element, traj_param);
       }
-      if (traj_param.start_time < *element.route.trajectory().finish_time())
+      if (traj_param.start_time < *element.route->trajectory().finish_time())
       {
         auto path_marker = make_path_marker(element, traj_param);
         marker_array.markers.push_back(path_marker);
@@ -499,7 +499,7 @@ private:
     const RequestParam& param)
   {
     // TODO Link the color, shape and size of marker to profile of trajectory
-    const auto& trajectory = element.route.trajectory();
+    const auto& trajectory = element.route->trajectory();
 
     // Find the pose of the markers
     const auto it = trajectory.find(param.start_time);
@@ -522,7 +522,7 @@ private:
     const RequestParam param)
   {
     // TODO Link the color, shape and size of marker to profile of trajectory
-    const auto& trajectory = element.route.trajectory();
+    const auto& trajectory = element.route->trajectory();
     const bool conflict = is_conflict(element.participant);
 
     Marker marker_msg;
