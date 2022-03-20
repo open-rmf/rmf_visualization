@@ -120,7 +120,7 @@ public:
       },
       [route = std::move(route)](rmf_traffic::schedule::Participant p)
       {
-        p.set({std::move(route)});
+        p.set(p.assign_plan_id(), {std::move(route)});
       });
 
     return node;
