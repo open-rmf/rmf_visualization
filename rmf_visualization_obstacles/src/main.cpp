@@ -24,6 +24,9 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
+#include <rmf_visualization_msgs/msg/rviz_param.hpp>
+
+
 #include <memory>
 
 //==============================================================================
@@ -37,6 +40,7 @@ public:
   using MarkerMsg = visualization_msgs::msg::Marker;
   using MarkerArrayMsg = visualization_msgs::msg::MarkerArray;
   using Color = std_msgs::msg::ColorRGBA;
+  using RvizParamMsg = rmf_visualization_msgs::msg::RvizParam;
 
   // Constructor
   ObstacleVisualizer()
@@ -55,6 +59,18 @@ public:
       {
         msg_cb(*msg);
       });
+
+    _param_sub = this->create_subscription<RvizParamMsg>(
+      "rmf_visualization/parameters",
+      rclcpp::QoS(10),
+      [&](std::shared_ptr<const RvizParamMsg> msg)
+      {
+        if (!msg->map_name.empty())
+          _active_level_name = msg->map_name;
+      });
+
+    _active_level_name = this->declare_parameter("initial_map_name", "L1");
+    _global_fixed_frame = this->declare_parameter("global_fixed_frame", "map");
   }
 
   void msg_cb(const ObstaclesMsg& msg)
@@ -62,7 +78,7 @@ public:
     if (msg.obstacles.empty())
       return;
 
-    RCLCPP_INFO(
+    RCLCPP_DEBUG(
       this->get_logger(),
       "Received %ld obstacles",
       msg.obstacles.size());
@@ -78,11 +94,11 @@ public:
           "Received obstacle message with empty source. Ignoring...");
         continue;;
       }
-      if (obstacle.level_name.empty())
+      if (obstacle.level_name.empty() || obstacle.level_name != _active_level_name)
       {
-        RCLCPP_WARN(
+        RCLCPP_DEBUG(
           this->get_logger(),
-          "Received obstacle message with empty level_name. Ignoring...");
+          "Received obstacle in a different level. Ignoring...");
         continue;
       }
       if (obstacle.classification != "human")
@@ -94,7 +110,7 @@ public:
         continue;
       }
       MarkerMsg _msg;
-      _msg.header.frame_id = obstacle.header.frame_id;
+      _msg.header.frame_id = _global_fixed_frame;
       _msg.header.stamp = this->get_clock()->now();
       _msg.ns = "humans";
       _msg.text = "human";
@@ -132,7 +148,10 @@ public:
 
 private:
   rclcpp::Subscription<ObstaclesMsg>::SharedPtr _obstacles_sub;
+  rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
   rclcpp::Publisher<MarkerArrayMsg>::SharedPtr _obstacle_markers_pub;
+  std::string _active_level_name;
+  std::string _global_fixed_frame;
 };
 
 //==============================================================================

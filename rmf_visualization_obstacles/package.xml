@@ -14,6 +14,7 @@
   <depend>vision_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>rmf_obstacle_msgs</depend>
+  <depend>rmf_visualization_msgs</depend>
 
   <test_depend>ament_cmake_uncrustify</test_depend>
 

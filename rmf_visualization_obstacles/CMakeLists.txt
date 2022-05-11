@@ -17,6 +17,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(vision_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(rmf_obstacle_msgs REQUIRED)
+find_package(rmf_visualization_msgs REQUIRED)
 
 
 if(BUILD_TESTING)
@@ -42,6 +43,7 @@ target_link_libraries(obstacle_visualizer
     ${geometry_msgs_LIBRARIES}
     ${vision_msgs_LIBRARIES}
     ${rmf_obstacle_msgs_LIBRARIES}
+    ${rmf_visualization_msgs_LIBRARIES}
 )
 
 target_include_directories(obstacle_visualizer
@@ -51,6 +53,7 @@ target_include_directories(obstacle_visualizer
     ${geometry_msgs_INCLUDE_DIRS}
     ${vision_msgs_INCLUDE_DIRS}
     ${rmf_obstacle_msgs_INCLUDE_DIRS}
+    ${rmf_visualization_msgs_INCLUDE_DIRS}
 )
 
 install(
