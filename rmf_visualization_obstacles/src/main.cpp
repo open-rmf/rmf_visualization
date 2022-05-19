@@ -117,8 +117,8 @@ public:
       _msg.id = obstacle.id;
       _msg.type = _msg.CYLINDER;
       _msg.action = _msg.ADD;
-      _msg.pose = obstacle.data.box.center;
-      _msg.scale = obstacle.data.box.size;
+      _msg.pose = obstacle.bbox.center;
+      _msg.scale = obstacle.bbox.size;
       _msg.color = make_color(0,0.9,0.3);
       _msg.lifetime = obstacle.lifetime;
 
