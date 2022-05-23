@@ -36,7 +36,6 @@ public rclcpp::Node, public std::enable_shared_from_this<ObstacleVisualizer>
 public:
   using ObstaclesMsg = rmf_obstacle_msgs::msg::Obstacles;
   using ObstacleMsg = rmf_obstacle_msgs::msg::Obstacle;
-  using ObstacleDataMsg = rmf_obstacle_msgs::msg::ObstacleData;
   using MarkerMsg = visualization_msgs::msg::Marker;
   using MarkerArrayMsg = visualization_msgs::msg::MarkerArray;
   using Color = std_msgs::msg::ColorRGBA;
