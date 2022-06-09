@@ -22,8 +22,13 @@
 
     <node pkg="rmf_visualization_building_systems" exec="rmf_visualization_building_systems" args="-m $(var map_name)">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
-      <param name="use_sim_time" value="$(var use_sim_time)"/>
     </node>
+
+    <node pkg="rmf_visualization_navgraphs" exec="navgraph_visualizer_node">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="initial_map_name" value="$(var map_name)"/>
+    </node>
+
   </group>
 
   <group unless="$(var headless)">

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 
 #include "NavGraphVisualizer.hpp"
@@ -23,36 +23,61 @@
 
 //==============================================================================
 NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
-: Node("navgraph_visualizer", options)
+	: Node("navgraph_visualizer", options)
 {
-  _data = std::make_shared<Data>();
+	_data = std::make_shared<Data>();
 
-  _data->current_level = this->declare_parameter("initial_map_nam", "L1");
-  RCLCPP_INFO(
-    this->get_logger(),
-    "Setting parameter initial_map_name to %s", _data->current_level.c_str());
+	_data->current_level = this->declare_parameter("initial_map_nam", "L1");
+	RCLCPP_INFO(
+		this->get_logger(),
+		"Setting parameter initial_map_name to %s", _data->current_level.c_str());
 
-  _data->param_sub = this->create_subscription<RvizParam>(
-    "rmf_visualization/parameters",
-    rclcpp::SystemDefaultsQoS(),
-    [data = _data, n = weak_from_this()](std::shared_ptr<const RvizParam> msg)
-    {
-      if (!msg->map_name.empty())
-        data->current_level = msg->map_name;
+	_data->param_sub = this->create_subscription<RvizParam>(
+		"rmf_visualization/parameters",
+		rclcpp::SystemDefaultsQoS(),
+		[data = _data, n = weak_from_this()](
+			std::shared_ptr<const RvizParam> msg)
+	{
+		if (!msg->map_name.empty())
+			data->current_level = msg->map_name;
 
-      if (auto node = n.lock())
-      {
-        RCLCPP_INFO(
-          node->get_logger(),
-          "Publishing navgraphs on level %s", data->current_level.c_str());
-      }
+		if (auto node = n.lock())
+		{
+		        RCLCPP_INFO(
+				node->get_logger(),
+				"Publishing navgraphs on level %s", data->current_level.c_str());
+		}
 
-      data->publish_navgraphs();
-    });
+		data->publish_navgraphs();
+	});
 
-  RCLCPP_INFO(
-    this->get_logger(),
-    "NavGraph visualizer is running...");
+	const auto transient_qos =
+		rclcpp::QoS(10).reliable().transient_local();
+
+	_data->navgraph_sub = this->create_subscription<NavGraph>(
+		"/nav_graphs",
+		transient_qos,
+		[data = _data, n = weak_from_this()](
+			std::shared_ptr<const NavGraph> msg)
+	{
+		if (msg->name.empty())
+			return;
+		data->navgraphs[msg->name] = msg;
+
+		data->publish_navgraphs();
+
+		if (auto node = n.lock())
+		{
+		        RCLCPP_INFO(
+				node->get_logger(),
+				"Received nav_graph from fleet %s. Publishing...",
+				msg->name.c_str());
+		}
+	});
+
+	RCLCPP_INFO(
+		this->get_logger(),
+		"NavGraph visualizer is running...");
 }
 
 //==============================================================================

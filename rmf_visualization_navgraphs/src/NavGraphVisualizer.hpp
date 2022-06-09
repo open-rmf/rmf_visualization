@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 #ifndef SRC__NAVGRAPHVISUALIZER_HPP
 #define SRC__NAVGRAPHVISUALIZER_HPP
@@ -34,30 +34,31 @@
 class NavGraphVisualizer : public rclcpp::Node
 {
 public:
-  using NavGraph = rmf_building_map_msgs::msg::Graph;
-  using LaneStates = rmf_fleet_msgs::msg::LaneStates;
-  using RvizParam = rmf_visualization_msgs::msg::RvizParam;
+using NavGraph = rmf_building_map_msgs::msg::Graph;
+using LaneStates = rmf_fleet_msgs::msg::LaneStates;
+using RvizParam = rmf_visualization_msgs::msg::RvizParam;
 
-  /// Constructor
-  NavGraphVisualizer(
-    const rclcpp::NodeOptions& options  = rclcpp::NodeOptions());
+/// Constructor
+NavGraphVisualizer(
+	const rclcpp::NodeOptions& options  = rclcpp::NodeOptions());
 
 private:
-  struct Data
-  {
-    void param_cb(std::shared_ptr<const RvizParam> msg);
-    void graph_cb(std::shared_ptr<const NavGraph> msg);
-    void lane_states_cb(std::shared_ptr<const LaneStates> msg);
-    void publish_navgraphs();
+struct Data
+{
+	void param_cb(std::shared_ptr<const RvizParam> msg);
+	void graph_cb(std::shared_ptr<const NavGraph> msg);
+	void lane_states_cb(std::shared_ptr<const LaneStates> msg);
+	void publish_navgraphs();
 
-    rclcpp::Subscription<RvizParam>::SharedPtr param_sub;
-    rclcpp::Subscription<NavGraph>::SharedPtr navgraph_sub;
-    rclcpp::Subscription<LaneStates>::SharedPtr lane_states_sub;
+	rclcpp::Subscription<RvizParam>::SharedPtr param_sub;
+	rclcpp::Subscription<NavGraph>::SharedPtr navgraph_sub;
+	rclcpp::Subscription<LaneStates>::SharedPtr lane_states_sub;
 
-    std::string current_level;
-  };
+	std::string current_level;
+	std::unordered_map<std::string, std::shared_ptr<const NavGraph> > navgraphs;
+};
 
-  std::shared_ptr<Data> _data;
+std::shared_ptr<Data> _data;
 
 };
 
