@@ -15,9 +15,11 @@
  *
  */
 
+#include <rmf_traffic/agv/Graph.hpp>
 
 #include "NavGraphVisualizer.hpp"
 
+#include <rmf_building_map_msgs/msg/graph_edge.hpp>
 
 #include <rclcpp_components/register_node_macro.hpp>
 
@@ -25,54 +27,40 @@
 NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 	: Node("navgraph_visualizer", options)
 {
-	_data = std::make_shared<Data>();
-
-	_data->current_level = this->declare_parameter("initial_map_nam", "L1");
+	_current_level = this->declare_parameter("initial_map_nam", "L1");
 	RCLCPP_INFO(
 		this->get_logger(),
-		"Setting parameter initial_map_name to %s", _data->current_level.c_str());
+		"Setting parameter initial_map_name to %s", _current_level.c_str());
 
-	_data->param_sub = this->create_subscription<RvizParam>(
+	// It is okay to capture this by reference here.
+	_param_sub = this->create_subscription<RvizParam>(
 		"rmf_visualization/parameters",
 		rclcpp::SystemDefaultsQoS(),
-		[data = _data, n = weak_from_this()](
-			std::shared_ptr<const RvizParam> msg)
+		[&](std::shared_ptr<const RvizParam> msg)
 	{
 		if (!msg->map_name.empty())
-			data->current_level = msg->map_name;
+			_current_level = msg->map_name;
 
-		if (auto node = n.lock())
-		{
-		        RCLCPP_INFO(
-				node->get_logger(),
-				"Publishing navgraphs on level %s", data->current_level.c_str());
-		}
-
-		data->publish_navgraphs();
+		RCLCPP_INFO(
+			this->get_logger(),
+			"Publishing navgraphs on level %s", _current_level.c_str());
+		publish_navgraphs();
 	});
 
 	const auto transient_qos =
-		rclcpp::QoS(10).reliable().transient_local();
-
-	_data->navgraph_sub = this->create_subscription<NavGraph>(
+		rclcpp::QoS(10).transient_local();
+	// It is okay to capture this by reference here.
+	_navgraph_sub = this->create_subscription<NavGraph>(
 		"/nav_graphs",
 		transient_qos,
-		[data = _data, n = weak_from_this()](
-			std::shared_ptr<const NavGraph> msg)
+		[&](std::shared_ptr<const NavGraph> msg)
 	{
 		if (msg->name.empty())
 			return;
-		data->navgraphs[msg->name] = msg;
 
-		data->publish_navgraphs();
+		_navgraphs[msg->name] = msg;
 
-		if (auto node = n.lock())
-		{
-		        RCLCPP_INFO(
-				node->get_logger(),
-				"Received nav_graph from fleet %s. Publishing...",
-				msg->name.c_str());
-		}
+		publish_navgraphs();
 	});
 
 	RCLCPP_INFO(
@@ -81,25 +69,25 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 }
 
 //==============================================================================
-void NavGraphVisualizer::Data::param_cb(std::shared_ptr<const RvizParam> msg)
+void NavGraphVisualizer::param_cb(std::shared_ptr<const RvizParam> msg)
 {
 
 }
 
 //==============================================================================
-void NavGraphVisualizer::Data::graph_cb(std::shared_ptr<const NavGraph> msg)
+void NavGraphVisualizer::graph_cb(std::shared_ptr<const NavGraph> msg)
 {
 
 }
 
 //==============================================================================
-void NavGraphVisualizer::Data::lane_states_cb(std::shared_ptr<const LaneStates> msg)
+void NavGraphVisualizer::lane_states_cb(std::shared_ptr<const LaneStates> msg)
 {
 
 }
 
 //==============================================================================
-void NavGraphVisualizer::Data::publish_navgraphs()
+void NavGraphVisualizer::publish_navgraphs()
 {
 
 }

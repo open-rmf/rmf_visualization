@@ -37,29 +37,43 @@ public:
 using NavGraph = rmf_building_map_msgs::msg::Graph;
 using LaneStates = rmf_fleet_msgs::msg::LaneStates;
 using RvizParam = rmf_visualization_msgs::msg::RvizParam;
+using Marker = rmf_visualization_msgs::msg::Marker;
 
 /// Constructor
 NavGraphVisualizer(
 	const rclcpp::NodeOptions& options  = rclcpp::NodeOptions());
 
 private:
-struct Data
-{
+
+	struct FleetNavGraph
+	{
+		std::shared_ptr<rmf_traffic::agv::Graph> traffic_graph;
+		std::shared_ptr<const NavGraph> navgraph;
+		LaneStates lane_states;
+		// Map marker id to Marker. Used for lookup and republishing when lane
+		// state changes.
+		std::unordered_map<std::size_t, Marker> lane_markers;
+
+		FleetNavGraph::FleetNavGraph()
+		{
+			traffic_graph = nullptr;
+			navgraph = nullptr;
+		}
+	};
+	using FleetNavGraphPtr = std::shared_ptr<FleetNavGraph>;
+
 	void param_cb(std::shared_ptr<const RvizParam> msg);
 	void graph_cb(std::shared_ptr<const NavGraph> msg);
 	void lane_states_cb(std::shared_ptr<const LaneStates> msg);
 	void publish_navgraphs();
 
-	rclcpp::Subscription<RvizParam>::SharedPtr param_sub;
-	rclcpp::Subscription<NavGraph>::SharedPtr navgraph_sub;
-	rclcpp::Subscription<LaneStates>::SharedPtr lane_states_sub;
+	rclcpp::Subscription<RvizParam>::SharedPtr _param_sub;
+	rclcpp::Subscription<NavGraph>::SharedPtr _navgraph_sub;
+	rclcpp::Subscription<LaneStates>::SharedPtr _lane_states_sub;
 
-	std::string current_level;
-	std::unordered_map<std::string, std::shared_ptr<const NavGraph> > navgraphs;
-};
-
-std::shared_ptr<Data> _data;
-
+	std::string _current_level;
+	// Map fleet name to FleetNavGraphPtr
+	std::unordered_map<std::string, FleetNavGraphPtr> _navgraphs;
 };
 
 
