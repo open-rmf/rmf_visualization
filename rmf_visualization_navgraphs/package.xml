@@ -15,6 +15,7 @@
   <depend>rmf_building_map_msgs</depend>
   <depend>rmf_visualization_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>rmf_traffic</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

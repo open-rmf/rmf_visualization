@@ -58,7 +58,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 		if (msg->name.empty())
 			return;
 
-		_navgraphs[msg->name] = msg;
+		// _navgraphs[msg->name] = msg;
 
 		publish_navgraphs();
 	});

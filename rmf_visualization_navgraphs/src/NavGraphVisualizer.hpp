@@ -37,7 +37,7 @@ public:
 using NavGraph = rmf_building_map_msgs::msg::Graph;
 using LaneStates = rmf_fleet_msgs::msg::LaneStates;
 using RvizParam = rmf_visualization_msgs::msg::RvizParam;
-using Marker = rmf_visualization_msgs::msg::Marker;
+using Marker = visualization_msgs::msg::Marker;
 
 /// Constructor
 NavGraphVisualizer(
@@ -54,7 +54,7 @@ private:
 		// state changes.
 		std::unordered_map<std::size_t, Marker> lane_markers;
 
-		FleetNavGraph::FleetNavGraph()
+		FleetNavGraph()
 		{
 			traffic_graph = nullptr;
 			navgraph = nullptr;
