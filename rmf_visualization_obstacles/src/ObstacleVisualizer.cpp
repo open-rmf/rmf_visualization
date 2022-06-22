@@ -25,6 +25,10 @@
 ObstacleVisualizer::ObstacleVisualizer(const rclcpp::NodeOptions& options)
 : Node("rmf_obstacle_visualizer", options)
 {
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Beginning RMF obstacle visualizer node");
+
   _obstacle_markers_pub = this->create_publisher<MarkerArrayMsg>(
     "obstacle_markers",
     rclcpp::QoS(10));

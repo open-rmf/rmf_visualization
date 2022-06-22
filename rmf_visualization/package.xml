@@ -13,7 +13,7 @@
   <exec_depend>rmf_visualization_schedule</exec_depend>
   <exec_depend>rmf_visualization_fleet_states</exec_depend>
   <exec_depend>rmf_visualization_building_systems</exec_depend>
-  <exec_depend>rmf_visualization_navgraphs</exec_depend>
+  <!-- <exec_depend>rmf_visualization_navgraphs</exec_depend> -->
   <exec_depend>rmf_visualization_obstacles</exec_depend>
   <exec_depend>rmf_visualization_rviz2_plugins</exec_depend>
   <exec_depend>launch_xml</exec_depend>

@@ -24,10 +24,68 @@
 #include <rclcpp_components/register_node_macro.hpp>
 
 //==============================================================================
+NavGraphVisualizer::FleetNavGraphPtr::FleetNavGraphPtr(
+  NavGraph::ConstSharedPtr navgraph_,
+  LaneStates::ConstSharedPtr lane_states_)
+: navgraph(navgraph_),
+  lane_states(lane_states_)
+{
+  traffic_graph = std::nullopt;
+  if (navgraph != nullptr)
+  {
+    set_traffic_graph(*navgraph);
+  }
+}
+
+//==============================================================================
+NavGraphVisualizer::FleetNavGraphPtr::set_traffic_graph(
+  const NavGraph& navgraph)
+{
+  TrafficGraph graph;
+  std::unordered_set<std::size_t> added_waypoints = {};
+
+  auto set_params = [&](const )
+
+  for (const auto& v : vertices)
+  {
+    const std::string name = v.name;
+    std::optional<std::string> level_name = std::nullopt;
+    bool is_holding_point = false;
+    bool is_passthrough_point = false;
+    bool is_parking_spot = false;
+    bool is_charger = false;
+    Eigen::Vector2d loc = {v.x, v.y};
+    for (const auto& p : v.params)
+    {
+      if (p.name == "is_holding_point")
+      {
+        is_holding_point = p.value_bool;
+      }
+      else if (p.name == "is_passthrough_point")
+      {
+        is_passthrough_point = p.value_bool;
+      }
+      else if (p.name == "is_parking_spot")
+      {
+        is_parking_spot = p.value_bool;
+      }
+      else if (p.name == "is_charger")
+      {
+        is_charger = p.value_bool;
+      }
+      else if (p.name == "")
+    }
+
+
+  }
+
+}
+
+//==============================================================================
 NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 	: Node("navgraph_visualizer", options)
 {
-	_current_level = this->declare_parameter("initial_map_nam", "L1");
+	_current_level = this->declare_parameter("initial_map_name", "L1");
 	RCLCPP_INFO(
 		this->get_logger(),
 		"Setting parameter initial_map_name to %s", _current_level.c_str());
@@ -53,12 +111,18 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 	_navgraph_sub = this->create_subscription<NavGraph>(
 		"/nav_graphs",
 		transient_qos,
-		[&](std::shared_ptr<const NavGraph> msg)
+		[&](NavGraph::ConstSharedPtr msg)
 	{
 		if (msg->name.empty())
 			return;
 
-		// _navgraphs[msg->name] = msg;
+		const auto insertion = _navgraphs.insert({msg->name, nullptr});
+    if (insertion.second)
+    {
+      // Add the navgraph and generate traffic_graph
+      auto navgraph = std::make_shared<FleetNavGraph>();
+
+    }
 
 		publish_navgraphs();
 	});
