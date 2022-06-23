@@ -15,6 +15,7 @@ set(dep_pkgs
   rmf_visualization_msgs
   visualization_msgs
   rmf_traffic
+  rmf_traffic_ros2
 )
 foreach(pkg ${dep_pkgs})
   find_package(${pkg} REQUIRED)
@@ -33,6 +34,7 @@ target_link_libraries(navgraph_visualizer
     ${rmf_visualization_msgs_LIBRARIES}
     ${visualization_msgs_LIBRARIES}
     rmf_traffic::rmf_traffic
+    rmf_traffic_ros2::rmf_traffic_ros2
 
 )
 
@@ -47,6 +49,7 @@ target_include_directories(navgraph_visualizer
     ${rmf_visualization_msgs_INCLUDE_DIRS}
     ${visualization_msgs_INCLUDE_DIRS}
     ${rmf_traffic_INCLUDE_DIRS}
+    ${rmf_traffic_ros2_INCLUDE_DIRS}
 )
 
 target_compile_features(navgraph_visualizer INTERFACE cxx_std_17)

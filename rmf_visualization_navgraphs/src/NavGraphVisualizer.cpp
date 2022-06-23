@@ -21,64 +21,19 @@
 
 #include <rmf_building_map_msgs/msg/graph_edge.hpp>
 
+#include <rmf_traffic_ros2/agv/Graph.hpp>
+
+#include <rclcpp/subscription_options.hpp>
+
+
 #include <rclcpp_components/register_node_macro.hpp>
 
 //==============================================================================
-NavGraphVisualizer::FleetNavGraphPtr::FleetNavGraphPtr(
-  NavGraph::ConstSharedPtr navgraph_,
-  LaneStates::ConstSharedPtr lane_states_)
-: navgraph(navgraph_),
-  lane_states(lane_states_)
+NavGraphVisualizer::FleetNavGraph::FleetNavGraph()
 {
   traffic_graph = std::nullopt;
-  if (navgraph != nullptr)
-  {
-    set_traffic_graph(*navgraph);
-  }
-}
-
-//==============================================================================
-NavGraphVisualizer::FleetNavGraphPtr::set_traffic_graph(
-  const NavGraph& navgraph)
-{
-  TrafficGraph graph;
-  std::unordered_set<std::size_t> added_waypoints = {};
-
-  auto set_params = [&](const )
-
-  for (const auto& v : vertices)
-  {
-    const std::string name = v.name;
-    std::optional<std::string> level_name = std::nullopt;
-    bool is_holding_point = false;
-    bool is_passthrough_point = false;
-    bool is_parking_spot = false;
-    bool is_charger = false;
-    Eigen::Vector2d loc = {v.x, v.y};
-    for (const auto& p : v.params)
-    {
-      if (p.name == "is_holding_point")
-      {
-        is_holding_point = p.value_bool;
-      }
-      else if (p.name == "is_passthrough_point")
-      {
-        is_passthrough_point = p.value_bool;
-      }
-      else if (p.name == "is_parking_spot")
-      {
-        is_parking_spot = p.value_bool;
-      }
-      else if (p.name == "is_charger")
-      {
-        is_charger = p.value_bool;
-      }
-      else if (p.name == "")
-    }
-
-
-  }
-
+  lane_states = nullptr;
+  lane_markers = {};
 }
 
 //==============================================================================
@@ -94,7 +49,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 	_param_sub = this->create_subscription<RvizParam>(
 		"rmf_visualization/parameters",
 		rclcpp::SystemDefaultsQoS(),
-		[&](std::shared_ptr<const RvizParam> msg)
+		[=](std::shared_ptr<const RvizParam> msg)
 	{
 		if (!msg->map_name.empty())
 			_current_level = msg->map_name;
@@ -107,11 +62,15 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 
 	const auto transient_qos =
 		rclcpp::QoS(10).transient_local();
-	// It is okay to capture this by reference here.
+  // Selectively disable intra-process comms for this subscriber as
+  // non-volatile QoS is not supported.
+  rclcpp::SubscriptionOptionsWithAllocator<std::allocator<void>> ipc_options;
+  ipc_options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
+
 	_navgraph_sub = this->create_subscription<NavGraph>(
 		"/nav_graphs",
 		transient_qos,
-		[&](NavGraph::ConstSharedPtr msg)
+		[=](NavGraph::ConstSharedPtr msg)
 	{
 		if (msg->name.empty())
 			return;
@@ -121,11 +80,46 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
     {
       // Add the navgraph and generate traffic_graph
       auto navgraph = std::make_shared<FleetNavGraph>();
-
+      navgraph->traffic_graph = rmf_traffic_ros2::convert(*msg);
+      _navgraphs[msg->name] = std::move(navgraph);
     }
-
+    else
+    {
+      if (!insertion.first->second->traffic_graph.has_value())
+      {
+        insertion.first->second->traffic_graph = rmf_traffic_ros2::convert(*msg);
+      }
+    }
 		publish_navgraphs();
-	});
+	},
+  ipc_options);
+
+  _lane_states_sub = this->create_subscription<LaneStates>(
+    "/lane_states",
+    rclcpp::QoS(10).reliable(),
+    [=](LaneStates::ConstSharedPtr msg)
+    {
+      if (msg->fleet_name.empty())
+      return;
+
+      const auto insertion = _navgraphs.insert({msg->fleet_name, nullptr});
+      if (insertion.second)
+      {
+        // Add the navgraph and generate traffic_graph
+        auto navgraph = std::make_shared<FleetNavGraph>();
+        navgraph->lane_states = msg;
+        _navgraphs[msg->fleet_name] = std::move(navgraph);
+      }
+      else
+      {
+        if (insertion.first->second->lane_states == nullptr)
+        {
+          insertion.first->second->lane_states = msg;
+        }
+      }
+      publish_navgraphs();
+    },
+    ipc_options);
 
 	RCLCPP_INFO(
 		this->get_logger(),

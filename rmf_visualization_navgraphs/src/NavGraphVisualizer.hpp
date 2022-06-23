@@ -49,18 +49,12 @@ private:
 	struct FleetNavGraph
 	{
 		std::optional<TrafficGraph> traffic_graph;
-		NavGraph::ConstSharedPtr navgraph;
 		LaneStates::ConstSharedPtr lane_states;
 		// Map marker id to Marker. Used for lookup and republishing when lane
 		// state changes.
 		std::unordered_map<std::size_t, Marker> lane_markers;
 
-    FleetNavGraphPtr(
-      NavGraph::ConstSharedPtr navgraph,
-      LaneStates::ConstSharedPtr lane_states);
-
-    // Generate rmf_traffic::agv::Graph
-    void set_traffic_graph(const NavGraph& navgraph);
+    FleetNavGraph();
 
 	};
 	using FleetNavGraphPtr = std::shared_ptr<FleetNavGraph>;
