@@ -227,7 +227,7 @@ private:
 
     // Add deletion markers for trajectories no longer active
     std::unordered_set<uint64_t> removed_markers;
-    for (const auto marker : _marker_tracker)
+    for (const auto& marker : _marker_tracker)
     {
       if (std::find(active_id.begin(), active_id.end(), marker)
         == active_id.end())
@@ -237,7 +237,7 @@ private:
       }
     }
 
-    for (const auto r : removed_markers)
+    for (const auto& r : removed_markers)
       _marker_tracker.erase(r);
 
     // Publish marker_array
@@ -360,9 +360,9 @@ private:
       // Add markers for nodes and lanes in each graph
       uint64_t graph_count = 0;
       uint64_t waypoint_count = 0;
-      for (const auto nav_graph : _level.nav_graphs)
+      for (const auto& nav_graph : _level.nav_graphs)
       {
-        for (const auto vertex : nav_graph.vertices)
+        for (const auto& vertex : nav_graph.vertices)
         {
           node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
           if (!vertex.name.empty())
@@ -375,7 +375,7 @@ private:
         lane_marker.points.clear();
         // TODO use graph id or graph name to lookup color
         lane_marker.color = get_color(graph_count);
-        for (const auto edge : nav_graph.edges)
+        for (const auto& edge : nav_graph.edges)
         {
           auto n1 = nav_graph.vertices[edge.v1_idx];
           auto n2 = nav_graph.vertices[edge.v2_idx];
@@ -384,7 +384,7 @@ private:
         }
         graph_count++;
         // Insert lane marker to marker_array
-        marker_array.markers.push_back(lane_marker);
+        // marker_array.markers.push_back(lane_marker);
       }
       marker_array.markers.push_back(node_marker);
 

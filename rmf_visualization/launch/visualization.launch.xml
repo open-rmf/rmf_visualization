@@ -9,6 +9,8 @@
   <arg name="display_names" default="true"/>
   <arg name="websocket_port" default="8006"/>
   <arg name="headless" default="false" description="Do not launch rviz2"/>
+  <arg name="lane_width" default="0.5" description="Width of lanes(m) to be rendered"/>
+  <arg name="waypoint_width" default="1.0" description="Width of waypoints(m) to be rendered"/>
 
   <group>
     <node pkg="rmf_visualization_schedule" exec="schedule_visualizer" args="-r $(var rate) -m $(var map_name) -p $(var websocket_port) --history 50">
@@ -24,10 +26,12 @@
       <param name="use_sim_time" value="$(var use_sim_time)"/>
     </node>
 
-    <!-- <node pkg="rmf_visualization_navgraphs" exec="navgraph_visualizer_node">
+    <node pkg="rmf_visualization_navgraphs" exec="navgraph_visualizer_node">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
       <param name="initial_map_name" value="$(var map_name)"/>
-    </node> -->
+      <param name="lane_width" value="$(var lane_width)"/>
+      <param name="waypoint_width" value="$(var waypoint_width)"/>
+    </node>
 
   </group>
 

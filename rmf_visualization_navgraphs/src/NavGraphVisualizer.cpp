@@ -23,13 +23,25 @@
 
 #include <rmf_traffic_ros2/agv/Graph.hpp>
 
+#include <rclcpp/publisher_options.hpp>
 #include <rclcpp/subscription_options.hpp>
 
+#include <geometry_msgs/msg/point.hpp>
 
 #include <rclcpp_components/register_node_macro.hpp>
 
 //==============================================================================
-NavGraphVisualizer::FleetNavGraph::FleetNavGraph()
+NavGraphVisualizer::FleetNavGraph::FleetNavGraph(
+  const std::string& fleet_name_,
+  std::weak_ptr<rclcpp::Node> node_,
+  Color::ConstSharedPtr color_,
+  double lane_width_,
+  double waypoint_width_)
+: fleet_name(std::move(fleet_name_)),
+  node(node_),
+  color(color_),
+  lane_width(lane_width_),
+  waypoint_width(waypoint_width_)
 {
   traffic_graph = std::nullopt;
   lane_states = nullptr;
@@ -37,62 +49,229 @@ NavGraphVisualizer::FleetNavGraph::FleetNavGraph()
 }
 
 //==============================================================================
+void NavGraphVisualizer::FleetNavGraph::initialize_markers(
+  const NavGraph& navgraph,
+  const rclcpp::Time& now)
+{
+  // We need to bucket each lane into the level it exists on. This was easy to
+  // infer when using rmf_building_map_msgs::msg::BuildingMap but there is no
+  // correlation between the indices of lanes in that message and the indices
+  // of the lane in the graph used by the fleet adapters. Hence, we sort the
+  // lanes here.
+  if (!traffic_graph.has_value())
+  {
+    // Without the traffic graph we cannot sort the lanes
+    if (const auto n = node.lock())
+    {
+      RCLCPP_WARN(
+        n->get_logger(),
+        "[bug] initialize_markers called before setting the traffic graph"
+        ". This is a bug and should be reported"
+      );
+    }
+    return;
+  }
+
+  using Point = geometry_msgs::msg::Point;
+  auto make_point =
+    [](const Eigen::Vector2d& loc, double z) -> Point
+    {
+      return geometry_msgs::build<Point>()
+      .x(loc[0])
+      .y(loc[1])
+      .z(z);
+    };
+
+  for (std::size_t i = 0; i < navgraph.edges.size(); ++i)
+  {
+    const auto& edge = navgraph.edges[i];
+    const auto& entry_wp = traffic_graph->get_waypoint(edge.v1_idx);
+    const auto& exit_wp = traffic_graph->get_waypoint(edge.v2_idx);
+    if (entry_wp.get_map_name() != exit_wp.get_map_name())
+    {
+      // Lane connecting two floors. We don't have to visualize this.
+      continue;
+    }
+    const auto& map_name = entry_wp.get_map_name();
+    if (lane_markers.find(map_name) == lane_markers.end())
+    {
+      lane_markers.insert({map_name, {}});
+    }
+
+    Marker marker;
+    marker.header.stamp = now;
+    marker.header.frame_id = "map";
+    marker.ns = fleet_name + "/lanes/" + map_name;
+    marker.id = i;
+    marker.type = marker.MODIFY;
+    marker.type = marker.LINE_STRIP;
+    marker.pose.orientation.w = 1.0;
+    // For now we implement a simple visual change if a lane is speed limited
+    // where the width of the lane is halved if speed limited.
+    const auto& lane = traffic_graph->get_lane(i);
+    marker.scale.x = lane.properties().speed_limit().has_value() ?
+      lane_width/2.0 : lane_width;
+    marker.color = *color;
+    marker.points.push_back(make_point(entry_wp.get_location(), -0.01));
+    marker.points.push_back(make_point(exit_wp.get_location(), -0.01));
+    auto& marker_map = lane_markers[map_name];
+    marker_map.insert({i, std::move(marker)});
+  }
+
+}
+
+//==============================================================================
+void NavGraphVisualizer::FleetNavGraph::fill_with_markers(
+  const std::string& map_name,
+  MarkerArray& marker_array,
+  const bool delete_markers)
+{
+  if (lane_markers.find(map_name) != lane_markers.end())
+  {
+    for (const auto& [_, marker] :  lane_markers.find(map_name)->second)
+    {
+      if (delete_markers)
+      {
+        // We create a copy and modify action to delete
+        auto m = marker;
+        m.action = marker.DELETEALL;
+        marker_array.markers.push_back(std::move(m));
+      }
+      else
+      {
+        marker_array.markers.push_back(marker);
+      }
+    }
+  }
+}
+
+//==============================================================================
 NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
-	: Node("navgraph_visualizer", options)
+: Node("navgraph_visualizer", options)
 {
 	_current_level = this->declare_parameter("initial_map_name", "L1");
 	RCLCPP_INFO(
 		this->get_logger(),
 		"Setting parameter initial_map_name to %s", _current_level.c_str());
 
+	_lane_width = this->declare_parameter("lane_width", 0.5);
+	RCLCPP_INFO(
+		this->get_logger(),
+		"Setting parameter lane_width to %f", _lane_width);
+
+	_waypoint_width = this->declare_parameter("waypoint_width", 1.0);
+	RCLCPP_INFO(
+		this->get_logger(),
+		"Setting parameter waypoint_width to %f", _waypoint_width);
+
 	// It is okay to capture this by reference here.
 	_param_sub = this->create_subscription<RvizParam>(
 		"rmf_visualization/parameters",
 		rclcpp::SystemDefaultsQoS(),
-		[=](std::shared_ptr<const RvizParam> msg)
+		[=](RvizParam::ConstSharedPtr msg)
 	{
-		if (!msg->map_name.empty())
-			_current_level = msg->map_name;
+		if (msg->map_name.empty() || msg->map_name == _current_level)
+      return;
 
+    // Delete old markers before updating current_level
+    publish_map_markers(true);
+
+    _current_level = msg->map_name;
 		RCLCPP_INFO(
 			this->get_logger(),
 			"Publishing navgraphs on level %s", _current_level.c_str());
-		publish_navgraphs();
+    // Publish new markers
+		publish_map_markers();
 	});
 
-	const auto transient_qos =
+
+  // Selectively disable intra-process comms for publishers abd subscriptions
+  // for non-volatile topics so that this node can still run in a container
+  // with intra-process comms enabled.
+  rclcpp::PublisherOptionsWithAllocator<
+  std::allocator<void>> ipc_pub_options;
+  ipc_pub_options.use_intra_process_comm =
+    rclcpp::IntraProcessSetting::Disable;
+  _marker_pub = this->create_publisher<MarkerArray>(
+    "/map_markers",
+    rclcpp::SystemDefaultsQoS().reliable().keep_last(1).transient_local(),
+    std::move(ipc_pub_options)
+  );
+
+	const auto sub_transient_qos =
 		rclcpp::QoS(10).transient_local();
-  // Selectively disable intra-process comms for this subscriber as
-  // non-volatile QoS is not supported.
-  rclcpp::SubscriptionOptionsWithAllocator<std::allocator<void>> ipc_options;
-  ipc_options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
+  rclcpp::SubscriptionOptionsWithAllocator<
+  std::allocator<void>> ipc_sub_options;
+  ipc_sub_options.use_intra_process_comm =
+    rclcpp::IntraProcessSetting::Disable;
 
 	_navgraph_sub = this->create_subscription<NavGraph>(
 		"/nav_graphs",
-		transient_qos,
+		sub_transient_qos,
 		[=](NavGraph::ConstSharedPtr msg)
-	{
-		if (msg->name.empty())
-			return;
+    {
+      if (msg->name.empty())
+        return;
 
-		const auto insertion = _navgraphs.insert({msg->name, nullptr});
-    if (insertion.second)
-    {
-      // Add the navgraph and generate traffic_graph
-      auto navgraph = std::make_shared<FleetNavGraph>();
-      navgraph->traffic_graph = rmf_traffic_ros2::convert(*msg);
-      _navgraphs[msg->name] = std::move(navgraph);
-    }
-    else
-    {
-      if (!insertion.first->second->traffic_graph.has_value())
+      const auto insertion = _navgraphs.insert({msg->name, nullptr});
+      if (insertion.second)
       {
-        insertion.first->second->traffic_graph = rmf_traffic_ros2::convert(*msg);
+        // Add the navgraph and generate traffic_graph
+        auto navgraph = std::make_shared<FleetNavGraph>(
+          msg->name,
+          weak_from_this(),
+          get_next_color(),
+          this->_lane_width,
+          this->_waypoint_width
+        );
+        navgraph->traffic_graph = rmf_traffic_ros2::convert(*msg);
+        if (!navgraph->traffic_graph.has_value())
+        {
+          RCLCPP_ERROR(
+            this->get_logger(),
+            "Unable to convert NavGraph message from fleet %s into a Traffic "
+            "Graph. Lane markers from this fleet will not be published.",
+            msg->name.c_str()
+          );
+          return;
+        }
+        navgraph->initialize_markers(*msg, this->get_clock()->now());
+        _navgraphs[msg->name] = navgraph;
       }
-    }
-		publish_navgraphs();
-	},
-  ipc_options);
+      else
+      {
+        // We received the LaneStates message before the NavGraph for the fleet
+        if (!insertion.first->second->traffic_graph.has_value())
+        {
+          auto traffic_graph  =
+            rmf_traffic_ros2::convert(*msg);
+          if (!traffic_graph.has_value())
+          {
+            RCLCPP_ERROR(
+              this->get_logger(),
+              "Unable to convert NavGraph message from fleet %s into a Traffic"
+              " Graph. Lane markers from this fleet will not be published.",
+              msg->name.c_str()
+            );
+
+            // We erase the entry from navgraphs since we cannot generate
+            // any markers.
+            _navgraphs.erase(insertion.first);
+            return;
+          }
+          else
+          {
+            insertion.first->second->traffic_graph = std::move(traffic_graph);
+            insertion.first->second->initialize_markers(
+              *msg, this->get_clock()->now());
+          }
+        }
+      }
+
+      publish_map_markers();
+    },
+  ipc_sub_options
+  );
 
   _lane_states_sub = this->create_subscription<LaneStates>(
     "/lane_states",
@@ -106,10 +285,17 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
       if (insertion.second)
       {
         // Add the navgraph and generate traffic_graph
-        auto navgraph = std::make_shared<FleetNavGraph>();
+        auto navgraph = std::make_shared<FleetNavGraph>(
+          msg->fleet_name,
+          weak_from_this(),
+          get_next_color(),
+          this->_lane_width,
+          this->_waypoint_width
+        );
         navgraph->lane_states = msg;
         _navgraphs[msg->fleet_name] = std::move(navgraph);
       }
+      // We received LaneStates message after NavGraph for this fleet
       else
       {
         if (insertion.first->second->lane_states == nullptr)
@@ -117,9 +303,12 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
           insertion.first->second->lane_states = msg;
         }
       }
-      publish_navgraphs();
+      publish_map_markers();
     },
-    ipc_options);
+    ipc_sub_options
+  );
+
+  this->initialize_color_options();
 
 	RCLCPP_INFO(
 		this->get_logger(),
@@ -127,27 +316,75 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 }
 
 //==============================================================================
-void NavGraphVisualizer::param_cb(std::shared_ptr<const RvizParam> msg)
+void NavGraphVisualizer::initialize_color_options()
 {
+  auto make_color =
+  [](float r, float g, float b, float a = 1.0) -> Color
+  {
+    return std_msgs::build<Color>().r(r).g(g).b(b).a(a);
+  };
 
+  // Initialize 9 distinct colors that the human eye can distinguish easily
+  // If there are more than 9 fleets, we will reuse the colors.
+  // Orange
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0.99, 0.5, 0.19))
+  );
+  // Blue
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0, 0.5, 0.8))
+  );
+  // Purple
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0.57, 0.12, 0.7))
+  );
+  // Teal
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0, 0.5, 0.5))
+  );
+  // Lavender
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0.9, 0.74, 1.0))
+  );
+  // Olive
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0.5, 0.5, 0))
+  );
+  // Cyan
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0.27, 0.94, 0.94))
+  );
+  // Grey
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0.5, 0.5, 0.5))
+  );
+  // Maroon
+  _color_options.push_back(
+    std::make_shared<Color>(make_color(0.5, 0, 0))
+  );
+}
+
+auto NavGraphVisualizer::get_next_color() -> Color::ConstSharedPtr
+{
+  assert(!_color_options.empty());
+  _next_color = std::min(_next_color, _color_options.size() - 1);
+  auto color = _color_options.at(_next_color);
+  ++_next_color;
+  return color;
 }
 
 //==============================================================================
-void NavGraphVisualizer::graph_cb(std::shared_ptr<const NavGraph> msg)
+void NavGraphVisualizer::publish_map_markers(const bool delete_markers)
 {
+  MarkerArray marker_array;
+  for (const auto& [name, navgraph] : _navgraphs)
+  {
+    navgraph->fill_with_markers(_current_level, marker_array, delete_markers);
+  }
 
-}
-
-//==============================================================================
-void NavGraphVisualizer::lane_states_cb(std::shared_ptr<const LaneStates> msg)
-{
-
-}
-
-//==============================================================================
-void NavGraphVisualizer::publish_navgraphs()
-{
-
+  if (marker_array.markers.empty())
+    return;
+  _marker_pub->publish(std::move(marker_array));
 }
 
 RCLCPP_COMPONENTS_REGISTER_NODE(NavGraphVisualizer)
