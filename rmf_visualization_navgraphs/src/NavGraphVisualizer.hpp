@@ -62,11 +62,10 @@ private:
 		LaneStates::ConstSharedPtr lane_states;
     // Map level name to LaneMarkers for that level
     std::unordered_map<std::string, LaneMarkers> lane_markers;
-
-    // TODO(YV)
     // Map level name to Marker for waypoint names
+    std::unordered_map<std::string, std::vector<Marker>> text_markers;
     // Map level name to marker for waypoints
-
+    std::unordered_map<std::string, Marker> waypoint_markers;
     // We store a weak pointer of the node for logging
     std::weak_ptr<rclcpp::Node> node;
     // Color for this fleet

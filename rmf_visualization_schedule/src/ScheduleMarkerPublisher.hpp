@@ -362,14 +362,14 @@ private:
       uint64_t waypoint_count = 0;
       for (const auto& nav_graph : _level.nav_graphs)
       {
-        for (const auto& vertex : nav_graph.vertices)
-        {
-          node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
-          if (!vertex.name.empty())
-            marker_array.markers.push_back(
-              make_label(vertex, waypoint_count));
-          ++waypoint_count;
-        }
+        // for (const auto& vertex : nav_graph.vertices)
+        // {
+        //   node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
+        //   if (!vertex.name.empty())
+        //     marker_array.markers.push_back(
+        //       make_label(vertex, waypoint_count));
+        //   ++waypoint_count;
+        // }
         // Unique lane marker for each graph
         lane_marker.id = graph_count + 2;
         lane_marker.points.clear();

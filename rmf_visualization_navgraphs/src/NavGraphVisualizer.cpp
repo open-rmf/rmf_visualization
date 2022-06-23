@@ -110,12 +110,74 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     // where the width of the lane is halved if speed limited.
     const auto& lane = traffic_graph->get_lane(i);
     marker.scale.x = lane.properties().speed_limit().has_value() ?
-      lane_width/2.0 : lane_width;
+      lane_width / 2.0 : lane_width;
     marker.color = *color;
     marker.points.push_back(make_point(entry_wp.get_location(), -0.01));
     marker.points.push_back(make_point(exit_wp.get_location(), -0.01));
     auto& marker_map = lane_markers[map_name];
     marker_map.insert({i, std::move(marker)});
+  }
+
+  auto make_text_marker =
+    [=](
+      const std::size_t id,
+      const Eigen::Vector2d& loc,
+      const std::string& text,
+      const std::string& map_name) -> Marker
+    {
+      Marker marker;
+      marker.header.stamp = now;
+      marker.header.frame_id = "map";
+      marker.ns = fleet_name + "/labels/" + map_name;
+      marker.id = id;
+      marker.type = marker.MODIFY;
+      marker.type = marker.TEXT_VIEW_FACING;
+      marker.pose.position.x = loc[0] + 0.4 * std::cos(0.7853);
+      marker.pose.position.x = loc[1] + 0.4 * std::sin(0.7853);
+      marker.pose.orientation.w = 1.0;
+      marker.scale.z = 0.2;
+      marker.text = text;
+      marker.color = *color;
+      return marker;
+    };
+
+  auto make_empty_waypoint_marker =
+    [=](const std::string& map_name) -> Marker
+    {
+      Marker marker;
+      marker.header.stamp = now;
+      marker.header.frame_id = "map";
+      marker.ns = fleet_name + "/waypoints/" + map_name;
+      marker.id = 1;
+      marker.type = marker.MODIFY;
+      marker.type = marker.POINTS;
+      marker.scale.x = waypoint_width;
+      marker.scale.y = waypoint_width;
+      marker.scale.z = 1.0;
+      marker.pose.orientation.w = 1.0;
+      // This will be filled inside the loop below
+      marker.points = {};
+      marker.color = *color;
+      return marker;
+    };
+
+  for (std::size_t i = 0; i < navgraph.vertices.size(); ++i)
+  {
+    const auto& wp = traffic_graph->get_waypoint(i);
+    const auto& map_name = wp.get_map_name();
+    const auto& loc = wp.get_location();
+    if (text_markers.find(map_name) == text_markers.end())
+    {
+      text_markers.insert({map_name, {}});
+      waypoint_markers.insert({map_name, make_empty_waypoint_marker(map_name)});
+    }
+
+    if (wp.name() != nullptr)
+    {
+      text_markers[map_name].push_back(
+        make_text_marker(i, loc, *wp.name(), map_name));
+    }
+    waypoint_markers[map_name].points.push_back(make_point(loc, 0.0));
   }
 
 }
@@ -142,7 +204,34 @@ void NavGraphVisualizer::FleetNavGraph::fill_with_markers(
         marker_array.markers.push_back(marker);
       }
     }
+
+    // We are guaranteed to have waypoint markers
+    if (delete_markers)
+    {
+      auto wp_marker = waypoint_markers.at(map_name);
+      wp_marker.action = wp_marker.DELETEALL;
+      marker_array.markers.push_back(std::move(wp_marker));
+    }
+    else
+    {
+      marker_array.markers.push_back(waypoint_markers[map_name]);
+    }
+
+    for (const auto& marker : text_markers.at(map_name))
+    {
+      if (delete_markers)
+      {
+        auto m = marker;
+        m.action = m.DELETEALL;
+        marker_array.markers.push_back(std::move(m));
+      }
+      else
+      {
+        marker_array.markers.push_back(marker);
+      }
+    }
   }
+
 }
 
 //==============================================================================
@@ -185,6 +274,8 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 	});
 
 
+	const auto transient_qos =
+		rclcpp::QoS(10).transient_local();
   // Selectively disable intra-process comms for publishers abd subscriptions
   // for non-volatile topics so that this node can still run in a container
   // with intra-process comms enabled.
@@ -194,12 +285,10 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
     rclcpp::IntraProcessSetting::Disable;
   _marker_pub = this->create_publisher<MarkerArray>(
     "/map_markers",
-    rclcpp::SystemDefaultsQoS().reliable().keep_last(1).transient_local(),
+    transient_qos,
     std::move(ipc_pub_options)
   );
 
-	const auto sub_transient_qos =
-		rclcpp::QoS(10).transient_local();
   rclcpp::SubscriptionOptionsWithAllocator<
   std::allocator<void>> ipc_sub_options;
   ipc_sub_options.use_intra_process_comm =
@@ -207,7 +296,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 
 	_navgraph_sub = this->create_subscription<NavGraph>(
 		"/nav_graphs",
-		sub_transient_qos,
+		transient_qos,
 		[=](NavGraph::ConstSharedPtr msg)
     {
       if (msg->name.empty())
@@ -319,7 +408,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 void NavGraphVisualizer::initialize_color_options()
 {
   auto make_color =
-  [](float r, float g, float b, float a = 1.0) -> Color
+  [](float r, float g, float b, float a = 0.5) -> Color
   {
     return std_msgs::build<Color>().r(r).g(g).b(b).a(a);
   };
