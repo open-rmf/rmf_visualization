@@ -18,6 +18,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rmf_traffic 2 REQUIRED)
 find_package(rmf_traffic_ros2 2 REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(websocketpp REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -76,22 +77,31 @@ ament_export_include_directories(include)
 ament_export_targets(rmf_visualization_schedule HAS_LIBRARY_TARGET)
 
 #===============================================================================
-add_executable(schedule_visualizer src/main.cpp)
+add_library(schedule_visualizer SHARED src/ScheduleVisualizer.cpp)
 
 target_link_libraries(schedule_visualizer
   PRIVATE
-  rmf_visualization_schedule
+    rmf_visualization_schedule
+    ${rclcpp_components_LIBRARIES}
     ${visualization_msgs_LIBRARIES}
     ${geometry_msgs_LIBRARIES}
     ${rmf_visualization_msgs_LIBRARIES}
 )
 
 target_include_directories(schedule_visualizer
-  PUBLIC
+  PRIVATE
+    ${rclcpp_INCLUDE_DIRS}
+    ${rclcpp_components_INCLUDE_DIRS}
     ${visualization_msgs_INCLUDE_DIRS}
     ${geometry_msgs_INCLUDE_DIRS}
     ${rmf_visualization_msgs_INCLUDE_DIRS}
 )
+
+target_compile_features(schedule_visualizer INTERFACE cxx_std_17)
+
+rclcpp_components_register_node(schedule_visualizer
+  PLUGIN "ScheduleVisualizer"
+  EXECUTABLE schedule_visualizer_node)
 
 #===============================================================================
 install(
@@ -115,8 +125,8 @@ install(
 install(
   TARGETS schedule_visualizer
   RUNTIME DESTINATION lib/${PROJECT_NAME}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
 )
 
 add_subdirectory(test)

@@ -78,8 +78,7 @@ endif()
 
 #===============================================================================
 install(
-  TARGETS
-    navgraph_visualizer
+  TARGETS navgraph_visualizer
   RUNTIME DESTINATION lib/rmf_visualization_navgraphs
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
