@@ -37,17 +37,20 @@ NavGraphVisualizer::FleetNavGraph::FleetNavGraph(
   Color::ConstSharedPtr color_,
   double lane_width_,
   double waypoint_width_,
-  double text_size_)
+  double text_size_,
+  double lane_transparency_)
 : fleet_name(std::move(fleet_name_)),
   node(node_),
   color(color_),
   lane_width(lane_width_),
   waypoint_width(waypoint_width_),
-  text_size(text_size_)
+  text_size(text_size_),
+  lane_transparency(lane_transparency_)
 {
   traffic_graph = std::nullopt;
   lane_states = nullptr;
   lane_markers = {};
+  all_lane_markers = {};
   currently_closed_lanes = {};
   currently_speed_limited_lanes = {};
 }
@@ -102,24 +105,26 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
       lane_markers.insert({map_name, {}});
     }
 
-    Marker marker;
-    marker.header.stamp = now;
-    marker.header.frame_id = "map";
-    marker.ns = fleet_name + "/lanes/" + map_name;
-    marker.id = i;
-    marker.type = marker.MODIFY;
-    marker.type = marker.LINE_STRIP;
-    marker.pose.orientation.w = 1.0;
+    auto marker = std::make_shared<Marker>();
+    marker->header.stamp = now;
+    marker->header.frame_id = "map";
+    marker->ns = fleet_name + "/lanes/" + map_name;
+    marker->id = i;
+    marker->type = marker->MODIFY;
+    marker->type = marker->LINE_STRIP;
+    marker->pose.orientation.w = 1.0;
     // For now we implement a simple visual change if a lane is speed limited
     // where the width of the lane is halved if speed limited.
     const auto& lane = traffic_graph->get_lane(i);
-    marker.scale.x = lane.properties().speed_limit().has_value() ?
+    marker->scale.x = lane.properties().speed_limit().has_value() ?
       lane_width * 0.5 : lane_width;
-    marker.color = *color;
-    marker.points.push_back(make_point(entry_wp.get_location(), -0.01));
-    marker.points.push_back(make_point(exit_wp.get_location(), -0.01));
+    marker->color = *color;
+    marker->points.push_back(make_point(entry_wp.get_location(), -0.01));
+    marker->points.push_back(make_point(exit_wp.get_location(), -0.01));
     auto& marker_map = lane_markers[map_name];
-    marker_map.insert({i, std::move(marker)});
+    // Update all book keeping
+    marker_map.insert({i, marker});
+    all_lane_markers.insert({i, marker});
   }
 
   auto make_text_marker =
@@ -189,55 +194,137 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
 
   // In case the NavGraph msg was received after LanesStates, we update the lane markers
   if (this->lane_states != nullptr)
-    update_lane_states(this->lane_states);
+    update_lane_states(*this->lane_states);
 }
 
 //==============================================================================
 auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
-  LaneStates::ConstSharedPtr lane_states_) -> std::vector<Marker>
+  const LaneStates& lane_states_) -> std::vector<Marker::ConstSharedPtr>
 {
+  if (!traffic_graph.has_value())
+    return {};
 
   // TODO(YV): Avoid this copy by storing Maker::ConstSharedPtr in the cache
-  std::vector<Marker> marker_updates = {};
+  std::vector<Marker::ConstSharedPtr> marker_updates = {};
 
+  auto open =
+    [&](Marker::SharedPtr& marker)
+    {
+      marker->color.a = this->lane_transparency;
+    };
+
+  auto close =
+    [&](Marker::SharedPtr& marker)
+    {
+      marker->color.a = 0.1;
+    };
+
+  auto limit =
+    [&](Marker::SharedPtr& marker)
+    {
+      marker->scale.x = this->lane_width * 0.5;
+    };
+
+  auto unlimit =
+    [&](Marker::SharedPtr& marker)
+    {
+      marker->scale.x = this->lane_width;
+    };
+
+  auto update_marker =
+    [&](const std::size_t id, std::function<void(Marker::SharedPtr& marker)> updater)
+    {
+      auto it = all_lane_markers.find(id);
+      if (it == all_lane_markers.end())
+        return;
+      updater(it->second);
+      marker_updates.push_back(it->second);
+    };
+
+  // Update lane closures
+  std::unordered_set<std::size_t> newly_closed_lanes = {};
+  for (const auto& id : lane_states_.closed_lanes)
+    newly_closed_lanes.insert(id);
   // Open lanes that were previously closed
-
-  // If a lane is closed we will set its transparency to 0.1
-  for (const auto& id : lane_states_->closed_lanes)
+  for (const auto& id : this->currently_closed_lanes)
   {
-    if (id >= traffic_graph->num_lanes())
-      continue;
-    for (auto& [level_name, lane_markers] : lane_markers)
+    if (newly_closed_lanes.find(id) == newly_closed_lanes.end())
     {
-      if (lane_markers.find(id) == lane_markers.end())
-        continue;
-      auto& marker = lane_markers.at(id);
-      marker.color.a = 0.1;
-      marker_updates.push_back(marker);
-      // TODO(YV): Add a "closed" text marker
-      // We've updated the lane and can move on to the next one
-      break;
+      // The lane has been opened
+      update_marker(id, open);
     }
   }
-
-  // If a lane is speed limited, we will scale its width by half.
-  // TODO(YV): Scale the width based on the magnitude of the speed limit value
-  for (const auto& limit : lane_states_->speed_limits)
+  // Close lanes that were previously open
+  for (const auto& id : newly_closed_lanes)
   {
-    if (limit.lane_index >= traffic_graph->num_lanes())
-      continue;
-    for (auto& [level_name, lane_markers] : lane_markers)
+    if (currently_closed_lanes.find(id) == currently_closed_lanes.end())
     {
-      if (lane_markers.find(limit.lane_index) == lane_markers.end())
-        continue;
-      auto& marker = lane_markers.at(limit.lane_index);
-      marker.scale.x = this->lane_width * 0.5;
-      marker_updates.push_back(marker);
-      // TODO(YV): Add a "speed limited" text marker
-      // We've updated the lane and can move on to the next one
-      break;
+      // New lane to close
+      update_marker(id, close);
     }
   }
+  currently_closed_lanes = std::move(newly_closed_lanes);
+
+  // Update speed limits
+  std::unordered_set<std::size_t> newly_speed_limited_lanes = {};
+  for (const auto& limit : lane_states_.speed_limits)
+    newly_speed_limited_lanes.insert(limit.lane_index);
+  // Open lanes that were previously closed
+  for (const auto& id : this->currently_speed_limited_lanes)
+  {
+    if (newly_speed_limited_lanes.find(id) == newly_speed_limited_lanes.end())
+    {
+      // The lane has been unlimited
+      update_marker(id, unlimit);
+    }
+  }
+  // Close lanes that were previously open
+  for (const auto& id : newly_speed_limited_lanes)
+  {
+    if (currently_speed_limited_lanes.find(id) == currently_speed_limited_lanes.end())
+    {
+      // New lane to close
+      update_marker(id, limit);
+    }
+  }
+  currently_speed_limited_lanes = std::move(newly_speed_limited_lanes);
+
+  // // If a lane is closed we will set its transparency to 0.1
+  // for (const auto& id : lane_states_.closed_lanes)
+  // {
+  //   if (id >= traffic_graph->num_lanes())
+  //     continue;
+  //   for (const auto& [level_name, lane_markers] : lane_markers)
+  //   {
+  //     if (lane_markers.find(id) == lane_markers.end())
+  //       continue;
+  //     auto& marker = lane_markers.at(id);
+  //     marker->color.a = 0.1;
+  //     marker_updates.push_back(marker);
+  //     // TODO(YV): Add a "closed" text marker
+  //     // We've updated the lane and can move on to the next one
+  //     break;
+  //   }
+  // }
+
+  // // If a lane is speed limited, we will scale its width by half.
+  // // TODO(YV): Scale the width based on the magnitude of the speed limit value
+  // for (const auto& limit : lane_states_.speed_limits)
+  // {
+  //   if (limit.lane_index >= traffic_graph->num_lanes())
+  //     continue;
+  //   for (const auto& [level_name, lane_markers] : lane_markers)
+  //   {
+  //     if (lane_markers.find(limit.lane_index) == lane_markers.end())
+  //       continue;
+  //     auto& marker = lane_markers.at(limit.lane_index);
+  //     marker->scale.x = this->lane_width * 0.5;
+  //     marker_updates.push_back(marker);
+  //     // TODO(YV): Add a "speed limited" text marker
+  //     // We've updated the lane and can move on to the next one
+  //     break;
+  //   }
+  // }
 
   return marker_updates;
 }
@@ -255,13 +342,13 @@ void NavGraphVisualizer::FleetNavGraph::fill_with_markers(
       if (delete_markers)
       {
         // We create a copy and modify action to delete
-        auto m = marker;
-        m.action = marker.DELETEALL;
+        auto m = *marker;
+        m.action = marker->DELETEALL;
         marker_array.markers.push_back(std::move(m));
       }
       else
       {
-        marker_array.markers.push_back(marker);
+        marker_array.markers.push_back(*marker);
       }
     }
 
@@ -390,7 +477,8 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
           get_next_color(),
           this->_lane_width,
           this->_lane_width * this->_waypoint_scale,
-          this->_lane_width * this->_text_scale
+          this->_lane_width * this->_text_scale,
+          this->_lane_transparency
         );
         navgraph->traffic_graph = rmf_traffic_ros2::convert(*msg);
         if (!navgraph->traffic_graph.has_value())
@@ -459,7 +547,8 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
           get_next_color(),
           this->_lane_width,
           this->_lane_width * this->_waypoint_scale,
-          this->_lane_width * this->_text_scale
+          this->_lane_width * this->_text_scale,
+          this->_lane_transparency
         );
         navgraph->lane_states = msg;
         _navgraphs[msg->fleet_name] = std::move(navgraph);
@@ -468,7 +557,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
       {
         // We received LaneStates message after NavGraph for this fleet.
         // We update the lane_states for this fleet.
-        insertion.first->second->update_lane_states(msg);
+        insertion.first->second->update_lane_states(*msg);
         publish_map_markers();
       }
     },

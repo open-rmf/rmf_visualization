@@ -56,13 +56,17 @@ private:
     // Map marker id to Marker. Used for lookup and republishing when lane
 		// state changes. The id is set to the index of the lane for easy lookup.
     // TODO(YV): Map level name
-    using LaneMarkers = std::unordered_map<std::size_t, Marker>;
+    using LaneMarkers = std::unordered_map<std::size_t, Marker::SharedPtr>;
 
     std::string fleet_name;
 		std::optional<TrafficGraph> traffic_graph;
 		LaneStates::ConstSharedPtr lane_states;
-    // Map level name to LaneMarkers for that level
+    // Map level name to LaneMarkers for that level. This cache is convenient
+    // when switching maps
     std::unordered_map<std::string, LaneMarkers> lane_markers;
+    // This map is purely for easy lookup when modifying lane markers
+    LaneMarkers all_lane_markers;
+
     // Map level name to Marker for waypoint names
     std::unordered_map<std::string, std::vector<Marker>> text_markers;
     // Map level name to marker for waypoints
@@ -74,6 +78,7 @@ private:
     double lane_width;
     double waypoint_width;
     double text_size;
+    double lane_transparency;
 
     std::unordered_set<std::size_t> currently_closed_lanes;
     std::unordered_set<std::size_t> currently_speed_limited_lanes;
@@ -84,14 +89,15 @@ private:
       Color::ConstSharedPtr color,
       double lane_width,
       double waypoint_width,
-      double text_size);
+      double text_size,
+      double lane_transparency);
 
     void initialize_markers(
       const NavGraph& navgraph,
       const rclcpp::Time& now);
 
-    std::vector<Marker> update_lane_states(
-      LaneStates::ConstSharedPtr lane_states);
+    std::vector<Marker::ConstSharedPtr> update_lane_states(
+      const LaneStates& lane_states);
 
     // Fill marker_array with all markers that are present in given map_name
     void fill_with_markers(
