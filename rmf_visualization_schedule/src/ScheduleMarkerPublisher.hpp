@@ -102,11 +102,6 @@ public:
     // Create publisher for map markers
     auto transient_qos_profile = rclcpp::QoS(10);
     transient_qos_profile.transient_local();
-    _map_markers_pub = this->create_publisher<MarkerArray>(
-      "map_markers",
-      transient_qos_profile);
-
-    transient_qos_profile.transient_local();
     _floorplan_pub = this->create_publisher<OccupancyGrid>(
       "floorplan",
       transient_qos_profile);
@@ -247,154 +242,6 @@ private:
         "Publishing marker array of size: %ld",
         marker_array.markers.size());
       _schedule_markers_pub->publish(marker_array);
-    }
-  }
-
-  void publish_map_markers()
-  {
-
-    auto convert_to_delete = [=](MarkerArray array) -> MarkerArray
-      {
-        for (auto& marker : array.markers)
-        {
-          marker.header.stamp = rmf_traffic_ros2::convert(
-            _schedule_data_node->now());
-          marker.action = marker.DELETE;
-        }
-        return array;
-      };
-
-    auto make_label =
-      [&](const GraphNode& node, const uint64_t count) -> Marker
-      {
-        Marker label_marker;
-        label_marker.header.frame_id = _frame_id; // map
-        label_marker.header.stamp = rmf_traffic_ros2::convert(
-          _schedule_data_node->now());
-        label_marker.ns = "labels";
-        label_marker.id = count;
-        label_marker.type = label_marker.TEXT_VIEW_FACING;
-        label_marker.action = label_marker.MODIFY;
-
-        // Set the pose of the marker
-        label_marker.pose.orientation.w = 1;
-        label_marker.pose.position.x = node.x + 0.4 * std::cos(0.7853);
-        label_marker.pose.position.y = node.y + 0.4 * std::sin(0.7853);
-        label_marker.pose.position.z = 0.0;
-
-        // Set the scale of the marker
-        label_marker.scale.z = 0.2;
-
-        // Set the text of the marker
-        label_marker.text = node.name.c_str();
-        // Set the color of the marker
-        label_marker.color = make_color(1, 1, 1);
-
-        return label_marker;
-      };
-
-    auto marker_it = _map_markers_cache.find(_level.name.c_str());
-
-    // Delete previously published map markers if building map does not contain
-    // _rviz_param.map_name
-    if (!_has_level)
-    {
-      if (_active_map_name.empty())
-        return;
-
-      if (marker_it != _map_markers_cache.end())
-      {
-        // We modify the timestamp and action and publish
-        auto array = convert_to_delete(marker_it->second);
-        _map_markers_pub->publish(array);
-        _active_map_name = "";
-      }
-      return;
-    }
-
-    // We first delete previously published map
-    if (_active_map_name != _level.name.c_str())
-    {
-      auto it = _map_markers_cache.find(_active_map_name);
-      if (it != _map_markers_cache.end())
-      {
-        auto array = convert_to_delete(it->second);
-        _map_markers_pub->publish(array);
-        _active_map_name = "";
-      }
-    }
-
-    // If the map markers are in the cache
-    if (marker_it != _map_markers_cache.end())
-    {
-      _map_markers_pub->publish(marker_it->second);
-      _active_map_name = _level.name.c_str();
-      return;
-    }
-    else
-    {
-      // We create the new marker array and cache it
-      MarkerArray marker_array;
-
-      // Marker for node locations
-      Marker node_marker;
-      node_marker.header.frame_id = _frame_id; // map
-      node_marker.header.stamp = rmf_traffic_ros2::convert(
-        _schedule_data_node->now());
-      node_marker.ns = "map";
-      node_marker.id = 0;
-      node_marker.type = node_marker.POINTS;
-      node_marker.action = node_marker.MODIFY;
-      node_marker.pose.orientation.w = 1;
-      node_marker.scale.x = 0.1;
-      node_marker.scale.y = 0.1;
-      node_marker.scale.z = 1.0;
-      node_marker.color = make_color(1, 1, 1);
-
-      // Marker for lanes
-      Marker lane_marker = node_marker;
-      lane_marker.id = 2;
-      lane_marker.type = lane_marker.LINE_LIST;
-      lane_marker.scale.x = 0.5;
-
-      // Add markers for nodes and lanes in each graph
-      uint64_t graph_count = 0;
-      uint64_t waypoint_count = 0;
-      for (const auto& nav_graph : _level.nav_graphs)
-      {
-        // for (const auto& vertex : nav_graph.vertices)
-        // {
-        //   node_marker.points.push_back(make_point({vertex.x, vertex.y, 0}));
-        //   if (!vertex.name.empty())
-        //     marker_array.markers.push_back(
-        //       make_label(vertex, waypoint_count));
-        //   ++waypoint_count;
-        // }
-        // Unique lane marker for each graph
-        lane_marker.id = graph_count + 2;
-        lane_marker.points.clear();
-        // TODO use graph id or graph name to lookup color
-        lane_marker.color = get_color(graph_count);
-        for (const auto& edge : nav_graph.edges)
-        {
-          auto n1 = nav_graph.vertices[edge.v1_idx];
-          auto n2 = nav_graph.vertices[edge.v2_idx];
-          lane_marker.points.push_back(make_point({n1.x, n1.y, -0.2}, true));
-          lane_marker.points.push_back(make_point({n2.x, n2.y, -0.2}, true));
-        }
-        graph_count++;
-        // Insert lane marker to marker_array
-        // marker_array.markers.push_back(lane_marker);
-      }
-      marker_array.markers.push_back(node_marker);
-
-      if (marker_array.markers.size() > 0)
-      {
-        _map_markers_cache.insert(
-          std::make_pair(_level.name.c_str(), marker_array));
-        _map_markers_pub->publish(marker_array);
-        _active_map_name = _level.name.c_str();
-      }
     }
   }
 
@@ -718,7 +565,6 @@ private:
           _has_level = true;
           _level = level;
           RCLCPP_INFO(this->get_logger(), "Level cache updated");
-          publish_map_markers();
           publish_floorplan();
           break;
         }
@@ -798,7 +644,6 @@ private:
 
   rclcpp::TimerBase::SharedPtr _timer;
   rclcpp::Publisher<MarkerArray>::SharedPtr _schedule_markers_pub;
-  rclcpp::Publisher<MarkerArray>::SharedPtr _map_markers_pub;
   rclcpp::Publisher<OccupancyGrid>::SharedPtr _floorplan_pub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
   rclcpp::CallbackGroup::SharedPtr _cb_group_param_sub;
