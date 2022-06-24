@@ -72,18 +72,21 @@ private:
     Color::ConstSharedPtr color;
     double lane_width;
     double waypoint_width;
+    double text_size;
 
     FleetNavGraph(
       const std::string& fleet_name,
       std::weak_ptr<rclcpp::Node> node,
       Color::ConstSharedPtr color,
       double lane_width,
-      double waypoint_width);
+      double waypoint_width,
+      double text_size);
 
     void initialize_markers(
       const NavGraph& navgraph,
       const rclcpp::Time& now);
-    // update_lane_markers(const LaneStates& lane_states);
+
+    void update_lane_markers(const LaneStates& lane_states);
 
     // Fill marker_array with all markers that are present in given map_name
     void fill_with_markers(
@@ -95,7 +98,7 @@ private:
 	using FleetNavGraphPtr = std::shared_ptr<FleetNavGraph>;
 
 	void publish_map_markers(const bool delete_markers = false);
-  void initialize_color_options();
+  void initialize_color_options(const double alpha);
   Color::ConstSharedPtr get_next_color();
 
 	rclcpp::Subscription<RvizParam>::SharedPtr _param_sub;
@@ -111,7 +114,9 @@ private:
   std::size_t _next_color = 0;
   std::vector<Color::ConstSharedPtr> _color_options;
   double _lane_width;
-  double _waypoint_width;
+  double _lane_transparency;
+  double _waypoint_scale;
+  double _text_scale;
 };
 
 

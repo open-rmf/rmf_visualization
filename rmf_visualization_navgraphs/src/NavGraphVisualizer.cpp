@@ -36,12 +36,14 @@ NavGraphVisualizer::FleetNavGraph::FleetNavGraph(
   std::weak_ptr<rclcpp::Node> node_,
   Color::ConstSharedPtr color_,
   double lane_width_,
-  double waypoint_width_)
+  double waypoint_width_,
+  double text_size_)
 : fleet_name(std::move(fleet_name_)),
   node(node_),
   color(color_),
   lane_width(lane_width_),
-  waypoint_width(waypoint_width_)
+  waypoint_width(waypoint_width_),
+  text_size(text_size_)
 {
   traffic_graph = std::nullopt;
   lane_states = nullptr;
@@ -132,12 +134,14 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
       marker.id = id;
       marker.type = marker.MODIFY;
       marker.type = marker.TEXT_VIEW_FACING;
-      marker.pose.position.x = loc[0] + 0.4 * std::cos(0.7853);
-      marker.pose.position.x = loc[1] + 0.4 * std::sin(0.7853);
+      marker.pose.position.x = loc[0] + this->lane_width * std::cos(0.8509);
+      marker.pose.position.y = loc[1] + this->lane_width * std::sin(0.8509);
+      marker.pose.position.z = 0.0;
       marker.pose.orientation.w = 1.0;
-      marker.scale.z = 0.2;
+      marker.scale.z = this->text_size;
       marker.text = text;
       marker.color = *color;
+      marker.color.a = 1.0;
       return marker;
     };
 
@@ -158,6 +162,7 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
       // This will be filled inside the loop below
       marker.points = {};
       marker.color = *color;
+      marker.color.a = 1.0;
       return marker;
     };
 
@@ -179,6 +184,16 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     }
     waypoint_markers[map_name].points.push_back(make_point(loc, 0.0));
   }
+
+  // In case the NavGraph msg was received after LanesStates, we update the lane markers
+  if (lane_states != nullptr)
+    update_lane_markers(*lane_states);
+}
+
+//==============================================================================
+void NavGraphVisualizer::FleetNavGraph::update_lane_markers(
+  const LaneStates& lane_markers)
+{
 
 }
 
@@ -244,14 +259,32 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 		"Setting parameter initial_map_name to %s", _current_level.c_str());
 
 	_lane_width = this->declare_parameter("lane_width", 0.5);
+  // Set a minimum positive bound to prevent rendering issues
+  _lane_width = std::max(0.1, _lane_width);
 	RCLCPP_INFO(
 		this->get_logger(),
 		"Setting parameter lane_width to %f", _lane_width);
 
-	_waypoint_width = this->declare_parameter("waypoint_width", 1.0);
+	_lane_transparency = this->declare_parameter("lane_transparency", 0.5);
+  // Set a minimum positive bound to prevent rendering issues
+  _lane_transparency = std::max(0.1, _lane_transparency);
 	RCLCPP_INFO(
 		this->get_logger(),
-		"Setting parameter waypoint_width to %f", _waypoint_width);
+		"Setting parameter lane_transparency to %f", _lane_transparency);
+
+	_waypoint_scale = this->declare_parameter("waypoint_scale", 1.0);
+  // Set a minimum positive bound to prevent rendering issues
+  _waypoint_scale = std::max(0.1, _waypoint_scale);
+	RCLCPP_INFO(
+		this->get_logger(),
+		"Setting parameter waypoint_scale to %f", _waypoint_scale);
+
+	_text_scale = this->declare_parameter("text_scale", 1.0);
+  // Set a minimum positive bound to prevent rendering issues
+  _text_scale = std::max(0.1, _text_scale);
+	RCLCPP_INFO(
+		this->get_logger(),
+		"Setting parameter text_scale to %f", _text_scale);
 
 	// It is okay to capture this by reference here.
 	_param_sub = this->create_subscription<RvizParam>(
@@ -311,7 +344,8 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
           weak_from_this(),
           get_next_color(),
           this->_lane_width,
-          this->_waypoint_width
+          this->_lane_width * this->_waypoint_scale,
+          this->_lane_width * this->_text_scale
         );
         navgraph->traffic_graph = rmf_traffic_ros2::convert(*msg);
         if (!navgraph->traffic_graph.has_value())
@@ -379,7 +413,8 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
           weak_from_this(),
           get_next_color(),
           this->_lane_width,
-          this->_waypoint_width
+          this->_lane_width * this->_waypoint_scale,
+          this->_lane_width * this->_text_scale
         );
         navgraph->lane_states = msg;
         _navgraphs[msg->fleet_name] = std::move(navgraph);
@@ -397,7 +432,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
     ipc_sub_options
   );
 
-  this->initialize_color_options();
+  this->initialize_color_options(_lane_transparency);
 
 	RCLCPP_INFO(
 		this->get_logger(),
@@ -405,7 +440,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 }
 
 //==============================================================================
-void NavGraphVisualizer::initialize_color_options()
+void NavGraphVisualizer::initialize_color_options(const double alpha)
 {
   auto make_color =
   [](float r, float g, float b, float a = 0.5) -> Color
@@ -417,39 +452,39 @@ void NavGraphVisualizer::initialize_color_options()
   // If there are more than 9 fleets, we will reuse the colors.
   // Orange
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0.99, 0.5, 0.19))
+    std::make_shared<Color>(make_color(0.99, 0.5, 0.19, alpha))
   );
   // Blue
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0, 0.5, 0.8))
+    std::make_shared<Color>(make_color(0, 0.5, 0.8, alpha))
   );
   // Purple
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0.57, 0.12, 0.7))
+    std::make_shared<Color>(make_color(0.57, 0.12, 0.7, alpha))
   );
   // Teal
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0, 0.5, 0.5))
+    std::make_shared<Color>(make_color(0, 0.5, 0.5, alpha))
   );
   // Lavender
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0.9, 0.74, 1.0))
+    std::make_shared<Color>(make_color(0.9, 0.74, 1.0, alpha))
   );
   // Olive
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0.5, 0.5, 0))
+    std::make_shared<Color>(make_color(0.5, 0.5, 0.0, alpha))
   );
   // Cyan
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0.27, 0.94, 0.94))
+    std::make_shared<Color>(make_color(0.27, 0.94, 0.94, alpha))
   );
   // Grey
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0.5, 0.5, 0.5))
+    std::make_shared<Color>(make_color(0.5, 0.5, 0.5, alpha))
   );
   // Maroon
   _color_options.push_back(
-    std::make_shared<Color>(make_color(0.5, 0, 0))
+    std::make_shared<Color>(make_color(0.5, 0, 0, alpha))
   );
 }
 

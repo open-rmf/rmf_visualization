@@ -10,7 +10,9 @@
   <arg name="websocket_port" default="8006"/>
   <arg name="headless" default="false" description="Do not launch rviz2"/>
   <arg name="lane_width" default="0.5" description="Width of lanes(m) to be rendered"/>
-  <arg name="waypoint_width" default="1.0" description="Width of waypoints(m) to be rendered"/>
+  <arg name="waypoint_scale" default="1.3" description="The relative size of a waypoint wrt the lane width"/>
+  <arg name="text_scale" default="0.7" description="The relative size of a text label wrt the lane width"/>
+  <arg name="lane_transparency" default="0.4" description="The transparency of a rendered lane in default state"/>
 
   <group>
     <node pkg="rmf_visualization_schedule" exec="schedule_visualizer" args="-r $(var rate) -m $(var map_name) -p $(var websocket_port) --history 50">
@@ -30,7 +32,9 @@
       <param name="use_sim_time" value="$(var use_sim_time)"/>
       <param name="initial_map_name" value="$(var map_name)"/>
       <param name="lane_width" value="$(var lane_width)"/>
-      <param name="waypoint_width" value="$(var waypoint_width)"/>
+      <param name="waypoint_scale" value="$(var waypoint_scale)"/>
+      <param name="text_scale" value="$(var text_scale)"/>
+      <param name="lane_transparency" value="$(var lane_transparency)"/>
     </node>
 
   </group>
