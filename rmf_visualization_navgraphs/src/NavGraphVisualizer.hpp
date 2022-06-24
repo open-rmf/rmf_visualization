@@ -30,6 +30,7 @@
 #include <rmf_visualization_msgs/msg/rviz_param.hpp>
 
 #include <unordered_map>
+#include <unordered_set>
 
 
 //==============================================================================
@@ -74,6 +75,9 @@ private:
     double waypoint_width;
     double text_size;
 
+    std::unordered_set<std::size_t> currently_closed_lanes;
+    std::unordered_set<std::size_t> currently_speed_limited_lanes;
+
     FleetNavGraph(
       const std::string& fleet_name,
       std::weak_ptr<rclcpp::Node> node,
@@ -86,7 +90,8 @@ private:
       const NavGraph& navgraph,
       const rclcpp::Time& now);
 
-    void update_lane_markers(const LaneStates& lane_states);
+    std::vector<Marker> update_lane_states(
+      LaneStates::ConstSharedPtr lane_states);
 
     // Fill marker_array with all markers that are present in given map_name
     void fill_with_markers(

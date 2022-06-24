@@ -48,6 +48,8 @@ NavGraphVisualizer::FleetNavGraph::FleetNavGraph(
   traffic_graph = std::nullopt;
   lane_states = nullptr;
   lane_markers = {};
+  currently_closed_lanes = {};
+  currently_speed_limited_lanes = {};
 }
 
 //==============================================================================
@@ -112,7 +114,7 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     // where the width of the lane is halved if speed limited.
     const auto& lane = traffic_graph->get_lane(i);
     marker.scale.x = lane.properties().speed_limit().has_value() ?
-      lane_width / 2.0 : lane_width;
+      lane_width * 0.5 : lane_width;
     marker.color = *color;
     marker.points.push_back(make_point(entry_wp.get_location(), -0.01));
     marker.points.push_back(make_point(exit_wp.get_location(), -0.01));
@@ -186,15 +188,58 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
   }
 
   // In case the NavGraph msg was received after LanesStates, we update the lane markers
-  if (lane_states != nullptr)
-    update_lane_markers(*lane_states);
+  if (this->lane_states != nullptr)
+    update_lane_states(this->lane_states);
 }
 
 //==============================================================================
-void NavGraphVisualizer::FleetNavGraph::update_lane_markers(
-  const LaneStates& lane_markers)
+auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
+  LaneStates::ConstSharedPtr lane_states_) -> std::vector<Marker>
 {
 
+  // TODO(YV): Avoid this copy by storing Maker::ConstSharedPtr in the cache
+  std::vector<Marker> marker_updates = {};
+
+  // Open lanes that were previously closed
+
+  // If a lane is closed we will set its transparency to 0.1
+  for (const auto& id : lane_states_->closed_lanes)
+  {
+    if (id >= traffic_graph->num_lanes())
+      continue;
+    for (auto& [level_name, lane_markers] : lane_markers)
+    {
+      if (lane_markers.find(id) == lane_markers.end())
+        continue;
+      auto& marker = lane_markers.at(id);
+      marker.color.a = 0.1;
+      marker_updates.push_back(marker);
+      // TODO(YV): Add a "closed" text marker
+      // We've updated the lane and can move on to the next one
+      break;
+    }
+  }
+
+  // If a lane is speed limited, we will scale its width by half.
+  // TODO(YV): Scale the width based on the magnitude of the speed limit value
+  for (const auto& limit : lane_states_->speed_limits)
+  {
+    if (limit.lane_index >= traffic_graph->num_lanes())
+      continue;
+    for (auto& [level_name, lane_markers] : lane_markers)
+    {
+      if (lane_markers.find(limit.lane_index) == lane_markers.end())
+        continue;
+      auto& marker = lane_markers.at(limit.lane_index);
+      marker.scale.x = this->lane_width * 0.5;
+      marker_updates.push_back(marker);
+      // TODO(YV): Add a "speed limited" text marker
+      // We've updated the lane and can move on to the next one
+      break;
+    }
+  }
+
+  return marker_updates;
 }
 
 //==============================================================================
@@ -338,7 +383,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
       const auto insertion = _navgraphs.insert({msg->name, nullptr});
       if (insertion.second)
       {
-        // Add the navgraph and generate traffic_graph
+        // Create a new navgraph entry with a traffic_graph
         auto navgraph = std::make_shared<FleetNavGraph>(
           msg->name,
           weak_from_this(),
@@ -398,7 +443,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 
   _lane_states_sub = this->create_subscription<LaneStates>(
     "/lane_states",
-    rclcpp::QoS(10).reliable(),
+    transient_qos,
     [=](LaneStates::ConstSharedPtr msg)
     {
       if (msg->fleet_name.empty())
@@ -407,7 +452,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
       const auto insertion = _navgraphs.insert({msg->fleet_name, nullptr});
       if (insertion.second)
       {
-        // Add the navgraph and generate traffic_graph
+        // Create a new navgraph entry with the lane_states msg
         auto navgraph = std::make_shared<FleetNavGraph>(
           msg->fleet_name,
           weak_from_this(),
@@ -419,15 +464,13 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
         navgraph->lane_states = msg;
         _navgraphs[msg->fleet_name] = std::move(navgraph);
       }
-      // We received LaneStates message after NavGraph for this fleet
       else
       {
-        if (insertion.first->second->lane_states == nullptr)
-        {
-          insertion.first->second->lane_states = msg;
-        }
+        // We received LaneStates message after NavGraph for this fleet.
+        // We update the lane_states for this fleet.
+        insertion.first->second->update_lane_states(msg);
+        publish_map_markers();
       }
-      publish_map_markers();
     },
     ipc_sub_options
   );
