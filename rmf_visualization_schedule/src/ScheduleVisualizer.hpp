@@ -22,6 +22,7 @@
 
 #include <rmf_visualization_schedule/CommonData.hpp>
 #include <rmf_visualization_schedule/ScheduleDataNode.hpp>
+#include <rmf_visualization_schedule/TrajectoryServer.hpp>
 
 #include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic/schedule/Viewer.hpp>
@@ -53,6 +54,7 @@ public:
   using RvizParamMsg = rmf_visualization_msgs::msg::RvizParam;
   using Color = std_msgs::msg::ColorRGBA;
   using ScheduleDataNode = rmf_visualization_schedule::ScheduleDataNode;
+  using TrajectoryServer = rmf_visualization_schedule::TrajectoryServer;
 
   ScheduleVisualizer(const rclcpp::NodeOptions& options =
     rclcpp::NodeOptions());
@@ -100,10 +102,12 @@ private:
   Color make_color(float r, float g, float b, float a = 1.0);
 
   std::shared_ptr<ScheduleDataNode> _schedule_data_node;
+  std::shared_ptr<TrajectoryServer> _trajectory_server;
   std::unordered_set<uint64_t> _marker_tracker;
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;
   double _rate;
+  double _path_width;
   std::chrono::nanoseconds _timer_period;
 
   rclcpp::TimerBase::SharedPtr _timer;

@@ -28,6 +28,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rmf_visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(Threads)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_uncrustify REQUIRED)
@@ -54,6 +55,7 @@ target_link_libraries(rmf_visualization_schedule
     ${websocketpp_LIBRARIES}
     OpenSSL::SSL
     OpenSSL::Crypto
+    Threads::Threads
     ${rmf_traffic_msgs_LIBRARIES}
 )
 

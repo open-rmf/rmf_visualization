@@ -58,28 +58,103 @@ builtin_interfaces::msg::Duration convert(rmf_traffic::Duration duration)
 
   return result;
 }
-
 } // anonymous namespace
 
 //==============================================================================
 ScheduleVisualizer::ScheduleVisualizer(
   const rclcpp::NodeOptions& options)
-  // const std::string& node_name,
-  // std::shared_ptr<ScheduleDataNode> schedule_data_node,
-  // const std::string& map_name,
-  // const double rate = 1.0,
-  // const std::string& frame_id = "/map")
-: Node("schedule_visualizer_node", options)
+// const std::string& node_name,
+// std::shared_ptr<ScheduleDataNode> schedule_data_node,
+// const std::string& map_name,
+// const double rate = 1.0,
+// const std::string& frame_id = "/map")
+: Node("schedule_visualizer_node", options),
+  _schedule_data_node(nullptr),
+  _trajectory_server(nullptr)
 {
-
-  // Create a timer with specified rate. This timer runs on the main thread.
   _rate = this->declare_parameter("rate", 1.0);
+  _rate = std::max(0.1, _rate);
   RCLCPP_INFO(
     this->get_logger(),
     "Setting parameter rate to %f", _rate
   );
 
+  _path_width = this->declare_parameter("path_width", 0.2);
+  _path_width = std::max(0.1, _path_width);
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter path_width to %f", _path_width
+  );
+
   auto map_name = this->declare_parameter("initial_map_name", "L1");
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter initial_map_name to %s", map_name.c_str()
+  );
+
+  const std::size_t wait_durations_secs = this->declare_parameter(
+    "wait_secs", 10);
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter wait_secs to %ld", wait_durations_secs
+  );
+
+  uint16_t port = this->declare_parameter(
+    "port", 8006);
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter port to %d", port
+  );
+
+  uint retained_history_count = this->declare_parameter(
+    "retained_history_count", 0);
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter retained_history_count to %i", retained_history_count
+  );
+
+  _schedule_data_node = rmf_visualization_schedule::ScheduleDataNode::make(
+    "schedule_data_node",
+    std::chrono::seconds(wait_durations_secs),
+    this->get_node_options()
+  );
+
+  if (_schedule_data_node == nullptr)
+  {
+    RCLCPP_ERROR(
+      this->get_logger(),
+      "Failed to create a Mirror of the RMF Schedule Database after waiting "
+      "for %ld seconds. Please ensur rmf_traffic_schedule node is running. "
+      "No schedule markers will be published to RViz.",
+      wait_durations_secs
+    );
+  }
+  else
+  {
+    RCLCPP_INFO(
+      this->get_logger(),
+      "Successfully connected to rmf_traffic_schedule node."
+    );
+
+    _spin_thread = std::thread(
+      [=]()
+      {
+        rclcpp::spin(_schedule_data_node);
+      }
+    );
+
+    auto negotiation = _schedule_data_node->get_negotiation();
+    negotiation->set_retained_history_count(retained_history_count);
+    _trajectory_server = TrajectoryServer::make(
+      port, _schedule_data_node);
+    if (_trajectory_server == nullptr)
+    {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "Unable to initialize TrajectoryServer on port %d", port
+      );
+    }
+  }
 
   _rviz_param = std::make_shared<RvizParamMsg>(
     rmf_visualization_msgs::build<RvizParamMsg>()
@@ -94,7 +169,8 @@ ScheduleVisualizer::ScheduleVisualizer(
     _timer_period,
     [=]()
     {
-      this->timer_callback();
+      if (this->_schedule_data_node != nullptr)
+        this->timer_callback();
     }
   );
 
@@ -117,6 +193,12 @@ ScheduleVisualizer::ScheduleVisualizer(
   );
 }
 
+//==============================================================================
+ScheduleVisualizer::~ScheduleVisualizer()
+{
+  if (_spin_thread.joinable())
+    _spin_thread.join();
+}
 //==============================================================================
 void ScheduleVisualizer::timer_callback()
 {
@@ -198,7 +280,7 @@ void ScheduleVisualizer::delete_marker(
   marker_msg.ns = "trajectory";
   marker_msg.id = id;
   marker_msg.type = marker_msg.CYLINDER;
-  marker_msg.action = marker_msg.DELETE;
+  marker_msg.action = marker_msg.DELETEALL;
   marker_array.markers.push_back(marker_msg);
 
   // Add a delete marker for the path
@@ -333,7 +415,7 @@ auto ScheduleVisualizer::make_path_marker(
   marker_msg.pose.orientation.w = 1;
 
   // Set the scale of the marker
-  marker_msg.scale.x = 0.2;
+  marker_msg.scale.x = _path_width;
 
   // Set the color
   if (conflict)
@@ -352,7 +434,7 @@ auto ScheduleVisualizer::make_path_marker(
     builtin_interfaces::msg::Duration duration;
     duration.sec = 1;
     duration.nanosec = 0;
-    marker_msg.lifetime = duration;
+    marker_msg.lifetime = std::move(duration);
   }
 
   const auto t_start_time = *trajectory.start_time();
@@ -401,7 +483,7 @@ auto ScheduleVisualizer::make_point(const Eigen::Vector3d tp, bool z) -> Point
   Point p;
   p.x = tp[0];
   p.y = tp[1];
-  p.z = z ? tp[2] : 0;
+  p.z = z ? tp[2] : 0.1;
   return p;
 }
 
