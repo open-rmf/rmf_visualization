@@ -18,11 +18,7 @@
 #ifndef SRC__SCHEDULEMARKERPUBLISHER_HPP
 #define SRC__SCHEDULEMARKERPUBLISHER_HPP
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-
 #include <rclcpp/rclcpp.hpp>
-#include <rclcpp/callback_group.hpp>
 
 #include <rmf_visualization_schedule/CommonData.hpp>
 #include <rmf_visualization_schedule/ScheduleDataNode.hpp>
@@ -35,17 +31,12 @@
 #include <rmf_traffic_ros2/StandardNames.hpp>
 #include <rmf_traffic_ros2/Time.hpp>
 
-#include <rmf_building_map_msgs/msg/building_map.hpp>
-#include <rmf_building_map_msgs/msg/graph_node.hpp>
-#include <rmf_building_map_msgs/msg/level.hpp>
 #include <geometry_msgs/msg/point.hpp>
-#include <nav_msgs/msg/occupancy_grid.hpp>
 #include <rmf_visualization_msgs/msg/rviz_param.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
-#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -57,34 +48,30 @@ class ScheduleMarkerPublisher : public rclcpp::Node
 public:
   using Marker = visualization_msgs::msg::Marker;
   using MarkerArray = visualization_msgs::msg::MarkerArray;
-  using OccupancyGrid = nav_msgs::msg::OccupancyGrid;
   using Point = geometry_msgs::msg::Point;
   using RequestParam = rmf_visualization_schedule::RequestParam;
   using Element = rmf_traffic::schedule::Viewer::View::Element;
   using RvizParamMsg = rmf_visualization_msgs::msg::RvizParam;
-  using BuildingMap = rmf_building_map_msgs::msg::BuildingMap;
-  using Level = rmf_building_map_msgs::msg::Level;
-  using GraphNode = rmf_building_map_msgs::msg::GraphNode;
   using Color = std_msgs::msg::ColorRGBA;
   using ScheduleDataNode = rmf_visualization_schedule::ScheduleDataNode;
 
   ScheduleMarkerPublisher(
-    std::string node_name,
+    const std::string& node_name,
     std::shared_ptr<ScheduleDataNode> schedule_data_node,
-    std::string map_name,
-    double rate = 1.0,
-    std::string frame_id = "/map")
-  : Node(node_name),
+    const std::string& map_name,
+    const double rate = 1.0,
+    const std::string& frame_id = "/map")
+  : Node(std::move(node_name)),
     _rate(rate),
-    _frame_id(frame_id),
-    _schedule_data_node(schedule_data_node)
+    _schedule_data_node(std::move(schedule_data_node)),
+    _frame_id(std::move(frame_id))
   {
-    // TODO add a constructor for RvizParam
-    _rviz_param.map_name = map_name;
-    _rviz_param.query_duration = std::chrono::seconds(600);
-    _rviz_param.start_duration = std::chrono::seconds(0);
-    _active_map_name = map_name;
-    update_level_cache();
+    _rviz_param = std::make_shared<RvizParamMsg>(
+      rmf_visualization_msgs::build<RvizParamMsg>()
+      .map_name(std::move(map_name))
+      .query_duration(600)
+      .start_duration(0)
+    );
 
     // Create a timer with specified rate. This timer runs on the main thread.
     const double period = 1.0/_rate;
@@ -97,78 +84,20 @@ public:
     // Create publisher for schedule markers
     _schedule_markers_pub = this->create_publisher<MarkerArray>(
       "schedule_markers",
-      rclcpp::ServicesQoS());
-
-    // Create publisher for map markers
-    auto transient_qos_profile = rclcpp::QoS(10);
-    transient_qos_profile.transient_local();
-    _floorplan_pub = this->create_publisher<OccupancyGrid>(
-      "floorplan",
-      transient_qos_profile);
+      rclcpp::QoS(10).reliable());
 
     // Create subscriber for rviz_param in separate thread
-    _cb_group_param_sub = this->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive);
-    auto sub_param_opt = rclcpp::SubscriptionOptions();
-    sub_param_opt.callback_group = _cb_group_param_sub;
     _param_sub = this->create_subscription<RvizParamMsg>(
       "rmf_visualization/parameters",
-      rclcpp::QoS(10),
-      [&](RvizParamMsg::SharedPtr msg)
+      rclcpp::QoS(10).reliable(),
+      [&](RvizParamMsg::ConstSharedPtr msg)
       {
-        std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
-
-        if (!msg->map_name.empty() && _rviz_param.map_name != msg->map_name)
-        {
-          _rviz_param.map_name = msg->map_name;
-          update_level_cache();
-        }
-
-        if (msg->query_duration > 0)
-        {
-          _rviz_param.query_duration =
-          std::chrono::seconds(msg->query_duration);
-        }
-
-        if (msg->start_duration >= 0 &&
-        std::chrono::seconds(msg->start_duration)
-        < _rviz_param.query_duration)
-        {
-          _rviz_param.start_duration =
-          std::chrono::seconds(msg->start_duration);
-        }
+        if (msg->map_name.empty())
+          return;
+        _rviz_param = msg;
         RCLCPP_INFO(this->get_logger(), "Rviz parameters updated");
-      },
-      sub_param_opt);
-
-    // Create subcscriber for building_map in separate thread.
-    // The subscriber requies QoS profile with transient local durability
-    _cb_group_map_sub = this->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive);
-    auto sub_map_opt = rclcpp::SubscriptionOptions();
-    sub_map_opt.callback_group = _cb_group_map_sub;
-    _map_sub = this->create_subscription<BuildingMap>(
-      "/map",
-      transient_qos_profile,
-      [&](BuildingMap::SharedPtr msg)
-      {
-        std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
-        RCLCPP_INFO(
-          this->get_logger(),
-          "Received map \"%s\" containing %ld level(s)",
-          msg->name.c_str(),
-          msg->levels.size());
-        // Cache building map message
-        _map_msg = *msg;
-        update_level_cache();
-      },
-      sub_map_opt);
-
-    // Initialize boolean to indicate whether level cache is relevant
-    _has_level = false;
-
-    // Populate _color_list used to assign colors to graphs and robots
-    set_color_list(0.4);
+      }
+    );
   }
 
 private:
@@ -177,21 +106,18 @@ private:
   {
     MarkerArray marker_array;
 
-    // TODO store a cache of trajectories to prevent frequent access.
-    // Update cache whenever mirror manager updates
-    std::lock_guard<std::mutex> guard(_schedule_data_node->get_mutex());
-
     RequestParam query_param;
-    query_param.map_name = _rviz_param.map_name;
+    query_param.map_name = _rviz_param->map_name;
     query_param.start_time = _schedule_data_node->now();
     query_param.finish_time = query_param.start_time +
-      _rviz_param.query_duration;
+      std::chrono::seconds(_rviz_param->query_duration);
 
     _elements = _schedule_data_node->get_elements(query_param);
 
     RequestParam traj_param;
     traj_param.map_name = query_param.map_name;
-    traj_param.start_time = query_param.start_time + _rviz_param.start_duration;
+    traj_param.start_time = query_param.start_time +
+      std::chrono::seconds(_rviz_param->start_duration);
     traj_param.finish_time = query_param.finish_time;
 
     // Store the ids of active trajectories
@@ -241,7 +167,7 @@ private:
       RCLCPP_DEBUG(this->get_logger(),
         "Publishing marker array of size: %ld",
         marker_array.markers.size());
-      _schedule_markers_pub->publish(marker_array);
+      _schedule_markers_pub->publish(std::move(marker_array));
     }
   }
 
@@ -499,160 +425,26 @@ private:
 
   Color make_color(float r, float g, float b, float a = 1.0)
   {
-    Color color;
-    color.r = r;
-    color.g = g;
-    color.b = b;
-    color.a = a;
-    return color;
+    return std_msgs::build<Color>()
+      .r(r)
+      .g(g)
+      .b(b)
+      .a(a);
   }
-
-  void set_color_list(float alpha = 1)
-  {
-    // List of colors that will be paired with graph ids.
-    // Add additional colors here.
-    // Orange
-    _color_list.push_back(make_color(0.99, 0.5, 0.19, alpha));
-    // Blue
-    _color_list.push_back(make_color(0, 0.5, 0.8, alpha));
-    // Purple
-    _color_list.push_back(make_color(0.57, 0.12, 0.7, alpha));
-    // Teal
-    _color_list.push_back(make_color(0, 0.5, 0.5, alpha));
-    // Lavender
-    _color_list.push_back(make_color(0.9, 0.74, 1.0, alpha));
-    // Olive
-    _color_list.push_back(make_color(0.5, 0.5, 0, alpha));
-    // Cyan
-    _color_list.push_back(make_color(0.27, 0.94, 0.94, alpha));
-    // Grey
-    _color_list.push_back(make_color(0.5, 0.5, 0.5, alpha));
-    // Maroon
-    _color_list.push_back(make_color(0.5, 0, 0, alpha));
-  }
-
-  Color get_color(uint64_t id)
-  {
-    if (_color_map.find(id) != _color_map.end())
-      return _color_map[id];
-    else
-    {
-      Color color;
-      if (id < _color_list.size())
-      {
-        color = _color_list[id];
-      }
-      else
-      {
-        // We assign a default color
-        color = make_color(1, 1, 0, 0.5);
-      }
-      _color_map.insert(std::make_pair(id, color));
-      return color;
-    }
-  }
-
-  void update_level_cache()
-  {
-    // Update Level cache when map is updated
-    if (_map_msg.levels.size() > 0)
-    {
-      _has_level = false;
-      for (auto level : _map_msg.levels)
-      {
-        if (level.name == _rviz_param.map_name)
-        {
-          _has_level = true;
-          _level = level;
-          RCLCPP_INFO(this->get_logger(), "Level cache updated");
-          // publish_floorplan();
-          break;
-        }
-      }
-
-      if (!_has_level)
-      {
-        RCLCPP_INFO(this->get_logger(), "Level cache not updated");
-      }
-    }
-  }
-
-  void publish_floorplan()
-  {
-    if (_level.images.size() == 0)
-      return;
-
-    auto floorplan_img = _level.images[0]; // only use the first img
-    RCLCPP_INFO(
-      this->get_logger(),
-      "Loading floorplan Image: %s %s",
-      floorplan_img.name.c_str(),
-      floorplan_img.encoding.c_str());
-    cv::Mat img =
-      cv::imdecode(cv::Mat(floorplan_img.data), cv::IMREAD_GRAYSCALE);
-
-    OccupancyGrid floorplan_msg;
-    floorplan_msg.info.resolution = floorplan_img.scale;
-    floorplan_msg.header.frame_id = "map";
-    floorplan_msg.info.width = img.cols;
-    floorplan_msg.info.height = img.rows;
-    floorplan_msg.info.origin.position.x = floorplan_img.x_offset;
-    floorplan_msg.info.origin.position.y = floorplan_img.y_offset;
-    floorplan_msg.info.origin.position.z = -0.01;
-
-    Eigen::Quaternionf q = Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX())
-      * Eigen::AngleAxisf(floorplan_img.yaw, Eigen::Vector3f::UnitZ());
-    floorplan_msg.info.origin.orientation.x = q.x();
-    floorplan_msg.info.origin.orientation.y = q.y();
-    floorplan_msg.info.origin.orientation.z = q.z();
-    floorplan_msg.info.origin.orientation.w = q.w();
-
-    std::vector<uint8_t> u_data(img.data, img.data + img.rows*img.cols);
-    std::vector<int8_t> occupancy_data;
-    for (auto pix : u_data)
-    {
-      auto pix_val = round((int)(0xFF - pix)/255.0*100);
-      occupancy_data.push_back(pix_val);
-    }
-
-    floorplan_msg.data = occupancy_data;
-    _floorplan_pub->publish(floorplan_msg);
-  }
-
-  struct RvizParam
-  {
-    std::string map_name;
-    rmf_traffic::Duration query_duration;
-    rmf_traffic::Duration start_duration;
-  };
 
   double _rate;
+  std::shared_ptr<ScheduleDataNode> _schedule_data_node;
   std::string _frame_id;
   std::unordered_set<uint64_t> _marker_tracker;
   std::vector<rmf_traffic::Trajectory> _trajectories;
   std::vector<Element> _elements;
   std::chrono::nanoseconds _timer_period;
 
-  BuildingMap _map_msg;
-  bool _has_level;
-  Level _level;
-  std::string _active_map_name;
-  std::unordered_map<uint64_t, std_msgs::msg::ColorRGBA> _color_map;
-  std::unordered_map<std::string, MarkerArray> _map_markers_cache;
-  // Cache of predefined colors for use
-  std::vector<Color> _color_list;
-
   rclcpp::TimerBase::SharedPtr _timer;
   rclcpp::Publisher<MarkerArray>::SharedPtr _schedule_markers_pub;
-  rclcpp::Publisher<OccupancyGrid>::SharedPtr _floorplan_pub;
   rclcpp::Subscription<RvizParamMsg>::SharedPtr _param_sub;
-  rclcpp::CallbackGroup::SharedPtr _cb_group_param_sub;
-  rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
-  rclcpp::CallbackGroup::SharedPtr _cb_group_map_sub;
 
-  std::shared_ptr<ScheduleDataNode> _schedule_data_node;
-
-  RvizParam _rviz_param;
+  RvizParamMsg::ConstSharedPtr _rviz_param;
 };
 
 #endif // SRC__SCHEDULEMARKERPUBLISHER_HPP
