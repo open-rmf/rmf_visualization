@@ -84,9 +84,9 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     [](const Eigen::Vector2d& loc, double z) -> Point
     {
       return geometry_msgs::build<Point>()
-      .x(loc[0])
-      .y(loc[1])
-      .z(z);
+        .x(loc[0])
+        .y(loc[1])
+        .z(z);
     };
 
   for (std::size_t i = 0; i < navgraph.edges.size(); ++i)
@@ -129,10 +129,10 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
 
   auto make_text_marker =
     [=](
-      const std::size_t id,
-      const Eigen::Vector2d& loc,
-      const std::string& text,
-      const std::string& map_name) -> Marker
+    const std::size_t id,
+    const Eigen::Vector2d& loc,
+    const std::string& text,
+    const std::string& map_name) -> Marker
     {
       Marker marker;
       marker.header.stamp = now;
@@ -233,7 +233,8 @@ auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
     };
 
   auto update_marker =
-    [&](const std::size_t id, std::function<void(Marker::SharedPtr& marker)> updater)
+    [&](const std::size_t id,
+      std::function<void(Marker::SharedPtr& marker)> updater)
     {
       auto it = all_lane_markers.find(id);
       if (it == all_lane_markers.end())
@@ -302,7 +303,8 @@ auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
   // Close lanes that were previously open
   for (const auto& id : newly_speed_limited_lanes)
   {
-    if (currently_speed_limited_lanes.find(id) == currently_speed_limited_lanes.end())
+    if (currently_speed_limited_lanes.find(id) ==
+      currently_speed_limited_lanes.end())
     {
       // New lane to close
       update_marker(id, limit);
@@ -368,67 +370,67 @@ void NavGraphVisualizer::FleetNavGraph::fill_with_markers(
 NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 : Node("navgraph_visualizer", options)
 {
-	_current_level = this->declare_parameter("initial_map_name", "L1");
-	RCLCPP_INFO(
-		this->get_logger(),
-		"Setting parameter initial_map_name to %s", _current_level.c_str());
+  _current_level = this->declare_parameter("initial_map_name", "L1");
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter initial_map_name to %s", _current_level.c_str());
 
-	_lane_width = this->declare_parameter("lane_width", 0.5);
+  _lane_width = this->declare_parameter("lane_width", 0.5);
   // Set a minimum positive bound to prevent rendering issues
   _lane_width = std::max(0.1, _lane_width);
-	RCLCPP_INFO(
-		this->get_logger(),
-		"Setting parameter lane_width to %f", _lane_width);
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter lane_width to %f", _lane_width);
 
-	_lane_transparency = this->declare_parameter("lane_transparency", 0.5);
+  _lane_transparency = this->declare_parameter("lane_transparency", 0.5);
   // Set a minimum positive bound to prevent rendering issues
   _lane_transparency = std::max(0.1, _lane_transparency);
-	RCLCPP_INFO(
-		this->get_logger(),
-		"Setting parameter lane_transparency to %f", _lane_transparency);
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter lane_transparency to %f", _lane_transparency);
 
-	_waypoint_scale = this->declare_parameter("waypoint_scale", 1.0);
+  _waypoint_scale = this->declare_parameter("waypoint_scale", 1.0);
   // Set a minimum positive bound to prevent rendering issues
   _waypoint_scale = std::max(0.1, _waypoint_scale);
-	RCLCPP_INFO(
-		this->get_logger(),
-		"Setting parameter waypoint_scale to %f", _waypoint_scale);
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter waypoint_scale to %f", _waypoint_scale);
 
-	_text_scale = this->declare_parameter("text_scale", 1.0);
+  _text_scale = this->declare_parameter("text_scale", 1.0);
   // Set a minimum positive bound to prevent rendering issues
   _text_scale = std::max(0.1, _text_scale);
-	RCLCPP_INFO(
-		this->get_logger(),
-		"Setting parameter text_scale to %f", _text_scale);
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter text_scale to %f", _text_scale);
 
-	// It is okay to capture this by reference here.
-	_param_sub = this->create_subscription<RvizParam>(
-		"rmf_visualization/parameters",
-		rclcpp::SystemDefaultsQoS(),
-		[=](RvizParam::ConstSharedPtr msg)
-	{
-		if (msg->map_name.empty() || msg->map_name == _current_level)
-      return;
+  // It is okay to capture this by reference here.
+  _param_sub = this->create_subscription<RvizParam>(
+    "rmf_visualization/parameters",
+    rclcpp::SystemDefaultsQoS(),
+    [=](RvizParam::ConstSharedPtr msg)
+    {
+      if (msg->map_name.empty() || msg->map_name == _current_level)
+        return;
 
-    // Delete old markers before updating current_level
-    publish_map_markers(true);
+      // Delete old markers before updating current_level
+      publish_map_markers(true);
 
-    _current_level = msg->map_name;
-		RCLCPP_INFO(
-			this->get_logger(),
-			"Publishing navgraphs on level %s", _current_level.c_str());
-    // Publish new markers
-		publish_map_markers();
-	});
+      _current_level = msg->map_name;
+      RCLCPP_INFO(
+        this->get_logger(),
+        "Publishing navgraphs on level %s", _current_level.c_str());
+      // Publish new markers
+      publish_map_markers();
+    });
 
 
-	const auto transient_qos =
-		rclcpp::QoS(10).transient_local();
+  const auto transient_qos =
+    rclcpp::QoS(10).transient_local();
   // Selectively disable intra-process comms for publishers abd subscriptions
   // for non-volatile topics so that this node can still run in a container
   // with intra-process comms enabled.
   rclcpp::PublisherOptionsWithAllocator<
-  std::allocator<void>> ipc_pub_options;
+    std::allocator<void>> ipc_pub_options;
   ipc_pub_options.use_intra_process_comm =
     rclcpp::IntraProcessSetting::Disable;
   _marker_pub = this->create_publisher<MarkerArray>(
@@ -438,14 +440,14 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
   );
 
   rclcpp::SubscriptionOptionsWithAllocator<
-  std::allocator<void>> ipc_sub_options;
+    std::allocator<void>> ipc_sub_options;
   ipc_sub_options.use_intra_process_comm =
     rclcpp::IntraProcessSetting::Disable;
 
-	_navgraph_sub = this->create_subscription<NavGraph>(
-		"/nav_graphs",
-		transient_qos,
-		[=](NavGraph::ConstSharedPtr msg)
+  _navgraph_sub = this->create_subscription<NavGraph>(
+    "/nav_graphs",
+    transient_qos,
+    [=](NavGraph::ConstSharedPtr msg)
     {
       if (msg->name.empty())
         return;
@@ -482,8 +484,8 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
         // We received the LaneStates message before the NavGraph for the fleet
         if (!insertion.first->second->traffic_graph.has_value())
         {
-          auto traffic_graph  =
-            rmf_traffic_ros2::convert(*msg);
+          auto traffic_graph =
+          rmf_traffic_ros2::convert(*msg);
           if (!traffic_graph.has_value())
           {
             RCLCPP_ERROR(
@@ -509,7 +511,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 
       publish_map_markers();
     },
-  ipc_sub_options
+    ipc_sub_options
   );
 
   _lane_states_sub = this->create_subscription<LaneStates>(
@@ -518,7 +520,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
     [=](LaneStates::ConstSharedPtr msg)
     {
       if (msg->fleet_name.empty())
-      return;
+        return;
 
       const auto insertion = _navgraphs.insert({msg->fleet_name, nullptr});
       if (insertion.second)
@@ -541,7 +543,7 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
         // We received LaneStates message after NavGraph for this fleet.
         // We update the lane_states for this fleet.
         const auto marker_updates =
-          insertion.first->second->update_lane_states(*msg, _current_level);
+        insertion.first->second->update_lane_states(*msg, _current_level);
         auto marker_array = std::make_unique<MarkerArray>();
         for (const auto& marker : marker_updates)
         {
@@ -556,19 +558,19 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
 
   this->initialize_color_options(_lane_transparency);
 
-	RCLCPP_INFO(
-		this->get_logger(),
-		"NavGraph visualizer is running...");
+  RCLCPP_INFO(
+    this->get_logger(),
+    "NavGraph visualizer is running...");
 }
 
 //==============================================================================
 void NavGraphVisualizer::initialize_color_options(const double alpha)
 {
   auto make_color =
-  [](float r, float g, float b, float a = 0.5) -> Color
-  {
-    return std_msgs::build<Color>().r(r).g(g).b(b).a(a);
-  };
+    [](float r, float g, float b, float a = 0.5) -> Color
+    {
+      return std_msgs::build<Color>().r(r).g(g).b(b).a(a);
+    };
 
   // Initialize 9 distinct colors that the human eye can distinguish easily
   // If there are more than 9 fleets, we will reuse the colors.

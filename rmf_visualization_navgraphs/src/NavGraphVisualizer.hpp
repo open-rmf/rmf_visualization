@@ -37,30 +37,30 @@
 class NavGraphVisualizer : public rclcpp::Node
 {
 public:
-using TrafficGraph = rmf_traffic::agv::Graph;
-using NavGraph = rmf_building_map_msgs::msg::Graph;
-using LaneStates = rmf_fleet_msgs::msg::LaneStates;
-using RvizParam = rmf_visualization_msgs::msg::RvizParam;
-using Marker = visualization_msgs::msg::Marker;
-using MarkerArray = visualization_msgs::msg::MarkerArray;
-using Color = std_msgs::msg::ColorRGBA;
+  using TrafficGraph = rmf_traffic::agv::Graph;
+  using NavGraph = rmf_building_map_msgs::msg::Graph;
+  using LaneStates = rmf_fleet_msgs::msg::LaneStates;
+  using RvizParam = rmf_visualization_msgs::msg::RvizParam;
+  using Marker = visualization_msgs::msg::Marker;
+  using MarkerArray = visualization_msgs::msg::MarkerArray;
+  using Color = std_msgs::msg::ColorRGBA;
 /// Constructor
-NavGraphVisualizer(
-	const rclcpp::NodeOptions& options  = rclcpp::NodeOptions());
+  NavGraphVisualizer(
+    const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
 private:
 
   // Data structure to handle markers for a given fleet
-	struct FleetNavGraph
-	{
+  struct FleetNavGraph
+  {
     // Map marker id to Marker. Used for lookup and republishing when lane
-		// state changes. The id is set to the index of the lane for easy lookup.
+    // state changes. The id is set to the index of the lane for easy lookup.
     // TODO(YV): Map level name
     using LaneMarkers = std::unordered_map<std::size_t, Marker::SharedPtr>;
 
     std::string fleet_name;
-		std::optional<TrafficGraph> traffic_graph;
-		LaneStates::ConstSharedPtr lane_states;
+    std::optional<TrafficGraph> traffic_graph;
+    LaneStates::ConstSharedPtr lane_states;
     // Map level name to LaneMarkers for that level. This cache is convenient
     // when switching maps
     std::unordered_map<std::string, LaneMarkers> lane_markers;
@@ -108,22 +108,22 @@ private:
       const std::string& map_name,
       MarkerArray& marker_array,
       const bool delete_markers = false);
-	};
+  };
 
-	using FleetNavGraphPtr = std::shared_ptr<FleetNavGraph>;
+  using FleetNavGraphPtr = std::shared_ptr<FleetNavGraph>;
 
-	void publish_map_markers(const bool delete_markers = false);
+  void publish_map_markers(const bool delete_markers = false);
   void initialize_color_options(const double alpha);
   Color::ConstSharedPtr get_next_color();
 
-	rclcpp::Subscription<RvizParam>::SharedPtr _param_sub;
-	rclcpp::Subscription<NavGraph>::SharedPtr _navgraph_sub;
-	rclcpp::Subscription<LaneStates>::SharedPtr _lane_states_sub;
-	rclcpp::Publisher<MarkerArray>::SharedPtr _marker_pub;
+  rclcpp::Subscription<RvizParam>::SharedPtr _param_sub;
+  rclcpp::Subscription<NavGraph>::SharedPtr _navgraph_sub;
+  rclcpp::Subscription<LaneStates>::SharedPtr _lane_states_sub;
+  rclcpp::Publisher<MarkerArray>::SharedPtr _marker_pub;
 
-	std::string _current_level;
-	// Map fleet name to FleetNavGraphPtr
-	std::unordered_map<std::string, FleetNavGraphPtr> _navgraphs;
+  std::string _current_level;
+  // Map fleet name to FleetNavGraphPtr
+  std::unordered_map<std::string, FleetNavGraphPtr> _navgraphs;
 
   // Visualization
   std::size_t _next_color = 0;

@@ -76,9 +76,10 @@ void ObstacleVisualizer::msg_cb(const ObstaclesMsg& msg)
       RCLCPP_WARN(
         this->get_logger(),
         "Received obstacle message with empty source. Ignoring...");
-      continue;;
+      continue;
     }
-    if (obstacle.level_name.empty() || obstacle.level_name != _active_level_name)
+    if (obstacle.level_name.empty() ||
+      obstacle.level_name != _active_level_name)
     {
       RCLCPP_DEBUG(
         this->get_logger(),
@@ -103,7 +104,7 @@ void ObstacleVisualizer::msg_cb(const ObstaclesMsg& msg)
     _msg.action = _msg.ADD;
     _msg.pose = obstacle.bbox.center;
     _msg.scale = obstacle.bbox.size;
-    _msg.color = make_color(0,0.9,0.3);
+    _msg.color = make_color(0, 0.9, 0.3);
     _msg.lifetime = obstacle.lifetime;
 
     MarkerMsg _text = _msg;
