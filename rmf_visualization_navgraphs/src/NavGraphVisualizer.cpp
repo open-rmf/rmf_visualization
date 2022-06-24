@@ -199,7 +199,8 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
 
 //==============================================================================
 auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
-  const LaneStates& lane_states_) -> std::vector<Marker::ConstSharedPtr>
+  const LaneStates& lane_states_,
+  std::optional<std::string> map_name_filter) -> std::vector<Marker::ConstSharedPtr>
 {
   if (!traffic_graph.has_value())
     return {};
@@ -238,13 +239,30 @@ auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
       if (it == all_lane_markers.end())
         return;
       updater(it->second);
-      marker_updates.push_back(it->second);
+      // We add the marker to marker_updates if it belongs to the provided
+      // map_name_filter
+      if (map_name_filter.has_value())
+      {
+        const auto& filter = map_name_filter.value();
+        const auto& map_name =
+          traffic_graph->get_waypoint(
+          traffic_graph->get_lane(id).entry().waypoint_index()).get_map_name();
+        if (filter == map_name)
+          marker_updates.push_back(it->second);
+      }
+      else
+      {
+        marker_updates.push_back(it->second);
+      }
     };
 
   // Update lane closures
   std::unordered_set<std::size_t> newly_closed_lanes = {};
   for (const auto& id : lane_states_.closed_lanes)
-    newly_closed_lanes.insert(id);
+  {
+    if (id < traffic_graph->num_lanes())
+      newly_closed_lanes.insert(id);
+  }
   // Open lanes that were previously closed
   for (const auto& id : this->currently_closed_lanes)
   {
@@ -268,7 +286,10 @@ auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
   // Update speed limits
   std::unordered_set<std::size_t> newly_speed_limited_lanes = {};
   for (const auto& limit : lane_states_.speed_limits)
-    newly_speed_limited_lanes.insert(limit.lane_index);
+  {
+    if (limit.lane_index < traffic_graph->num_lanes())
+      newly_speed_limited_lanes.insert(limit.lane_index);
+  }
   // Open lanes that were previously closed
   for (const auto& id : this->currently_speed_limited_lanes)
   {
@@ -288,44 +309,6 @@ auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
     }
   }
   currently_speed_limited_lanes = std::move(newly_speed_limited_lanes);
-
-  // // If a lane is closed we will set its transparency to 0.1
-  // for (const auto& id : lane_states_.closed_lanes)
-  // {
-  //   if (id >= traffic_graph->num_lanes())
-  //     continue;
-  //   for (const auto& [level_name, lane_markers] : lane_markers)
-  //   {
-  //     if (lane_markers.find(id) == lane_markers.end())
-  //       continue;
-  //     auto& marker = lane_markers.at(id);
-  //     marker->color.a = 0.1;
-  //     marker_updates.push_back(marker);
-  //     // TODO(YV): Add a "closed" text marker
-  //     // We've updated the lane and can move on to the next one
-  //     break;
-  //   }
-  // }
-
-  // // If a lane is speed limited, we will scale its width by half.
-  // // TODO(YV): Scale the width based on the magnitude of the speed limit value
-  // for (const auto& limit : lane_states_.speed_limits)
-  // {
-  //   if (limit.lane_index >= traffic_graph->num_lanes())
-  //     continue;
-  //   for (const auto& [level_name, lane_markers] : lane_markers)
-  //   {
-  //     if (lane_markers.find(limit.lane_index) == lane_markers.end())
-  //       continue;
-  //     auto& marker = lane_markers.at(limit.lane_index);
-  //     marker->scale.x = this->lane_width * 0.5;
-  //     marker_updates.push_back(marker);
-  //     // TODO(YV): Add a "speed limited" text marker
-  //     // We've updated the lane and can move on to the next one
-  //     break;
-  //   }
-  // }
-
   return marker_updates;
 }
 
@@ -557,8 +540,15 @@ NavGraphVisualizer::NavGraphVisualizer(const rclcpp::NodeOptions& options)
       {
         // We received LaneStates message after NavGraph for this fleet.
         // We update the lane_states for this fleet.
-        insertion.first->second->update_lane_states(*msg);
-        publish_map_markers();
+        const auto marker_updates =
+          insertion.first->second->update_lane_states(*msg, _current_level);
+        auto marker_array = std::make_unique<MarkerArray>();
+        for (const auto& marker : marker_updates)
+        {
+          marker_array->markers.push_back(*marker);
+        }
+        if (!marker_array->markers.empty())
+          _marker_pub->publish(std::move(marker_array));
       }
     },
     ipc_sub_options

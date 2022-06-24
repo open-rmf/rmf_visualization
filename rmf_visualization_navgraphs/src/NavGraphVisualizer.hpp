@@ -96,8 +96,12 @@ private:
       const NavGraph& navgraph,
       const rclcpp::Time& now);
 
+    // Update the lane markers and return a vector of markers that belong to
+    // map_name_filter if provided. If map_name_filter is not provided, then
+    // return all lane markers that were updated
     std::vector<Marker::ConstSharedPtr> update_lane_states(
-      const LaneStates& lane_states);
+      const LaneStates& lane_states,
+      std::optional<std::string> map_name_filter = std::nullopt);
 
     // Fill marker_array with all markers that are present in given map_name
     void fill_with_markers(
