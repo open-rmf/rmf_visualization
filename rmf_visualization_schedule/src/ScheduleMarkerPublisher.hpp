@@ -565,7 +565,7 @@ private:
           _has_level = true;
           _level = level;
           RCLCPP_INFO(this->get_logger(), "Level cache updated");
-          publish_floorplan();
+          // publish_floorplan();
           break;
         }
       }

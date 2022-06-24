@@ -34,16 +34,18 @@ class FloorplanVisualizer : public rclcpp::Node
 {
 public:
   using RvizParam = rmf_visualization_msgs::msg::RvizParam;
-  using BuildingMap = rmf_building_map_msgs::msg::BuildingMap
+  using BuildingMap = rmf_building_map_msgs::msg::BuildingMap;
   using OccupancyGrid = nav_msgs::msg::OccupancyGrid;
 /// Constructor
   FloorplanVisualizer(
     const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
 private:
+  void publish_grid();
+
   std::string _current_level;
   rclcpp::Subscription<RvizParam>::SharedPtr _param_sub;
-  rclcpp::Subscription<RvizParam>::SharedPtr _map_sub;
+  rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
   rclcpp::Publisher<OccupancyGrid>::SharedPtr _floorplan_pub;
   std::unordered_map<std::string, OccupancyGrid> _grids;
 };

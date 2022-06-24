@@ -37,6 +37,11 @@
       <param name="lane_transparency" value="$(var lane_transparency)"/>
     </node>
 
+    <node pkg="rmf_visualization_floorplans" exec="floorplan_visualizer_node">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="initial_map_name" value="$(var map_name)"/>
+    </node>
+
   </group>
 
   <group unless="$(var headless)">

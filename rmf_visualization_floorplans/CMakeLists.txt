@@ -11,6 +11,7 @@ set(dep_pkgs
   rclcpp
   rclcpp_components
   OpenCV
+  Eigen3
   rmf_building_map_msgs
   rmf_visualization_msgs
   nav_msgs
@@ -26,6 +27,7 @@ add_library(floorplan_visualizer SHARED src/FloorplanVisualizer.cpp)
 target_link_libraries(floorplan_visualizer
   PRIVATE
     rclcpp::rclcpp
+    Eigen3::Eigen
     ${rclcpp_components_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${rmf_building_map_msgs_LIBRARIES}
@@ -42,6 +44,7 @@ target_include_directories(floorplan_visualizer
     ${rclcpp_INCLUDE_DIRS}
     ${rclcpp_components_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ${Eigen3_INCLUDE_DIRS}
     ${rmf_fleet_msgs_INCLUDE_DIRS}
     ${rmf_building_map_msgs_INCLUDE_DIRS}
     ${rmf_visualization_msgs_INCLUDE_DIRS}

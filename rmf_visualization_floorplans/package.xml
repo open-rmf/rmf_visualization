@@ -12,6 +12,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>libopencv-dev</depend>
+  <depend>eigen</depend>
   <depend>rmf_building_map_msgs</depend>
   <depend>rmf_visualization_msgs</depend>
   <depend>geometry_msgs</depend>

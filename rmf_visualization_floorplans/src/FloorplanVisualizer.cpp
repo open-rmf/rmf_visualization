@@ -18,6 +18,11 @@
 
 #include "FloorplanVisualizer.hpp"
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+
+#include <Eigen/Geometry>
+
 #include <rclcpp_components/register_node_macro.hpp>
 
 //==============================================================================
@@ -27,6 +32,12 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
   RCLCPP_INFO(
     this->get_logger(),
     "Configuring floorplan_visualizer..."
+  );
+
+  _current_level = this->declare_parameter("initial_map_name", "L1");
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter initial_map_name to %s", _current_level.c_str()
   );
 
   const auto transient_qos =
@@ -53,35 +64,94 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
     transient_qos,
     [=](BuildingMap::ConstSharedPtr msg)
     {
+      if (msg->levels.empty())
+        return;
 
+      for (const auto& level : msg->levels)
+      {
+        const auto& map_name = level.name;
+        if (map_name.empty() || level.images.empty())
+          continue;
+
+        cv::Mat cv_img = cv::imdecode(
+          cv::Mat(level.images[0].data), cv::IMREAD_GRAYSCALE);
+        auto it = level.images.begin();
+        ++it;
+        // We blend all the other images into the first image
+        // TODO(YV): Consider blending all the other layers into one image
+        // at 0.5:0.5 ratio and then blend the first layer to this result at
+        // 0.7:0.3
+        for (; it != level.images.end(); ++it)
+        {
+          cv::Mat next_img = cv::imdecode(
+            cv::Mat(it->data), cv::IMREAD_GRAYSCALE);
+          cv::addWeighted(cv_img, 0.7, next_img, 0.3, 0.0, cv_img);
+        }
+        const auto& image = level.images[0];
+        OccupancyGrid grid;
+        grid.info.resolution = image.scale;
+        grid.header.stamp = this->get_clock()->now();
+        grid.header.frame_id = "map";
+        grid.info.width = cv_img.cols;
+        grid.info.height = cv_img.rows;
+        grid.info.origin.position.x = image.x_offset;
+        grid.info.origin.position.y = image.y_offset;
+        grid.info.origin.position.z = -0.01;
+        Eigen::Quaternionf q = Eigen::AngleAxisf(
+          M_PI,
+          Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(
+          image.yaw, Eigen::Vector3f::UnitZ());
+        grid.info.origin.orientation.x = q.x();
+        grid.info.origin.orientation.y = q.y();
+        grid.info.origin.orientation.z = q.z();
+        grid.info.origin.orientation.w = q.w();
+        // TODO(YV): Avoid these copies
+        std::vector<uint8_t> u_data(
+          cv_img.data, cv_img.data + cv_img.rows*cv_img.cols);
+        std::vector<int8_t> occupancy_data;
+        for (auto pix : u_data)
+        {
+          pix = round((int)(0xFF - pix)/255.0*100);
+          occupancy_data.push_back(pix);
+        }
+        grid.data = std::move(occupancy_data);
+        _grids.insert({map_name, std::move(grid)});
+      }
+      publish_grid();
     },
     ipc_sub_options);
 
-  _param_sub = this->create_subscription<RvizParamMsg>(
+  _param_sub = this->create_subscription<RvizParam>(
     "rmf_visualization/parameters",
     rclcpp::SystemDefaultsQoS(),
-    [=](RvizParamMsg::ConstSharedPtr msg)
+    [=](RvizParam::ConstSharedPtr msg)
     {
       if (msg->map_name.empty() || msg->map_name == _current_level)
         return;
 
-      auto it = _grids.find(msg->map_name);
-      if (it == _grids.end())
-      {
-        // Publish deletion
-        return;
-      }
-      _floorplan_pub->publish(
-        std::move(std::make_unique<OccupancyGrid>(it->second))
-      );
+      _current_level = msg->map_name;
+      publish_grid();
     });
 
   RCLCPP_INFO(
     this->get_logger(),
     "Running floorplan_visualizer..."
-  )
+  );
 }
 
 //==============================================================================
+void FloorplanVisualizer::publish_grid()
+{
+  if (_grids.find(_current_level) == _grids.end())
+  {
+    auto msg = std::make_unique<OccupancyGrid>();
+    msg->header.stamp = this->get_clock()->now();
+    msg->header.frame_id = "map";
+    _floorplan_pub->publish(std::move(msg));
+    return;
+  }
+  auto msg = std::make_unique<OccupancyGrid>(_grids.at(_current_level));
+  _floorplan_pub->publish(std::move(msg));
+}
 
 RCLCPP_COMPONENTS_REGISTER_NODE(FloorplanVisualizer)
