@@ -15,38 +15,51 @@
  *
  */
 
-#ifndef SRC__FLOORPLANVISUALIZER_HPP
-#define SRC__FLOORPLANVISUALIZER_HPP
+#ifndef SRC__FLEETSTATESVISUALIZER_HPP
+#define SRC__FLEETSTATESVISUALIZER_HPP
 
 #include <rclcpp/rclcpp.hpp>
 
 #include <rmf_visualization_msgs/msg/rviz_param.hpp>
-#include <rmf_building_map_msgs/msg/building_map.hpp>
+#include <rmf_fleet_msgs/msg/fleet_state.hpp>
 
-#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <std_msgs/msg/color_rgba.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <unordered_map>
 
 //==============================================================================
-class FloorplanVisualizer : public rclcpp::Node
+class FleetStatesVisualizer : public rclcpp::Node
 {
 public:
   using RvizParam = rmf_visualization_msgs::msg::RvizParam;
-  using BuildingMap = rmf_building_map_msgs::msg::BuildingMap;
-  using OccupancyGrid = nav_msgs::msg::OccupancyGrid;
+  using FleetState = rmf_fleet_msgs::msg::FleetState;
+  using Marker = visualization_msgs::msg::Marker;
+  using MarkerArray = visualization_msgs::msg::MarkerArray;
+  using Color = std_msgs::msg::ColorRGBA;
+
 /// Constructor
-  FloorplanVisualizer(
+  FleetStatesVisualizer(
     const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
 private:
-  void publish_grid();
+  void publish_markers() const;
 
   std::string _current_level;
   rclcpp::Subscription<RvizParam>::SharedPtr _param_sub;
-  rclcpp::Subscription<BuildingMap>::SharedPtr _map_sub;
-  rclcpp::Publisher<OccupancyGrid>::SharedPtr _floorplan_pub;
-  std::unordered_map<std::string, OccupancyGrid> _grids;
+  rclcpp::Subscription<FleetState>::SharedPtr _fleet_sub;
+  rclcpp::Publisher<MarkerArray>::SharedPtr _marker_pub;
+
+  struct RobotMarker
+  {
+    Marker text_marker;
+    Marker pose_marker;
+  };
+  using RobotMarkerPtr = std::shared_ptr<RobotMarker>;
+  // Map robot name to its marker
+  std::unordered_map<std::string, RobotMarkerPtr> _markers;
 };
 
 
-#endif // SRC__FLOORPLANVISUALIZER_HPP
+#endif // SRC__FLEETSTATESVISUALIZER_HPP

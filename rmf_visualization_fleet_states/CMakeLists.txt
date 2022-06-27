@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(rmf_visualization_floorplans)
+project(rmf_visualization_fleet_states)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -10,52 +10,45 @@ include(GNUInstallDirs)
 set(dep_pkgs
   rclcpp
   rclcpp_components
-  OpenCV
-  Eigen3
-  rmf_building_map_msgs
+  rmf_fleet_msgs
   rmf_visualization_msgs
-  nav_msgs
   geometry_msgs
+  visualization_msgs
 )
 foreach(pkg ${dep_pkgs})
   find_package(${pkg} REQUIRED)
 endforeach()
 
 #===============================================================================
-add_library(floorplan_visualizer SHARED src/FloorplanVisualizer.cpp)
+add_library(fleetstates_visualizer SHARED src/FleetStatesVisualizer.cpp)
 
-target_link_libraries(floorplan_visualizer
+target_link_libraries(fleetstates_visualizer
   PRIVATE
     rclcpp::rclcpp
-    Eigen3::Eigen
     ${rclcpp_components_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-    ${rmf_building_map_msgs_LIBRARIES}
+    ${rmf_fleet_msgs_LIBRARIES}
     ${rmf_visualization_msgs_LIBRARIES}
-    ${nav_msgs_LIBRARIES}
+    ${visualization_msgs_LIBRARIES}
     ${geometry_msgs_LIBRARIES}
-
 )
 
-target_include_directories(floorplan_visualizer
+target_include_directories(fleetstates_visualizer
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     ${rclcpp_INCLUDE_DIRS}
     ${rclcpp_components_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
-    ${Eigen3_INCLUDE_DIRS}
     ${rmf_fleet_msgs_INCLUDE_DIRS}
-    ${rmf_building_map_msgs_INCLUDE_DIRS}
     ${rmf_visualization_msgs_INCLUDE_DIRS}
+    ${visualization_msgs_INCLUDE_DIRS}
     ${geometry_msgs_INCLUDE_DIRS}
 )
 
-target_compile_features(floorplan_visualizer INTERFACE cxx_std_17)
+target_compile_features(fleetstates_visualizer INTERFACE cxx_std_17)
 
-rclcpp_components_register_node(floorplan_visualizer
-  PLUGIN "FloorplanVisualizer"
-  EXECUTABLE floorplan_visualizer_node)
+rclcpp_components_register_node(fleetstates_visualizer
+  PLUGIN "FleetStatesVisualizer"
+  EXECUTABLE fleetstates_visualizer_node)
 
 #===============================================================================
 if(BUILD_TESTING)
@@ -74,7 +67,7 @@ endif()
 
 #===============================================================================
 install(
-  TARGETS floorplan_visualizer
+  TARGETS fleetstates_visualizer
   RUNTIME DESTINATION lib/${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

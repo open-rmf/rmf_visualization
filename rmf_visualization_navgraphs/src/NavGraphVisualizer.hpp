@@ -44,12 +44,12 @@ public:
   using Marker = visualization_msgs::msg::Marker;
   using MarkerArray = visualization_msgs::msg::MarkerArray;
   using Color = std_msgs::msg::ColorRGBA;
+
 /// Constructor
   NavGraphVisualizer(
     const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
 private:
-
   // Data structure to handle markers for a given fleet
   struct FleetNavGraph
   {
