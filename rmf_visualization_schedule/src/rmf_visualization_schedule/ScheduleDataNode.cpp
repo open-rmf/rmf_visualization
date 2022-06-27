@@ -116,7 +116,7 @@ ScheduleDataNode::ScheduleDataNode(
   this->_pimpl->conflict_notice_sub =
     this->create_subscription<Implementation::ConflictNotice>(
     rmf_traffic_ros2::NegotiationNoticeTopicName,
-    rclcpp::QoS(10),
+    rclcpp::ServicesQoS().reliable(),
     [this](Implementation::ConflictNotice::UniquePtr msg)
     {
       std::lock_guard<std::mutex> guard(this->_pimpl->mutex);

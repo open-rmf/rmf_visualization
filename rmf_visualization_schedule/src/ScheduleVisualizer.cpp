@@ -17,6 +17,12 @@
 
 #include "ScheduleVisualizer.hpp"
 
+#include <rmf_traffic/geometry/Circle.hpp>
+#include <rmf_traffic/Motion.hpp>
+
+#include <rmf_traffic_ros2/Time.hpp>
+#include <rmf_traffic_ros2/StandardNames.hpp>
+
 #include <rclcpp_components/register_node_macro.hpp>
 
 

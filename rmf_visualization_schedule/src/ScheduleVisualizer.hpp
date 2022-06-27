@@ -24,13 +24,8 @@
 #include <rmf_visualization_schedule/ScheduleDataNode.hpp>
 #include <rmf_visualization_schedule/TrajectoryServer.hpp>
 
-#include <rmf_traffic/geometry/Circle.hpp>
 #include <rmf_traffic/schedule/Viewer.hpp>
-#include <rmf_traffic/Motion.hpp>
 #include <rmf_traffic/Time.hpp>
-
-#include <rmf_traffic_ros2/StandardNames.hpp>
-#include <rmf_traffic_ros2/Time.hpp>
 
 #include <geometry_msgs/msg/point.hpp>
 #include <rmf_visualization_msgs/msg/rviz_param.hpp>
@@ -38,7 +33,6 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
-#include <unordered_map>
 #include <unordered_set>
 #include <thread>
 
