@@ -92,14 +92,13 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
           const RobotState& state,
           const double radius,
           const std::size_t id,
-          const rclcpp::Time& now,
           MarkerArray& marker_array)
         {
           const auto& loc = state.location;
 
-          auto body_marker = Marker();
+          Marker body_marker;
           body_marker.header.frame_id = "map";
-          body_marker.header.stamp = now;
+          body_marker.header.stamp = state.location.t;
           body_marker.ns = "body";
           body_marker.id = id;
           body_marker.type = body_marker.SPHERE;
@@ -121,7 +120,7 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
           nose_marker.scale.y = 0.25 * radius;
           nose_marker.scale.z = 0.25 * radius;
 
-          auto& text_marker = body_marker;
+          auto text_marker = body_marker;
           text_marker.ns = "name";
           text_marker.type = text_marker.TEXT_VIEW_FACING;
           set_text_pose(loc, radius, text_marker);
@@ -132,7 +131,6 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
           marker_array.markers.push_back(std::move(nose_marker));
           marker_array.markers.push_back(std::move(text_marker));
         };
-
 
       if (msg->name.empty() || msg->robots.empty())
         return;
@@ -161,7 +159,6 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
           robot,
           radius,
           _ids[robot.name],
-          this->get_clock()->now(),
           *marker_array
         );
       }
