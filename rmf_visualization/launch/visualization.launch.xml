@@ -28,9 +28,9 @@
       <param name="retained_history_count" value="$(var retained_history_count)"/>
     </node>
 
-    <node pkg="rmf_visualization_fleet_states" exec="rmf_visualization_fleet_states" args="-m $(var map_name)">
-      <param name="display_names" value ="$(var display_names)"/>
+    <node pkg="rmf_visualization_fleet_states" exec="fleetstates_visualizer_node">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="initial_map_name" value="$(var map_name)"/>
     </node>
 
     <node pkg="rmf_visualization_building_systems" exec="rmf_visualization_building_systems" args="-m $(var map_name)">

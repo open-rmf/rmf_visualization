@@ -51,14 +51,10 @@ private:
   rclcpp::Subscription<FleetState>::SharedPtr _fleet_sub;
   rclcpp::Publisher<MarkerArray>::SharedPtr _marker_pub;
 
-  struct RobotMarker
-  {
-    Marker text_marker;
-    Marker pose_marker;
-  };
-  using RobotMarkerPtr = std::shared_ptr<RobotMarker>;
-  // Map robot name to its marker
-  std::unordered_map<std::string, RobotMarkerPtr> _markers;
+  // Map robot name to a unique marker id
+  std::unordered_map<std::string, std::size_t> _ids;
+  std::unordered_set<std::string> _declared_radius;
+  std::size_t _next_available_id;
 };
 
 
