@@ -54,6 +54,7 @@ private:
   // Map robot name to a unique marker id
   std::unordered_map<std::string, std::size_t> _ids;
   std::unordered_set<std::string> _declared_radius;
+  double _nose_scale;
   std::size_t _next_available_id;
 };
 

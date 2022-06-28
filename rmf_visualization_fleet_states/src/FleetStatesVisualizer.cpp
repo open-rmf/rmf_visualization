@@ -38,6 +38,12 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
     "Setting parameter initial_map_name to %s", _current_level.c_str()
   );
 
+  _nose_scale = this->declare_parameter("fleet_state_nose_scale", "0.5");
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Setting parameter fleet_state_nose_scale to %d", _nose_scale
+  );
+
   _param_sub = this->create_subscription<RvizParam>(
     "rmf_visualization/parameters",
     rclcpp::SystemDefaultsQoS(),
@@ -116,9 +122,9 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
           auto nose_marker = body_marker;
           nose_marker.ns = "nose";
           set_nose_pose(loc, radius, nose_marker);
-          nose_marker.scale.x = 0.25 * radius;
-          nose_marker.scale.y = 0.25 * radius;
-          nose_marker.scale.z = 0.25 * radius;
+          nose_marker.scale.x = this->_nose_scale * radius;
+          nose_marker.scale.y = this->_nose_scale * radius;
+          nose_marker.scale.z = this->_nose_scale * radius;
 
           auto text_marker = body_marker;
           text_marker.ns = "name";

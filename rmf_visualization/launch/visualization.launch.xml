@@ -16,6 +16,7 @@
   <arg name="lane_transparency" default="0.4" description="The transparency of a rendered lane in default state"/>
   <arg name="wait_secs" default="10" description="The nummber of seconds the schedule visualizer should keep trying to connect to the rmf_schedule_node"/>
   <arg name="retained_history_count" default="50" description="The retained history count for negotiations"/>
+  <arg name="fleet_state_nose_scale" default="0.5" description="The radius of the nose marker as a fraction of the fleet's footprint radius"/>
 
   <group>
     <node pkg="rmf_visualization_schedule" exec="schedule_visualizer_node">
@@ -30,7 +31,13 @@
 
     <node pkg="rmf_visualization_fleet_states" exec="fleetstates_visualizer_node">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
-      <param name="initial_map_name" value="$(var map_name)"/>
+      <param name="fleet_state_nose_scale" value="$(var fleet_state_nose_scale)"/>
+      <!-- Radius parameters for fleets provided in rmf_demos -->
+      <param name="tinyRobot_radius" value="0.3"/>
+      <param name="deliveryRobot_radius" value="0.6"/>
+      <param name="cleanerBotA_radius" value="1.0"/>
+      <param name="cleanerBotE_radius" value="1.0"/>
+      <param name="caddy_radius" value="1.5"/>
     </node>
 
     <node pkg="rmf_visualization_building_systems" exec="rmf_visualization_building_systems" args="-m $(var map_name)">
