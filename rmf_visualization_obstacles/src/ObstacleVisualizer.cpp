@@ -95,7 +95,7 @@ void ObstacleVisualizer::msg_cb(const ObstaclesMsg& msg)
       continue;
     }
     MarkerMsg _msg;
-    _msg.header.frame_id = _global_fixed_frame;
+    _msg.header.frame_id = obstacle.header.frame_id;
     _msg.header.stamp = this->get_clock()->now();
     _msg.ns = "humans";
     _msg.text = "human";

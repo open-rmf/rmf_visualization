@@ -17,6 +17,7 @@
   <arg name="wait_secs" default="10" description="The nummber of seconds the schedule visualizer should keep trying to connect to the rmf_schedule_node"/>
   <arg name="retained_history_count" default="50" description="The retained history count for negotiations"/>
   <arg name="fleet_state_nose_scale" default="0.5" description="The radius of the nose marker as a fraction of the fleet's footprint radius"/>
+  <arg name="rmf_frame_id" default="map" description="The RMF global frame id"/>
 
   <group>
     <node pkg="rmf_visualization_schedule" exec="schedule_visualizer_node">
@@ -58,6 +59,11 @@
       <param name="initial_map_name" value="$(var map_name)"/>
     </node>
 
+    <node pkg="rmf_visualization_obstacles" exec="obstacle_visualizer_node">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="initial_map_name" value="$(var map_name)"/>
+      <param name="global_fixed_frame" value="$(var rmf_frame_id)"/>
+    </node>
   </group>
 
   <group unless="$(var headless)">
