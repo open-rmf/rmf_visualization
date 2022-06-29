@@ -32,7 +32,7 @@
     <node pkg="rmf_visualization_fleet_states" exec="fleetstates_visualizer_node">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
       <param name="fleet_state_nose_scale" value="$(var fleet_state_nose_scale)"/>
-      <!-- Radius parameters for fleets provided in rmf_demos -->
+      <!-- Radius parameters for fleets available in rmf_demos -->
       <param name="tinyRobot_radius" value="0.3"/>
       <param name="deliveryRobot_radius" value="0.6"/>
       <param name="cleanerBotA_radius" value="1.0"/>
