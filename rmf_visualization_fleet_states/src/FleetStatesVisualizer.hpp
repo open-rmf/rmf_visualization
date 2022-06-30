@@ -28,6 +28,7 @@
 #include <visualization_msgs/msg/marker.hpp>
 
 #include <unordered_map>
+#include <unordered_set>
 
 //==============================================================================
 class FleetStatesVisualizer : public rclcpp::Node
