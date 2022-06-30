@@ -211,12 +211,15 @@ auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
   auto open =
     [&](Marker::SharedPtr& marker)
     {
-      marker->color.a = this->lane_transparency;
+      marker->color = *color;
     };
 
   auto close =
     [&](Marker::SharedPtr& marker)
     {
+      marker->color.r = 0.22;
+      marker->color.g = 0.22;
+      marker->color.b = 0.22;
       marker->color.a = 0.1;
     };
 

@@ -13,7 +13,7 @@
   <arg name="lane_width" default="0.5" description="Width of lanes(m) to be rendered"/>
   <arg name="waypoint_scale" default="1.3" description="The relative size of a waypoint wrt the lane width"/>
   <arg name="text_scale" default="0.7" description="The relative size of a text label wrt the lane width"/>
-  <arg name="lane_transparency" default="0.4" description="The transparency of a rendered lane in default state"/>
+  <arg name="lane_transparency" default="0.6" description="The transparency of a rendered lane in default state"/>
   <arg name="wait_secs" default="10" description="The nummber of seconds the schedule visualizer should keep trying to connect to the rmf_schedule_node"/>
   <arg name="retained_history_count" default="50" description="The retained history count for negotiations"/>
   <arg name="fleet_state_nose_scale" default="0.5" description="The radius of the nose marker as a fraction of the fleet's footprint radius"/>

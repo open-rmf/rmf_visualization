@@ -30,13 +30,13 @@ ObstacleVisualizer::ObstacleVisualizer(const rclcpp::NodeOptions& options)
     "Beginning RMF obstacle visualizer node");
 
   _obstacle_markers_pub = this->create_publisher<MarkerArrayMsg>(
-    "obstacle_markers",
-    rclcpp::QoS(10));
+    "fleet_markers",
+    rclcpp::QoS(10).reliable());
 
   // It is okay to capture this by reference here.
   _obstacles_sub = this->create_subscription<ObstaclesMsg>(
     "rmf_obstacles",
-    rclcpp::QoS(10),
+    rclcpp::QoS(10).best_effort(),
     [&](std::shared_ptr<const ObstaclesMsg> msg)
     {
       msg_cb(*msg);
@@ -100,7 +100,7 @@ void ObstacleVisualizer::msg_cb(const ObstaclesMsg& msg)
     _msg.ns = "humans";
     _msg.text = "human";
     _msg.id = obstacle.id;
-    _msg.type = _msg.CYLINDER;
+    _msg.type = _msg.CUBE;
     _msg.action = _msg.ADD;
     _msg.pose = obstacle.bbox.center;
     _msg.scale = obstacle.bbox.size;
