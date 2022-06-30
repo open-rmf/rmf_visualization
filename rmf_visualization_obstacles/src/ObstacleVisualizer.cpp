@@ -86,19 +86,12 @@ void ObstacleVisualizer::msg_cb(const ObstaclesMsg& msg)
         "Received obstacle in a different level. Ignoring...");
       continue;
     }
-    if (obstacle.classification != "human")
-    {
-      RCLCPP_WARN(
-        this->get_logger(),
-        "ObstacleVisualizer currently only supports human classification. "
-        "Ignoring...");
-      continue;
-    }
+
     MarkerMsg _msg;
     _msg.header.frame_id = obstacle.header.frame_id;
     _msg.header.stamp = this->get_clock()->now();
-    _msg.ns = "humans";
-    _msg.text = "human";
+    _msg.ns = "obstacles";
+    _msg.text = obstacle.classification;
     _msg.id = obstacle.id;
     _msg.type = _msg.CUBE;
     _msg.action = _msg.ADD;
@@ -108,11 +101,11 @@ void ObstacleVisualizer::msg_cb(const ObstaclesMsg& msg)
     _msg.lifetime = obstacle.lifetime;
 
     MarkerMsg _text = _msg;
+    _text.ns = "obstacle_texts";
     _text.type = _text.TEXT_VIEW_FACING;
-    _text.id = -1 * (_msg.id + 1);
     _text.pose.position.z = _text.pose.position.z + 1.0;
     _text.pose.position.x = _text.pose.position.x + 1.0;
-
+    _text.scale.z = 0.3;
     obstacle_msg->markers.emplace_back(_msg);
     obstacle_msg->markers.emplace_back(_text);
   }
