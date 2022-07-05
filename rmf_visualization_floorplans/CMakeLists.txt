@@ -48,6 +48,7 @@ target_include_directories(floorplan_visualizer
     ${rmf_fleet_msgs_INCLUDE_DIRS}
     ${rmf_building_map_msgs_INCLUDE_DIRS}
     ${rmf_visualization_msgs_INCLUDE_DIRS}
+    ${nav_msgs_INCLUDE_DIRS}
     ${geometry_msgs_INCLUDE_DIRS}
 )
 

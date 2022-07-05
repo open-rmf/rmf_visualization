@@ -69,11 +69,6 @@ builtin_interfaces::msg::Duration convert(rmf_traffic::Duration duration)
 //==============================================================================
 ScheduleVisualizer::ScheduleVisualizer(
   const rclcpp::NodeOptions& options)
-// const std::string& node_name,
-// std::shared_ptr<ScheduleDataNode> schedule_data_node,
-// const std::string& map_name,
-// const double rate = 1.0,
-// const std::string& frame_id = "/map")
 : Node("schedule_visualizer_node", options),
   _schedule_data_node(nullptr),
   _trajectory_server(nullptr)
