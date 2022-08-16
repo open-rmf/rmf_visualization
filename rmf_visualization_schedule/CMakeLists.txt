@@ -30,6 +30,7 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rmf_visualization_msgs REQUIRED)
 find_package(rmf_building_map_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_uncrustify REQUIRED)
@@ -57,6 +58,8 @@ target_link_libraries(rmf_visualization_schedule
     OpenSSL::SSL
     OpenSSL::Crypto
     ${rmf_traffic_msgs_LIBRARIES}
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
 )
 
 target_include_directories(rmf_visualization_schedule
