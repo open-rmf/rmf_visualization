@@ -37,7 +37,7 @@ if(BUILD_TESTING)
     PATHS "${rmf_utils_DIR}/../../../share/rmf_utils/")
 
   ament_uncrustify(
-    include/rmf_visualization_schedule src test
+    ARGN include/rmf_visualization_schedule src test
     CONFIG_FILE ${uncrustify_config_file}
     MAX_LINE_LENGTH 80
   )
