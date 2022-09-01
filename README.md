@@ -1,6 +1,7 @@
 # rmf_schedule_visualizer
 
 ![](https://github.com/open-rmf/rmf_visualization/workflows/build/badge.svg)
+![](https://github.com/open-rmf/rmf_visualization/workflows/style/badge.svg)
 [![codecov](https://codecov.io/gh/open-rmf/rmf_visualization/branch/main/graph/badge.svg)](https://codecov.io/gh/open-rmf/rmf_visualization)
 
 This repository contains several packages that aid with visualizing various entities within RMF via RViz.
