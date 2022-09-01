@@ -67,76 +67,76 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
       using Location = rmf_fleet_msgs::msg::Location;
 
       auto set_body_pose =
-        [](const Location& loc, Marker& marker)
-        {
-          marker.pose.position.x = loc.x;
-          marker.pose.position.y = loc.y;
-          marker.pose.position.z = 0.0;
-          marker.pose.orientation.w = 1.0;
-        };
+      [](const Location& loc, Marker& marker)
+      {
+        marker.pose.position.x = loc.x;
+        marker.pose.position.y = loc.y;
+        marker.pose.position.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+      };
 
       auto set_nose_pose =
-        [](const Location& loc, const double radius, Marker& marker)
-        {
-          marker.pose.position.x = loc.x + radius * std::cos(loc.yaw);
-          marker.pose.position.y = loc.y + radius * std::sin(loc.yaw);
-          marker.pose.position.z = 0.0;
-          marker.pose.orientation.w = 1.0;
-        };
+      [](const Location& loc, const double radius, Marker& marker)
+      {
+        marker.pose.position.x = loc.x + radius * std::cos(loc.yaw);
+        marker.pose.position.y = loc.y + radius * std::sin(loc.yaw);
+        marker.pose.position.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+      };
       auto set_text_pose =
-        [](const Location& loc, const double radius, Marker& marker)
-        {
-          marker.pose.position.x =
-            loc.x + 2.0 * radius * std::cos(loc.yaw - 0.7853);
-          marker.pose.position.y =
-            loc.y + 2.0 * radius * std::sin(loc.yaw - 0.7853);
-          marker.pose.position.z = 0.0;
-          marker.pose.orientation.w = 1.0;
-        };
+      [](const Location& loc, const double radius, Marker& marker)
+      {
+        marker.pose.position.x =
+        loc.x + 2.0 * radius * std::cos(loc.yaw - 0.7853);
+        marker.pose.position.y =
+        loc.y + 2.0 * radius * std::sin(loc.yaw - 0.7853);
+        marker.pose.position.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+      };
       auto fill_markers =
-        [&](
-          const RobotState& state,
-          const double radius,
-          const std::size_t id,
-          MarkerArray& marker_array)
-        {
-          const auto& loc = state.location;
+      [&](
+        const RobotState& state,
+        const double radius,
+        const std::size_t id,
+        MarkerArray& marker_array)
+      {
+        const auto& loc = state.location;
 
-          Marker body_marker;
-          body_marker.header.frame_id = "map";
-          body_marker.header.stamp = state.location.t;
-          body_marker.ns = "body";
-          body_marker.id = id;
-          body_marker.type = body_marker.SPHERE;
-          body_marker.action = body_marker.MODIFY;
-          set_body_pose(loc, body_marker);
-          body_marker.scale.x = 2.0 * radius;
-          body_marker.scale.y = 2.0 * radius;
-          body_marker.scale.z = 2.0 * radius;
-          // TODO(YV): Get the color to match that of the navigation graph
-          body_marker.color.r = 1.0;
-          body_marker.color.b = 1.0;
-          body_marker.color.a = 1.0;
-          body_marker.lifetime = rclcpp::Duration(std::chrono::seconds(1));
+        Marker body_marker;
+        body_marker.header.frame_id = "map";
+        body_marker.header.stamp = state.location.t;
+        body_marker.ns = "body";
+        body_marker.id = id;
+        body_marker.type = body_marker.SPHERE;
+        body_marker.action = body_marker.MODIFY;
+        set_body_pose(loc, body_marker);
+        body_marker.scale.x = 2.0 * radius;
+        body_marker.scale.y = 2.0 * radius;
+        body_marker.scale.z = 2.0 * radius;
+        // TODO(YV): Get the color to match that of the navigation graph
+        body_marker.color.r = 1.0;
+        body_marker.color.b = 1.0;
+        body_marker.color.a = 1.0;
+        body_marker.lifetime = rclcpp::Duration(std::chrono::seconds(1));
 
-          auto nose_marker = body_marker;
-          nose_marker.ns = "nose";
-          set_nose_pose(loc, radius, nose_marker);
-          nose_marker.scale.x = this->_nose_scale * radius;
-          nose_marker.scale.y = this->_nose_scale * radius;
-          nose_marker.scale.z = this->_nose_scale * radius;
+        auto nose_marker = body_marker;
+        nose_marker.ns = "nose";
+        set_nose_pose(loc, radius, nose_marker);
+        nose_marker.scale.x = this->_nose_scale * radius;
+        nose_marker.scale.y = this->_nose_scale * radius;
+        nose_marker.scale.z = this->_nose_scale * radius;
 
-          auto text_marker = body_marker;
-          text_marker.ns = "name";
-          text_marker.type = text_marker.TEXT_VIEW_FACING;
-          set_text_pose(loc, radius, text_marker);
-          text_marker.text = state.name;
-          text_marker.scale.z = 0.3;
+        auto text_marker = body_marker;
+        text_marker.ns = "name";
+        text_marker.type = text_marker.TEXT_VIEW_FACING;
+        set_text_pose(loc, radius, text_marker);
+        text_marker.text = state.name;
+        text_marker.scale.z = 0.3;
 
-          marker_array.markers.push_back(std::move(body_marker));
-          marker_array.markers.push_back(std::move(nose_marker));
-          marker_array.markers.push_back(std::move(text_marker));
-        };
+        marker_array.markers.push_back(std::move(body_marker));
+        marker_array.markers.push_back(std::move(nose_marker));
+        marker_array.markers.push_back(std::move(text_marker));
+      };
 
       if (msg->name.empty() || msg->robots.empty())
         return;
