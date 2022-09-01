@@ -112,7 +112,7 @@ auto TrajectoryServer::Implementation::on_message(
 
   if (msg->get_payload().empty())
   {
-    RCLCPP_INFO(
+    RCLCPP_DEBUG(
       schedule_data_node->get_logger(),
       "[TrajectoryServer] Empty request received. Ignoring...");
     return;
@@ -154,7 +154,7 @@ auto TrajectoryServer::Implementation::on_message(
   }
   else
   {
-    RCLCPP_INFO(schedule_data_node->get_logger(),
+    RCLCPP_DEBUG(schedule_data_node->get_logger(),
       "[TrajectoryServer] Invalid request received: %s",
       msg->get_payload().c_str());
   }

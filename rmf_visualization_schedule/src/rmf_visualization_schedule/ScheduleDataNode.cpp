@@ -69,11 +69,12 @@ public:
 //==============================================================================
 std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
   const std::string& node_name,
-  rmf_traffic::Duration wait_time)
+  rmf_traffic::Duration wait_time,
+  const rclcpp::NodeOptions& options)
 {
   const auto start_time = std::chrono::steady_clock::now();
   std::shared_ptr<ScheduleDataNode> schedule_data(
-    new ScheduleDataNode(std::move(node_name)));
+    new ScheduleDataNode(std::move(node_name), options));
 
   // Creating a mirror manager that queries over all
   // Spacetime in the database schedule
@@ -106,14 +107,16 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
 }
 
 //==============================================================================
-ScheduleDataNode::ScheduleDataNode(std::string node_name)
-: Node(node_name),
+ScheduleDataNode::ScheduleDataNode(
+  std::string node_name,
+  const rclcpp::NodeOptions& options)
+: Node(std::move(node_name), options),
   _pimpl(rmf_utils::make_impl<Implementation>(Implementation{}))
 {
   this->_pimpl->conflict_notice_sub =
     this->create_subscription<Implementation::ConflictNotice>(
     rmf_traffic_ros2::NegotiationNoticeTopicName,
-    rclcpp::QoS(10),
+    rclcpp::ServicesQoS().reliable(),
     [this](Implementation::ConflictNotice::UniquePtr msg)
     {
       std::lock_guard<std::mutex> guard(this->_pimpl->mutex);

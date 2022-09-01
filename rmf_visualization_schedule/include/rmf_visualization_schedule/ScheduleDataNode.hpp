@@ -55,7 +55,8 @@ public:
   ///   The waiting duration to discover the rmf_traffic_schedule node
   static std::shared_ptr<ScheduleDataNode> make(
     const std::string& node_name,
-    rmf_traffic::Duration wait_time = std::chrono::seconds(10));
+    rmf_traffic::Duration wait_time = std::chrono::seconds(10),
+    const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
   /// Query the schedule database for elements
   std::vector<Element> get_elements(const RequestParam& request_param) const;
@@ -82,7 +83,9 @@ public:
   class Implementation;
 
 private:
-  ScheduleDataNode(std::string node_name);
+  ScheduleDataNode(
+    std::string node_name,
+    const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
   rmf_utils::impl_ptr<Implementation> _pimpl;
 };
 

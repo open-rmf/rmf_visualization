@@ -31,6 +31,9 @@ jobs:
             rmf_visualization
             rmf_visualization_building_systems
             rmf_visualization_fleet_states
+            rmf_visualization_floorplans
+            rmf_visualization_navgraphs
+            rmf_visualization_obstacles
             rmf_visualization_rviz2_plugins
             rmf_visualization_schedule
           vcs-repo-file-url: |
