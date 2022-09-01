@@ -21,4 +21,4 @@ jobs:
         run: |
           sudo apt update && sudo apt install wget
           wget https://raw.githubusercontent.com/open-rmf/rmf_utils/main/rmf_utils/test/format/rmf_code_style.cfg
-          /ros_entrypoint.sh ament_uncrustify -c rmf_code_style.cfg . --language C++ --exclude rmf_visualization_schedule/include/json.hpp rmf_visualization_schedule/include/jwt/* rmf_visualization_schedule/jwt/*/*
+          /ros_entrypoint.sh ament_uncrustify -c rmf_code_style.cfg . --language C++ --exclude rmf_visualization_schedule/include/json.hpp rmf_visualization_schedule/include/jwt/* rmf_visualization_schedule/include/jwt/*/*
