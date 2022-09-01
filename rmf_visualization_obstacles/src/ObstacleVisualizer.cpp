@@ -90,7 +90,7 @@ void ObstacleVisualizer::msg_cb(const ObstaclesMsg& msg)
     MarkerMsg _msg;
     _msg.header.frame_id = obstacle.header.frame_id;
     _msg.header.stamp = this->get_clock()->now();
-    _msg.ns = "obstacles";
+    _msg.ns = obstacle.header.frame_id + "_obstacles";
     _msg.text = obstacle.classification;
     _msg.id = obstacle.id;
     _msg.type = _msg.CUBE;
@@ -101,7 +101,7 @@ void ObstacleVisualizer::msg_cb(const ObstaclesMsg& msg)
     _msg.lifetime = obstacle.lifetime;
 
     MarkerMsg _text = _msg;
-    _text.ns = "obstacle_texts";
+    _text.ns = obstacle.header.frame_id + "_obstacle_texts";
     _text.type = _text.TEXT_VIEW_FACING;
     _text.pose.position.z = _text.pose.position.z + 1.0;
     _text.pose.position.x = _text.pose.position.x + 1.0;
