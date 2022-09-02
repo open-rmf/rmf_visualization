@@ -49,6 +49,7 @@ rclcpp_components_register_node(obstacle_visualizer
 #===============================================================================
 if(BUILD_TESTING)
   find_package(ament_cmake_uncrustify REQUIRED)
+  find_package(rmf_utils REQUIRED)
   find_file(uncrustify_config_file
     NAMES "rmf_code_style.cfg"
     PATHS "${rmf_utils_DIR}/../../../share/rmf_utils/")
