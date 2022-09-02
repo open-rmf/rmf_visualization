@@ -32,12 +32,13 @@ find_package(Threads)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_uncrustify REQUIRED)
+  find_package(rmf_utils REQUIRED)
   find_file(uncrustify_config_file
     NAMES "rmf_code_style.cfg"
     PATHS "${rmf_utils_DIR}/../../../share/rmf_utils/")
 
   ament_uncrustify(
-    include/rmf_visualization_schedule src test
+    ARGN include/rmf_visualization_schedule src test
     CONFIG_FILE ${uncrustify_config_file}
     MAX_LINE_LENGTH 80
   )

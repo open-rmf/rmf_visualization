@@ -203,7 +203,9 @@ auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
   std::optional<std::string> map_name_filter) -> std::vector<Marker::ConstSharedPtr>
 {
   if (!traffic_graph.has_value())
+  {
     return {};
+  }
 
   // TODO(YV): Avoid this copy by storing Maker::ConstSharedPtr in the cache
   std::vector<Marker::ConstSharedPtr> marker_updates = {};
