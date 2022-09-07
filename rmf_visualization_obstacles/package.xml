@@ -1,24 +1,23 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>rmf_visualization_fleet_states</name>
+  <name>rmf_visualization_obstacles</name>
   <version>2.0.0</version>
-  <description>A package to visualize positions of robots from different fleets in the a building</description>
-  <maintainer email="mquigley@openrobotics.org">Morgan Quigley</maintainer>
-  <maintainer email="yadunund@openrobotics.org">Yadunund</maintainer>
-  <maintainer email="marco@openrobotics.org">Marco A. Gutiérrez</maintainer>
+  <description>A visualizer for obstacles in RMF</description>
+  <maintainer email="yadunund@openrobotics.com">Yadunund</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>rmf_fleet_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>vision_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>rmf_obstacle_msgs</depend>
   <depend>rmf_visualization_msgs</depend>
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_uncrustify</test_depend>
   <test_depend>rmf_utils</test_depend>
 
   <export>

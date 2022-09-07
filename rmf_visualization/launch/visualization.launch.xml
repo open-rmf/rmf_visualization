@@ -3,26 +3,66 @@
 <launch>
 
   <arg name="use_sim_time" default="false"/>
-  <arg name="rate" default="10"/>
-  <arg name="map_name" default="B1"/>
+  <arg name="rate" default="10.0" description= "The rate in hz at which the scheduler markers should publish"/>
+  <arg name="map_name" default="B1" description="The name of the map to initialize the visualizer"/>
   <arg name="viz_config_file" default="$(find-pkg-share rmf_visualization_schedule)/config/rmf.rviz"/>
   <arg name="display_names" default="true"/>
   <arg name="websocket_port" default="8006"/>
   <arg name="headless" default="false" description="Do not launch rviz2"/>
+  <arg name="path_width" default="0.2" description="Width of schedule path(m) to be rendered"/>
+  <arg name="lane_width" default="0.5" description="Width of lanes(m) to be rendered"/>
+  <arg name="waypoint_scale" default="1.3" description="The relative size of a waypoint wrt the lane width"/>
+  <arg name="text_scale" default="0.7" description="The relative size of a text label wrt the lane width"/>
+  <arg name="lane_transparency" default="0.6" description="The transparency of a rendered lane in default state"/>
+  <arg name="wait_secs" default="10" description="The nummber of seconds the schedule visualizer should keep trying to connect to the rmf_schedule_node"/>
+  <arg name="retained_history_count" default="50" description="The retained history count for negotiations"/>
+  <arg name="fleet_state_nose_scale" default="0.5" description="The radius of the nose marker as a fraction of the fleet's footprint radius"/>
+  <arg name="rmf_frame_id" default="map" description="The RMF global frame id"/>
 
   <group>
-    <node pkg="rmf_visualization_schedule" exec="schedule_visualizer" args="-r $(var rate) -m $(var map_name) -p $(var websocket_port) --history 50">
+    <node pkg="rmf_visualization_schedule" exec="schedule_visualizer_node">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="rate" value="$(var rate)"/>
+      <param name="path_width" value="$(var path_width)"/>
+      <param name="initial_map_name" value="$(var map_name)"/>
+      <param name="wait_secs" value="$(var wait_secs)"/>
+      <param name="port" value="$(var websocket_port)"/>
+      <param name="retained_history_count" value="$(var retained_history_count)"/>
     </node>
 
-    <node pkg="rmf_visualization_fleet_states" exec="rmf_visualization_fleet_states" args="-m $(var map_name)">
-      <param name="display_names" value ="$(var display_names)"/>
+    <node pkg="rmf_visualization_fleet_states" exec="fleetstates_visualizer_node">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="fleet_state_nose_scale" value="$(var fleet_state_nose_scale)"/>
+      <!-- Radius parameters for fleets available in rmf_demos -->
+      <param name="tinyRobot_radius" value="0.3"/>
+      <param name="deliveryRobot_radius" value="0.6"/>
+      <param name="cleanerBotA_radius" value="1.0"/>
+      <param name="cleanerBotE_radius" value="1.0"/>
+      <param name="caddy_radius" value="1.5"/>
     </node>
 
     <node pkg="rmf_visualization_building_systems" exec="rmf_visualization_building_systems" args="-m $(var map_name)">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
+    </node>
+
+    <node pkg="rmf_visualization_navgraphs" exec="navgraph_visualizer_node">
       <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="initial_map_name" value="$(var map_name)"/>
+      <param name="lane_width" value="$(var lane_width)"/>
+      <param name="waypoint_scale" value="$(var waypoint_scale)"/>
+      <param name="text_scale" value="$(var text_scale)"/>
+      <param name="lane_transparency" value="$(var lane_transparency)"/>
+    </node>
+
+    <node pkg="rmf_visualization_floorplans" exec="floorplan_visualizer_node">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="initial_map_name" value="$(var map_name)"/>
+    </node>
+
+    <node pkg="rmf_visualization_obstacles" exec="obstacle_visualizer_node">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="initial_map_name" value="$(var map_name)"/>
+      <param name="global_fixed_frame" value="$(var rmf_frame_id)"/>
     </node>
   </group>
 

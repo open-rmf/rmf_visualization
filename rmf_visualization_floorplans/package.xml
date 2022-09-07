@@ -1,21 +1,22 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>rmf_visualization_fleet_states</name>
+  <name>rmf_visualization_floorplans</name>
   <version>2.0.0</version>
-  <description>A package to visualize positions of robots from different fleets in the a building</description>
-  <maintainer email="mquigley@openrobotics.org">Morgan Quigley</maintainer>
+  <description>A package to visualize the floorplans for levels in a building</description>
   <maintainer email="yadunund@openrobotics.org">Yadunund</maintainer>
-  <maintainer email="marco@openrobotics.org">Marco A. Gutiérrez</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>rmf_fleet_msgs</depend>
-  <depend>visualization_msgs</depend>
+  <depend>libopencv-dev</depend>
+  <depend>eigen</depend>
+  <depend>rmf_building_map_msgs</depend>
   <depend>rmf_visualization_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

@@ -1,5 +1,8 @@
 ## Changelog for package rmf_visualization_building_systems
 
+2.0.0 (2022-09-09)
+------------------
+
 1.2.1 (2021-09-01)
 ------------------
 * Fix style checking in CI: [#37](https://github.com/open-rmf/rmf_visualization/pull/37)
@@ -17,5 +20,5 @@
 
 1.0.0 (2020-06-22)
 ------------------
-* A ROS 2 node that publishers RViz markers to visualize the states of doors and elevators as defined in the `building_map::msgs::BuildingMap` message. 
+* A ROS 2 node that publishers RViz markers to visualize the states of doors and elevators as defined in the `building_map::msgs::BuildingMap` message.
 * Contributors: Chen Bainian, Yadu

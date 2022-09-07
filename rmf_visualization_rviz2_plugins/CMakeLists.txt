@@ -35,12 +35,13 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Test)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_uncrustify REQUIRED)
+  find_package(rmf_utils REQUIRED)
   find_file(uncrustify_config_file
     NAMES "rmf_code_style.cfg"
     PATHS "${rmf_utils_DIR}/../../../share/rmf_utils/")
 
   ament_uncrustify(
-    src test
+    ARGN src
     CONFIG_FILE ${uncrustify_config_file}
     MAX_LINE_LENGTH 80
   )

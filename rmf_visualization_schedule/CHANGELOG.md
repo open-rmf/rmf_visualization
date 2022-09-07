@@ -1,5 +1,9 @@
 ## Changelog for package rmf_visualization_schedule
 
+2.0.0 (2022-09-09)
+------------------
+* Separate map marker and floor plan publishing to separate packages: [#44](https://github.com/open-rmf/rmf_visualization/pull/44)
+
 1.3.0 (2022-03-18)
 ------------------
 * Update to traffic dependency API: [#43](https://github.com/open-rmf/rmf_visualization/pull/43)
