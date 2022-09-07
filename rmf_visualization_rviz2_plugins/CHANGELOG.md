@@ -1,5 +1,8 @@
 ## Changelog for package rmf_visualization_rviz2_plugins
 
+2.0.0 (2022-09-09)
+------------------
+
 1.2.1 (2021-09-01)
 ------------------
 * Fix style checking in CI: [#37](https://github.com/open-rmf/rmf_visualization/pull/37)
