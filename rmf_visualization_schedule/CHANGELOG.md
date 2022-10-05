@@ -2,6 +2,7 @@
 
 2.0.0 (2022-09-09)
 ------------------
+* Build against rmf_traffic v3.0: [#52](https://github.com/open-rmf/rmf_visualization/pull/52)
 * Separate map marker and floor plan publishing to separate packages: [#44](https://github.com/open-rmf/rmf_visualization/pull/44)
 
 1.3.0 (2022-03-18)
