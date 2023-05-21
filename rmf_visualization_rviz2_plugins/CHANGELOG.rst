@@ -1,22 +1,24 @@
-## Changelog for package rmf_visualization_rviz2_plugins
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package rmf_visualization_rviz2_plugins
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 2.0.0 (2022-10-03)
 ------------------
 
 1.2.1 (2021-09-01)
 ------------------
-* Fix style checking in CI: [#37](https://github.com/open-rmf/rmf_visualization/pull/37)
+* Fix style checking in CI: (`#37 <https://github.com/open-rmf/rmf_visualization/pull/3>`_)
 * Contributors: Grey
 
 1.2.0 (2021-06-14)
 ------------------
-* Renamed package to `rmf_visualization_rviz2_plugins`: [#8](https://github.com/open-rmf/rmf_visualization/pull/8)
+* Renamed package to `rmf_visualization_rviz2_plugins`: (`#8 <https://github.com/open-rmf/rmf_visualization/pull/>`_)
 
 1.1.0 (2020-09-24)
------------
-* Use relative library path for plugin: [#62](https://github.com/osrf/rmf_schedule_visualizer/pull/62)
+------------------
+* Use relative library path for plugin: (`#62 <https://github.com/osrf/rmf_schedule_visualizer/pull/6>`_)
 * Websocket server for negotiation visualizer (`#69 <https://github.com/osrf/rmf_schedule_visualizer/issues/69>`_)
-* Foxy warning fix: Change deprecated ament_export_interfaces to ament_export_targets: [#74](https://github.com/osrf/rmf_schedule_visualizer/pull/74)
+* Foxy warning fix: Change deprecated ament_export_interfaces to ament_export_targets: (`#74 <https://github.com/osrf/rmf_schedule_visualizer/pull/7>`_)
 * Contributors: Geoffrey Biggs, Michael X. Grey, ddengster
 
 1.0.0 (2020-06-22)
