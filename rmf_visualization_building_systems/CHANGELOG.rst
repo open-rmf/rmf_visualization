@@ -2,8 +2,8 @@
 Changelog for package rmf_visualization_building_systems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.2 (2023-06-05)
+------------------
 * Port version bump and changes from main to humble
 * Switch to rst changelogs (`#57 <https://github.com/open-rmf/rmf_visualization/issues/57>`_)
 * Contributors: Esteban Martinena, Grey, Yadunund
