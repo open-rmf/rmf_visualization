@@ -1,5 +1,8 @@
 ## Changelog for package rmf_visualization_rviz2_plugins
 
+2.0.1 (2022-11-15)
+------------------
+
 2.0.0 (2022-10-03)
 ------------------
 
