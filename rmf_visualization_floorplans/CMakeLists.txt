@@ -7,6 +7,7 @@ endif()
 
 include(GNUInstallDirs)
 
+find_package(eigen3_cmake_module REQUIRED)
 set(dep_pkgs
   rclcpp
   rclcpp_components
