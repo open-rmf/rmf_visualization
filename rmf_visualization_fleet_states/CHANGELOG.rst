@@ -2,6 +2,11 @@
 Changelog for package rmf_visualization_fleet_states
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Switch to rst changelogs (`#57 <https://github.com/open-rmf/rmf_visualization/pull/57>`_)
+* Contributors: Yadunund
+
 2.0.1 (2022-11-15)
 ------------------
 
