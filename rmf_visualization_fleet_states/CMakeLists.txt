@@ -22,26 +22,20 @@ endforeach()
 #===============================================================================
 add_library(fleetstates_visualizer SHARED src/FleetStatesVisualizer.cpp)
 
-target_link_libraries(fleetstates_visualizer
-  PRIVATE
-    rclcpp::rclcpp
-    ${rclcpp_components_LIBRARIES}
-    ${rmf_fleet_msgs_LIBRARIES}
-    ${rmf_visualization_msgs_LIBRARIES}
-    ${visualization_msgs_LIBRARIES}
-    ${geometry_msgs_LIBRARIES}
+ament_target_dependencies(fleetstates_visualizer
+  PUBLIC
+    rclcpp
+    rclcpp_components
+    rmf_fleet_msgs
+    rmf_visualization_msgs
+    visualization_msgs
+    geometry_msgs
 )
 
 target_include_directories(fleetstates_visualizer
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    ${rclcpp_INCLUDE_DIRS}
-    ${rclcpp_components_INCLUDE_DIRS}
-    ${rmf_fleet_msgs_INCLUDE_DIRS}
-    ${rmf_visualization_msgs_INCLUDE_DIRS}
-    ${visualization_msgs_INCLUDE_DIRS}
-    ${geometry_msgs_INCLUDE_DIRS}
 )
 
 target_compile_features(fleetstates_visualizer INTERFACE cxx_std_17)

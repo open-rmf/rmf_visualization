@@ -48,7 +48,16 @@ endif()
 file(GLOB_RECURSE core_lib_srcs "src/rmf_visualization_schedule/*.cpp")
 add_library(rmf_visualization_schedule SHARED ${core_lib_srcs})
 
-ament_target_dependencies(rmf_visualization_schedule rmf_traffic rmf_traffic_ros2 rclcpp websocketpp OpenSSL Threads rmf_traffic_msgs)
+ament_target_dependencies(rmf_visualization_schedule
+  PUBLIC
+    rmf_traffic
+    rmf_traffic_ros2
+    rclcpp
+    websocketpp
+    OpenSSL
+    Threads
+    rmf_traffic_msgs
+)
 
 target_include_directories(rmf_visualization_schedule
   PUBLIC
@@ -67,7 +76,13 @@ ament_export_targets(rmf_visualization_schedule HAS_LIBRARY_TARGET)
 
 #===============================================================================
 add_library(schedule_visualizer SHARED src/ScheduleVisualizer.cpp)
-ament_target_dependencies(schedule_visualizer PUBLIC rclcpp_components visualization_msgs geometry_msgs rmf_visualization_msgs)
+ament_target_dependencies(schedule_visualizer
+  PUBLIC
+    rclcpp_components
+    visualization_msgs
+    geometry_msgs
+    rmf_visualization_msgs
+)
 
 target_link_libraries(schedule_visualizer
   PRIVATE

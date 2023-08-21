@@ -56,31 +56,28 @@ add_library(${PROJECT_NAME} SHARED
   src/NegotiationModel.cpp
 )
 
+ament_target_dependencies(${PROJECT_NAME}
+  PUBLIC
+    rclcpp
+    rmf_door_msgs
+    rmf_lift_msgs
+    rmf_visualization_msgs
+    rmf_traffic_ros2
+    rviz_common
+    rviz_rendering
+    rviz_default_plugins
+)
+
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
     ${QT5_LIBRARIES}
-    ${rclcpp_LIBRARIES}
-    ${rmf_door_msgs_LIBRARIES}
-    ${rmf_lift_msgs_LIBRARIES}
-    ${rmf_visualization_msgs_LIBRARIES}
-    rviz_common::rviz_common
-    ${rviz_rendering_LIBRARIES}
-    ${rviz_default_plugins_LIBRARIES}
     ${Qt5Widgets_LIBRARIES}
-    rmf_traffic_ros2::rmf_traffic_ros2
 )
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    ${rclcpp_INCLUDE_DIRS}
-    ${rmf_door_msgs_INCLUDE_DIRS}
-    ${rmf_lift_msgs_INCLUDE_DIRS}
-    ${rmf_visualization_msgs_INCLUDE_DIRS}
-    ${rviz_common_INCLUDE_DIRS}
-    ${rviz_rendering_INCLUDE_DIRS}
-    ${rviz_default_plugins_INCLUDE_DIRS}
     ${Qt5Widgets_INCLUDE_DIRS}
     ${QT5_INCLUDE_DIRS}
 )
