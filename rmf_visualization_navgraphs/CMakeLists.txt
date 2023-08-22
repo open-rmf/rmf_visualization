@@ -26,33 +26,22 @@ endforeach()
 #===============================================================================
 add_library(navgraph_visualizer SHARED src/NavGraphVisualizer.cpp)
 
-target_link_libraries(navgraph_visualizer
-  PRIVATE
-    rclcpp::rclcpp
-    ${rclcpp_components_LIBRARIES}
-    ${rmf_fleet_msgs_LIBRARIES}
-    ${rmf_building_map_msgs_LIBRARIES}
-    ${rmf_visualization_msgs_LIBRARIES}
-    ${visualization_msgs_LIBRARIES}
-    ${geometry_msgs_LIBRARIES}
-    rmf_traffic::rmf_traffic
-    rmf_traffic_ros2::rmf_traffic_ros2
-
+ament_target_dependencies(navgraph_visualizer
+  PUBLIC
+    rclcpp
+    rclcpp_components
+    rmf_fleet_msgs
+    rmf_building_map_msgs
+    rmf_visualization_msgs
+    visualization_msgs
+    geometry_msgs
+    rmf_traffic_ros2
 )
 
 target_include_directories(navgraph_visualizer
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    ${rclcpp_INCLUDE_DIRS}
-    ${rclcpp_components_INCLUDE_DIRS}
-    ${rmf_fleet_msgs_INCLUDE_DIRS}
-    ${rmf_building_map_msgs_INCLUDE_DIRS}
-    ${rmf_visualization_msgs_INCLUDE_DIRS}
-    ${visualization_msgs_INCLUDE_DIRS}
-    ${geometry_msgs_INCLUDE_DIRS}
-    ${rmf_traffic_INCLUDE_DIRS}
-    ${rmf_traffic_ros2_INCLUDE_DIRS}
 )
 
 target_compile_features(navgraph_visualizer INTERFACE cxx_std_17)
