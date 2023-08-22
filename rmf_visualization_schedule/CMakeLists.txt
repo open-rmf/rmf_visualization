@@ -48,25 +48,20 @@ endif()
 file(GLOB_RECURSE core_lib_srcs "src/rmf_visualization_schedule/*.cpp")
 add_library(rmf_visualization_schedule SHARED ${core_lib_srcs})
 
-target_link_libraries(rmf_visualization_schedule
+ament_target_dependencies(rmf_visualization_schedule
   PUBLIC
-    rmf_traffic_ros2::rmf_traffic_ros2
-    rmf_traffic::rmf_traffic
-    ${rclcpp_LIBRARIES}
-    ${websocketpp_LIBRARIES}
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    Threads::Threads
-    ${rmf_traffic_msgs_LIBRARIES}
+    rmf_traffic
+    rmf_traffic_ros2
+    rclcpp
+    websocketpp
+    OpenSSL
+    Threads
+    rmf_traffic_msgs
 )
 
 target_include_directories(rmf_visualization_schedule
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    ${rclcpp_INCLUDE_DIRS}
-    ${WEBSOCKETPP_INCLUDE_DIR}
-    ${OpenSSL_INCLUDE_DIR}
 )
 
 ament_export_dependencies(
@@ -81,23 +76,17 @@ ament_export_targets(rmf_visualization_schedule HAS_LIBRARY_TARGET)
 
 #===============================================================================
 add_library(schedule_visualizer SHARED src/ScheduleVisualizer.cpp)
+ament_target_dependencies(schedule_visualizer
+  PUBLIC
+    rclcpp_components
+    visualization_msgs
+    geometry_msgs
+    rmf_visualization_msgs
+)
 
 target_link_libraries(schedule_visualizer
   PRIVATE
     rmf_visualization_schedule
-    ${rclcpp_components_LIBRARIES}
-    ${visualization_msgs_LIBRARIES}
-    ${geometry_msgs_LIBRARIES}
-    ${rmf_visualization_msgs_LIBRARIES}
-)
-
-target_include_directories(schedule_visualizer
-  PRIVATE
-    ${rclcpp_INCLUDE_DIRS}
-    ${rclcpp_components_INCLUDE_DIRS}
-    ${visualization_msgs_INCLUDE_DIRS}
-    ${geometry_msgs_INCLUDE_DIRS}
-    ${rmf_visualization_msgs_INCLUDE_DIRS}
 )
 
 target_compile_features(schedule_visualizer INTERFACE cxx_std_17)
