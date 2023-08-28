@@ -2,6 +2,11 @@
 Changelog for package rmf_visualization_rviz2_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Improve linking times (`#61 <https://github.com/open-rmf/rmf_visualization/pull/61>`_)
+* Contributors: Grey, Luca Della Vedova
+
 2.2.0 (2023-06-08)
 ------------------
 
