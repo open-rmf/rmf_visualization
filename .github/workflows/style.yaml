@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        docker_image: ['ros:humble-ros-base']
+        docker_image: ['ros:iron-ros-base']
     container:
       image: ${{ matrix.docker_image }}
     steps:

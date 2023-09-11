@@ -18,26 +18,15 @@ find_package(rmf_visualization_msgs REQUIRED)
 #===============================================================================
 add_library(obstacle_visualizer SHARED src/ObstacleVisualizer.cpp)
 
-target_link_libraries(obstacle_visualizer
-  PRIVATE
-    rclcpp::rclcpp
-    ${rclcpp_components_LIBRARIES}
-    ${visualization_msgs_LIBRARIES}
-    ${geometry_msgs_LIBRARIES}
-    ${vision_msgs_LIBRARIES}
-    ${rmf_obstacle_msgs_LIBRARIES}
-    ${rmf_visualization_msgs_LIBRARIES}
-)
-
-target_include_directories(obstacle_visualizer
+ament_target_dependencies(obstacle_visualizer
   PUBLIC
-    ${rclcpp_INCLUDE_DIRS}
-    ${rclcpp_components_INCLUDE_DIRS}
-    ${visualization_msgs_INCLUDE_DIRS}
-    ${geometry_msgs_INCLUDE_DIRS}
-    ${vision_msgs_INCLUDE_DIRS}
-    ${rmf_obstacle_msgs_INCLUDE_DIRS}
-    ${rmf_visualization_msgs_INCLUDE_DIRS}
+    rclcpp
+    rclcpp_components
+    visualization_msgs
+    geometry_msgs
+    vision_msgs
+    rmf_obstacle_msgs
+    rmf_visualization_msgs
 )
 
 target_compile_features(obstacle_visualizer INTERFACE cxx_std_17)
