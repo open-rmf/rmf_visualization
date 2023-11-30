@@ -340,6 +340,17 @@ const std::string TrajectoryServer::Implementation::parse_trajectories(
         add_segment(start_time,
           motion->compute_position(start_time),
           motion->compute_velocity(start_time));
+        const auto first_seg_x = j_traj["segments"][0]["x"];
+        if (first_seg_x[0] < 1e-9 && first_seg_x[0] > -1e-9)
+        {
+          std::string json_str = j_traj.dump();
+          RCLCPP_ERROR(schedule_data_node->get_logger(),
+            "############# GOT A ZERO SEG HERE #############");
+          RCLCPP_ERROR(schedule_data_node->get_logger(),
+            "%s", json_str.c_str());
+          RCLCPP_ERROR(schedule_data_node->get_logger(),
+            "##############################################");
+        }
 
         // Add the segments in between
         for (; it < trajectory.find(end_time); it++)
