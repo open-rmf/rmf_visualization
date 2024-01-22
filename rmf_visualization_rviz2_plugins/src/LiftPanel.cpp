@@ -36,10 +36,10 @@ LiftPanel::LiftPanel(QWidget* parent)
     {
       lift_state_callback(std::move(msg));
     });
-  _lift_request_pub = _node->create_publisher<LiftRequest>(
-    LiftRequestTopicName, rclcpp::QoS(10));
   const auto transient_qos = rclcpp::SystemDefaultsQoS()
     .reliable().keep_last(100).transient_local();
+  _lift_request_pub = _node->create_publisher<LiftRequest>(
+    LiftRequestTopicName, transient_qos);
   _adapter_lift_request_pub = _node->create_publisher<LiftRequest>(
     AdapterLiftRequestTopicName, transient_qos);
 
