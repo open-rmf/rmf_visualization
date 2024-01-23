@@ -1,6 +1,8 @@
 import rclpy
 from rclpy.node import Node
 
+from rclpy.event_handler import PublisherEventCallbacks
+from rclpy.event_handler import QoSPublisherMatchedInfo
 from rclpy.qos import qos_profile_system_default
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSHistoryPolicy as History
@@ -34,32 +36,30 @@ class BuildingSystemsVisualizer(Node):
         super().__init__('building_systems_visualizer')
         self.get_logger().info('Building systems visualizer started...')
 
-        qos = QoSProfile(
-            history=History.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+        map_qos = QoSProfile(
+            history=History.KEEP_LAST,
             depth=1,
-            reliability=Reliability.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-            durability=Durability.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
+            reliability=Reliability.RELIABLE,
+            durability=Durability.TRANSIENT_LOCAL)
+
+        pub_event_callback = \
+            PublisherEventCallbacks(matched=self.__pub_matched_event_callback)
+        marker_qos = QoSProfile(
+            history=History.KEEP_LAST,
+            depth=5,
+            reliability=Reliability.RELIABLE,
+            durability=Durability.TRANSIENT_LOCAL)
 
         self.marker_pub = self.create_publisher(
             MarkerArray,
             'building_systems_markers',
-            qos_profile=qos)
+            qos_profile=marker_qos,
+            event_callbacks=pub_event_callback)
 
         self.create_subscription(
             BuildingMap,
             'map', self.map_cb,
-            qos_profile=qos)
-
-        self.create_subscription(
-            DoorState, 'door_states',
-            self.door_cb,
-            qos_profile=qos_profile_system_default)
-
-        self.create_subscription(
-            LiftState,
-            'lift_states',
-            self.lift_cb,
-            qos_profile=qos_profile_system_default)
+            qos_profile=map_qos)
 
         self.create_subscription(
             RvizParam,
@@ -67,11 +67,10 @@ class BuildingSystemsVisualizer(Node):
             self.param_cb,
             qos_profile=qos_profile_system_default)
 
-        self.initialized = False
-
         # data obtained from BuildingMap
         self.building_doors = {}
         self.building_lifts = {}
+        self.door_to_level_name = {}
 
         # name of the current map to display
         self.map_name = map_name
@@ -81,8 +80,19 @@ class BuildingSystemsVisualizer(Node):
         self.door_states = {}
         self.door_states[self.map_name] = {}
 
+        # Tracks when all the necessary nodes are ready
+        self.map_received = False
+        self.rviz_ready = False
+        self.subscriptions_initialized = False
+
         # markers currently being displayed
         self.active_markers = {}
+
+    def __pub_matched_event_callback(self, info: QoSPublisherMatchedInfo):
+        if info.current_count_change > 0:
+            self.rviz_ready = True
+            if self.map_received is True:
+                self.init_subscriptions()
 
     def create_door_marker(self, msg):
         door_marker = Marker()
@@ -162,18 +172,15 @@ class BuildingSystemsVisualizer(Node):
 
         return marker
 
-    def create_lift_marker(self, lift_name):
-        if lift_name not in self.building_lifts or \
-          lift_name not in self.lift_states:
-            return
+    def create_lift_marker(self, msg):
         marker = Marker()
         marker.header.frame_id = 'map'
-        marker.ns = lift_name
+        marker.ns = msg.lift_name
         marker.id = 1
         marker.type = Marker.CUBE
         marker.action = Marker.MODIFY
 
-        lift = self.building_lifts[lift_name]
+        lift = self.building_lifts[msg.lift_name]
         marker.pose.position.x = lift.ref_x
         marker.pose.position.y = lift.ref_y
         marker.pose.position.z = -0.5  # below lane markers
@@ -183,7 +190,7 @@ class BuildingSystemsVisualizer(Node):
         marker.scale.y = lift.depth
         marker.scale.z = 0.1
 
-        if self.lift_states[lift_name].door_state == 2:  # lift door open
+        if msg.door_state == 2:  # lift door open
             marker.color.r = 0.50
             marker.color.g = 0.70
             marker.color.b = 0.50
@@ -192,9 +199,9 @@ class BuildingSystemsVisualizer(Node):
             marker.color.g = 0.50
             marker.color.b = 0.65
 
-        if self.lift_states[lift_name].current_floor != self.map_name or \
-           self.lift_states[lift_name].motion_state == 1 or \
-           self.lift_states[lift_name].motion_state == 2:
+        if msg.current_floor != self.map_name or \
+           msg.motion_state == 1 or \
+           msg.motion_state == 2:
             # lift moving or not on current floor
             marker.color.a = 0.2
         else:
@@ -202,19 +209,16 @@ class BuildingSystemsVisualizer(Node):
 
         return marker
 
-    def create_lift_text_marker(self, lift_name):
-        if lift_name not in self.building_lifts or \
-          lift_name not in self.lift_states:
-            return
+    def create_lift_text_marker(self, msg):
         marker = Marker()
         marker.header.frame_id = 'map'
-        marker.ns = lift_name + '_text'
+        marker.ns = msg.lift_name + '_text'
         marker.id = 1
         marker.type = Marker.TEXT_VIEW_FACING
         marker.action = Marker.MODIFY
         marker.scale.z = 0.3
 
-        lift = self.building_lifts[lift_name]
+        lift = self.building_lifts[msg.lift_name]
 
         marker.pose.position.z = 0.0
         marker.pose.position.x = lift.ref_x + 0.4
@@ -225,18 +229,17 @@ class BuildingSystemsVisualizer(Node):
         marker.color.g = 1.0
         marker.color.b = 1.0
         marker.color.a = 1.0
-        lift_state = self.lift_states[lift_name]
-        marker.text = "Lift:" + lift_name
-        if self.lift_states[lift_name].motion_state != 0 and \
-           self.lift_states[lift_name].motion_state != 3:  # lift is moving
-            marker.text += "\n MovingTo:" + lift_state.destination_floor
+        marker.text = "Lift:" + msg.lift_name
+        if msg.motion_state != 0 and \
+           msg.motion_state != 3:  # lift is moving
+            marker.text += "\n MovingTo:" + msg.destination_floor
         else:
-            marker.text += "\n CurrentFloor:" + lift_state.current_floor
-        if lift_state.door_state == 0:
+            marker.text += "\n CurrentFloor:" + msg.current_floor
+        if msg.door_state == 0:
             marker.text += "\n DoorState:Closed"
-        elif lift_state.door_state == 1:
+        elif msg.door_state == 1:
             marker.text += "\n DoorState:Moving"
-        elif lift_state.door_state == 2:
+        elif msg.door_state == 2:
             marker.text += "\n DoorState:Open"
 
         return marker
@@ -254,38 +257,61 @@ class BuildingSystemsVisualizer(Node):
             self.door_states[level.name] = {}
             for door in level.doors:
                 self.building_doors[level.name][door.name] = door
-        self.initialized = True
+                self.door_to_level_name[door.name] = level.name
+        self.map_received = True
+        if self.rviz_ready is True:
+            self.init_subscriptions()
+
+    def init_subscriptions(self):
+        if self.subscriptions_initialized is True:
+            return
+        state_qos = QoSProfile(
+            history=History.KEEP_LAST,
+            depth=100,
+            reliability=Reliability.RELIABLE,
+            durability=Durability.VOLATILE)
+
+        self.create_subscription(
+            DoorState, 'door_states',
+            self.door_cb,
+            qos_profile=state_qos)
+
+        self.create_subscription(
+            LiftState,
+            'lift_states',
+            self.lift_cb,
+            qos_profile=state_qos)
+        self.subscriptions_initialized = True
 
     def door_cb(self, msg):
-        if not self.initialized or \
-          msg.door_name not in self.building_doors[self.map_name]:
+        if msg.door_name not in self.door_to_level_name:
             return
 
+        map_name = self.door_to_level_name[msg.door_name]
+
         publish_marker = False
-        door_state = self.door_states[self.map_name]
+        door_state = self.door_states[map_name]
         if msg.door_name not in door_state:
             door_state[msg.door_name] = msg
-            publish_marker = True
+            publish_marker = self.map_name == map_name
         else:
             if msg.current_mode.value != \
               door_state[msg.door_name].current_mode.value:
                 door_state[msg.door_name] = msg
-                publish_marker = True
+                publish_marker = self.map_name == map_name
 
         if publish_marker:
             marker_array = MarkerArray()
             marker = self.create_door_marker(msg)
             text_marker = self.create_door_text_marker(msg)
-            if marker is not None:
-                marker_array.markers.append(marker)
-                self.active_markers[msg.door_name] = marker
-            if text_marker is not None:
-                marker_array.markers.append(text_marker)
-                self.active_markers[f'{msg.door_name}_text'] = text_marker
+            marker_array.markers.append(marker)
+            marker_array.markers.append(text_marker)
+            self.active_markers[msg.door_name] = marker
+            self.active_markers[f'{msg.door_name}_text'] = text_marker
             self.marker_pub.publish(marker_array)
 
     def lift_cb(self, msg):
-        if not self.initialized:
+        if msg.lift_name not in self.building_lifts:
             return
         publish_marker = False
         if msg.lift_name not in self.lift_states:
@@ -301,32 +327,31 @@ class BuildingSystemsVisualizer(Node):
 
         if publish_marker:
             marker_array = MarkerArray()
-            marker = self.create_lift_marker(msg.lift_name)
-            text_marker = self.create_lift_text_marker(msg.lift_name)
-            if marker is not None:
-                marker_array.markers.append(marker)
-            if text_marker is not None:
-                marker_array.markers.append(text_marker)
+            marker_array.markers.append(self.create_lift_marker(msg))
+            marker_array.markers.append(self.create_lift_text_marker(msg))
             self.marker_pub.publish(marker_array)
 
     def param_cb(self, msg):
-        if not self.initialized or \
-          msg.map_name not in self.building_doors:
+        if msg.map_name not in self.building_doors:
             return
 
         self.map_name = msg.map_name
         marker_array = MarkerArray()
-        # deleting previously avtive door markers
+        # deleting previously active door markers
         for name, marker in self.active_markers.items():
-            if marker is not None:
-                marker.action = Marker.DELETE
-                marker_array.markers.append(marker)
+            marker.action = Marker.DELETE
+            marker_array.markers.append(marker)
         self.active_markers = {}
-        self.marker_pub.publish(marker_array)
 
-        # clearing door states and lift states so that markers can be updated
-        self.door_states[self.map_name] = {}
-        self.lift_states = {}
+        # Send all the markers for this level
+        for msg in self.door_states[self.map_name].values():
+            marker = self.create_door_marker(msg)
+            text_marker = self.create_door_text_marker(msg)
+            marker_array.markers.append(marker)
+            self.active_markers[msg.door_name] = marker
+            marker_array.markers.append(text_marker)
+            self.active_markers[f'{msg.door_name}_text'] = text_marker
+        self.marker_pub.publish(marker_array)
 
 
 def main(argv=sys.argv):
