@@ -35,10 +35,10 @@ class BuildingSystemsVisualizer(Node):
         self.get_logger().info('Building systems visualizer started...')
 
         qos = QoSProfile(
-            history=History.KEEP_LAST,
+            history=History.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
             depth=1,
-            reliability=Reliability.RELIABLE,
-            durability=Durability.TRANSIENT_LOCAL)
+            reliability=Reliability.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+            durability=Durability.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
 
         self.marker_pub = self.create_publisher(
             MarkerArray,

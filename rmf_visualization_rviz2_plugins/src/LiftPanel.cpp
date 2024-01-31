@@ -36,12 +36,10 @@ LiftPanel::LiftPanel(QWidget* parent)
     {
       lift_state_callback(std::move(msg));
     });
-  const auto transient_qos = rclcpp::SystemDefaultsQoS().keep_last(10)
-    .reliable().keep_last(100).transient_local();
   _lift_request_pub = _node->create_publisher<LiftRequest>(
-    LiftRequestTopicName, transient_qos);
+    LiftRequestTopicName, rclcpp::QoS(10));
   _adapter_lift_request_pub = _node->create_publisher<LiftRequest>(
-    AdapterLiftRequestTopicName, transient_qos);
+    AdapterLiftRequestTopicName, rclcpp::QoS(10));
 
   create_layout();
   create_connections();
@@ -375,7 +373,7 @@ void LiftPanel::lift_state_callback(LiftState::UniquePtr msg)
 void LiftPanel::display_state(const LiftState& msg)
 {
   std::string floors_str = "";
-  for (const auto& f : msg.available_floors)
+  for (const auto f : msg.available_floors)
     floors_str += f + ", ";
 
   std::string available_modes_str = "";
