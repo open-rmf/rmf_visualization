@@ -46,7 +46,7 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
 
   _param_sub = this->create_subscription<RvizParam>(
     "rmf_visualization/parameters",
-    rclcpp::SystemDefaultsQoS(),
+    rclcpp::SystemDefaultsQoS().keep_last(10),
     [=](RvizParam::ConstSharedPtr msg)
     {
       if (msg->map_name.empty() || msg->map_name == _current_level)
