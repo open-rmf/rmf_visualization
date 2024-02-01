@@ -42,9 +42,10 @@ SchedulePanel::SchedulePanel(QWidget* parent)
 
   // Creating publisher
   _param_pub = _node->create_publisher<RvizParamMsg>(
-    _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
+    _param_topic.toStdString(), rclcpp::SystemDefaultsQoS().keep_last(10));
   _cancel_pub = _node->create_publisher<NegotiationRefusal>(
-    rmf_traffic_ros2::NegotiationRefusalTopicName, rclcpp::SystemDefaultsQoS());
+    rmf_traffic_ros2::NegotiationRefusalTopicName,
+    rclcpp::SystemDefaultsQoS().keep_last(10));
 
   // Create layout for output topic and map_name
   QHBoxLayout* layout1 = new QHBoxLayout;
@@ -130,14 +131,16 @@ SchedulePanel::SchedulePanel(QWidget* parent)
     SIGNAL(clicked()), this, SLOT(cancel_negotiation()));
 
   _notice_sub = _node->create_subscription<NegotiationNotice>(
-    "/rmf_traffic/negotiation_notice", rclcpp::SystemDefaultsQoS(),
+    "/rmf_traffic/negotiation_notice", rclcpp::SystemDefaultsQoS().keep_last(
+      10),
     [&](const NegotiationNotice::UniquePtr msg)
     {
       this->recieved_notification(*msg);
     });
 
   _conclusion_sub = _node->create_subscription<NegotiationConclusion>(
-    "/rmf_traffic/negotiation_conclusion", rclcpp::SystemDefaultsQoS(),
+    "/rmf_traffic/negotiation_conclusion", rclcpp::SystemDefaultsQoS().keep_last(
+      10),
     [&](const NegotiationConclusion::UniquePtr msg)
     {
       this->recieved_conclusion(*msg);
@@ -263,7 +266,7 @@ void SchedulePanel::set_topic(const QString& new_topic)
     {
       // Update publisher
       _param_pub = _node->create_publisher<RvizParamMsg>(
-        _param_topic.toStdString(), rclcpp::SystemDefaultsQoS());
+        _param_topic.toStdString(), rclcpp::SystemDefaultsQoS().keep_last(10));
       // Send new message
       send_param();
     }
