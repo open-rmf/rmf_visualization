@@ -332,16 +332,18 @@ class BuildingSystemsVisualizer(Node):
             self.marker_pub.publish(marker_array)
 
     def param_cb(self, msg):
-        if msg.map_name not in self.building_doors:
-            return
-
-        self.map_name = msg.map_name
         marker_array = MarkerArray()
         # deleting previously active door markers
         for name, marker in self.active_markers.items():
             marker.action = Marker.DELETE
             marker_array.markers.append(marker)
         self.active_markers = {}
+
+        if msg.map_name not in self.building_doors:
+            self.marker_pub.publish(marker_array)
+            return
+
+        self.map_name = msg.map_name
 
         # Send all the markers for this level
         for msg in self.door_states[self.map_name].values():
