@@ -42,8 +42,6 @@ class BuildingSystemsVisualizer(Node):
             reliability=Reliability.RELIABLE,
             durability=Durability.TRANSIENT_LOCAL)
 
-        pub_event_callback = \
-            PublisherEventCallbacks(matched=self.__pub_matched_event_callback)
         marker_qos = QoSProfile(
             history=History.KEEP_LAST,
             depth=5,
@@ -53,8 +51,7 @@ class BuildingSystemsVisualizer(Node):
         self.marker_pub = self.create_publisher(
             MarkerArray,
             'building_systems_markers',
-            qos_profile=marker_qos,
-            event_callbacks=pub_event_callback)
+            qos_profile=marker_qos)
 
         self.create_subscription(
             BuildingMap,
@@ -80,19 +77,35 @@ class BuildingSystemsVisualizer(Node):
         self.door_states = {}
         self.door_states[self.map_name] = {}
 
-        # Tracks when all the necessary nodes are ready
-        self.map_received = False
-        self.rviz_ready = False
-        self.subscriptions_initialized = False
-
-        # markers currently being displayed
+        # door markers currently being displayed
         self.active_markers = {}
 
-    def __pub_matched_event_callback(self, info: QoSPublisherMatchedInfo):
-        if info.current_count_change > 0:
-            self.rviz_ready = True
-            if self.map_received is True:
-                self.init_subscriptions()
+    def publish_rviz_markers(self, map_name):
+        marker_array = MarkerArray()
+        if map_name != self.map_name:
+            # deleting previously active door markers
+            for marker in self.active_markers.values():
+                marker.action = Marker.DELETE
+                marker_array.markers.append(marker)
+            self.active_markers = {}
+            if map_name in self.building_doors:
+                self.map_name = map_name
+            else:
+                self.marker_pub.publish(marker_array)
+                return
+
+        for msg in self.door_states[self.map_name].values():
+            marker = self.create_door_marker(msg)
+            text_marker = self.create_door_text_marker(msg)
+            self.active_markers[msg.door_name] = marker
+            self.active_markers[f'{msg.door_name}_text'] = text_marker
+            marker_array.markers.append(marker)
+            marker_array.markers.append(text_marker)
+            self.marker_pub.publish(marker_array)
+        for msg in self.lift_states.values():
+            marker_array.markers.append(self.create_lift_marker(msg))
+            marker_array.markers.append(self.create_lift_text_marker(msg))
+        self.marker_pub.publish(marker_array)
 
     def create_door_marker(self, msg):
         door_marker = Marker()
@@ -258,13 +271,9 @@ class BuildingSystemsVisualizer(Node):
             for door in level.doors:
                 self.building_doors[level.name][door.name] = door
                 self.door_to_level_name[door.name] = level.name
-        self.map_received = True
-        if self.rviz_ready is True:
-            self.init_subscriptions()
+        self.init_subscriptions()
 
     def init_subscriptions(self):
-        if self.subscriptions_initialized is True:
-            return
         state_qos = QoSProfile(
             history=History.KEEP_LAST,
             depth=100,
@@ -281,7 +290,6 @@ class BuildingSystemsVisualizer(Node):
             'lift_states',
             self.lift_cb,
             qos_profile=state_qos)
-        self.subscriptions_initialized = True
 
     def door_cb(self, msg):
         if msg.door_name not in self.door_to_level_name:
@@ -301,59 +309,25 @@ class BuildingSystemsVisualizer(Node):
                 publish_marker = self.map_name == map_name
 
         if publish_marker:
-            marker_array = MarkerArray()
-            marker = self.create_door_marker(msg)
-            text_marker = self.create_door_text_marker(msg)
-            marker_array.markers.append(marker)
-            marker_array.markers.append(text_marker)
-            self.active_markers[msg.door_name] = marker
-            self.active_markers[f'{msg.door_name}_text'] = text_marker
-            self.marker_pub.publish(marker_array)
+            self.publish_rviz_markers(self.map_name)
 
     def lift_cb(self, msg):
         if msg.lift_name not in self.building_lifts:
             return
-        publish_marker = False
+
         if msg.lift_name not in self.lift_states:
             self.lift_states[msg.lift_name] = msg
-            publish_marker = True
         else:
             stored_state = self.lift_states[msg.lift_name]
             if msg.current_floor != stored_state.current_floor or \
                msg.motion_state != stored_state.motion_state or \
                msg.door_state != stored_state.door_state:
                 self.lift_states[msg.lift_name] = msg
-                publish_marker = True
+                self.publish_rviz_markers(self.map_name)
 
-        if publish_marker:
-            marker_array = MarkerArray()
-            marker_array.markers.append(self.create_lift_marker(msg))
-            marker_array.markers.append(self.create_lift_text_marker(msg))
-            self.marker_pub.publish(marker_array)
 
     def param_cb(self, msg):
-        marker_array = MarkerArray()
-        # deleting previously active door markers
-        for name, marker in self.active_markers.items():
-            marker.action = Marker.DELETE
-            marker_array.markers.append(marker)
-        self.active_markers = {}
-
-        if msg.map_name not in self.building_doors:
-            self.marker_pub.publish(marker_array)
-            return
-
-        self.map_name = msg.map_name
-
-        # Send all the markers for this level
-        for msg in self.door_states[self.map_name].values():
-            marker = self.create_door_marker(msg)
-            text_marker = self.create_door_text_marker(msg)
-            marker_array.markers.append(marker)
-            self.active_markers[msg.door_name] = marker
-            marker_array.markers.append(text_marker)
-            self.active_markers[f'{msg.door_name}_text'] = text_marker
-        self.marker_pub.publish(marker_array)
+        self.publish_rviz_markers(msg.map_name)
 
 
 def main(argv=sys.argv):
