@@ -30,9 +30,11 @@ LiftPanel::LiftPanel(QWidget* parent)
 : rviz_common::Panel(parent),
   _session_id(LiftPanelSessionId)
 {
+  const auto default_qos =
+    rclcpp::SystemDefaultsQoS().durability_volatile().keep_last(100).reliable();
   _node = std::make_shared<rclcpp::Node>(_session_id + "_node");
   _lift_state_sub = _node->create_subscription<LiftState>(
-    LiftStateTopicName, 10, [&](LiftState::UniquePtr msg)
+    LiftStateTopicName, default_qos, [&](LiftState::UniquePtr msg)
     {
       lift_state_callback(std::move(msg));
     });
