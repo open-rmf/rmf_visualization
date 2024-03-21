@@ -1,8 +1,6 @@
 import rclpy
 from rclpy.node import Node
 
-from rclpy.event_handler import PublisherEventCallbacks
-from rclpy.event_handler import QoSPublisherMatchedInfo
 from rclpy.qos import qos_profile_system_default
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSHistoryPolicy as History
