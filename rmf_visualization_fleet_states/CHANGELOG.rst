@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_fleet_states
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.1.1 (2023-09-11)
 ------------------
 * Improve linking times (`#63 <https://github.com/open-rmf/rmf_visualization/pull/63>`_)

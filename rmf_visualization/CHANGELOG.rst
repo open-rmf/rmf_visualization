@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.1.1 (2023-09-11)
 ------------------
 
