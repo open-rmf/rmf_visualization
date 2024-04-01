@@ -315,6 +315,7 @@ class BuildingSystemsVisualizer(Node):
 
         if msg.lift_name not in self.lift_states:
             self.lift_states[msg.lift_name] = msg
+            self.publish_rviz_markers(self.map_name)
         else:
             stored_state = self.lift_states[msg.lift_name]
             if msg.current_floor != stored_state.current_floor or \
