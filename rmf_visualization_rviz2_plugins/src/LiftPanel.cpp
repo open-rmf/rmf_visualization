@@ -32,6 +32,8 @@ LiftPanel::LiftPanel(QWidget* parent)
 {
   const auto default_qos =
     rclcpp::SystemDefaultsQoS().durability_volatile().keep_last(100).reliable();
+  const auto transient_qos =
+    rclcpp::SystemDefaultsQoS().transient_local().keep_last(100).reliable();
   _node = std::make_shared<rclcpp::Node>(_session_id + "_node");
   _lift_state_sub = _node->create_subscription<LiftState>(
     LiftStateTopicName, default_qos, [&](LiftState::UniquePtr msg)
@@ -39,9 +41,9 @@ LiftPanel::LiftPanel(QWidget* parent)
       lift_state_callback(std::move(msg));
     });
   _lift_request_pub = _node->create_publisher<LiftRequest>(
-    LiftRequestTopicName, rclcpp::QoS(10));
+    LiftRequestTopicName, transient_qos);
   _adapter_lift_request_pub = _node->create_publisher<LiftRequest>(
-    AdapterLiftRequestTopicName, rclcpp::QoS(10));
+    AdapterLiftRequestTopicName, transient_qos);
 
   create_layout();
   create_connections();
