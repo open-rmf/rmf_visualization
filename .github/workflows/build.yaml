@@ -20,5 +20,5 @@ jobs:
         rmf_visualization_obstacles
         rmf_visualization_rviz2_plugins
         rmf_visualization_schedule
-      dist-matrix: '[{"ros_distribution": "humble", "ubuntu_distribution": "jammy"}, {"ros_distribution": "rolling", "ubuntu_distribution": "jammy"}]'
+      dist-matrix: '[{"ros_distribution": "humble", "ubuntu_distribution": "jammy"}]'
 

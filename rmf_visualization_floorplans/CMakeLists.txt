@@ -25,32 +25,23 @@ endforeach()
 #===============================================================================
 add_library(floorplan_visualizer SHARED src/FloorplanVisualizer.cpp)
 
-target_link_libraries(floorplan_visualizer
-  PRIVATE
-    rclcpp::rclcpp
-    Eigen3::Eigen
-    ${rclcpp_components_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-    ${rmf_building_map_msgs_LIBRARIES}
-    ${rmf_visualization_msgs_LIBRARIES}
-    ${nav_msgs_LIBRARIES}
-    ${geometry_msgs_LIBRARIES}
-
+ament_target_dependencies(floorplan_visualizer
+  PUBLIC
+    rclcpp
+    Eigen3
+    rclcpp_components
+    OpenCV
+    rmf_building_map_msgs
+    rmf_visualization_msgs
+    nav_msgs
+    geometry_msgs
 )
+
 
 target_include_directories(floorplan_visualizer
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    ${rclcpp_INCLUDE_DIRS}
-    ${rclcpp_components_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
-    ${Eigen3_INCLUDE_DIRS}
-    ${rmf_fleet_msgs_INCLUDE_DIRS}
-    ${rmf_building_map_msgs_INCLUDE_DIRS}
-    ${rmf_visualization_msgs_INCLUDE_DIRS}
-    ${nav_msgs_INCLUDE_DIRS}
-    ${geometry_msgs_INCLUDE_DIRS}
 )
 
 target_compile_features(floorplan_visualizer INTERFACE cxx_std_17)
