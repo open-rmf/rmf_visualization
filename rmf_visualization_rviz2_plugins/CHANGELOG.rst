@@ -2,8 +2,8 @@
 Changelog for package rmf_visualization_rviz2_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.0 (2024-06-01)
+------------------
 * Explicitly specify all qos depth (`#70 <https://github.com/open-rmf/rmf_visualization/pull/70>`_)
 * Fix adapter lift request publisher QoS to transient local (`#66 <https://github.com/open-rmf/rmf_visualization/pull/66>`_)
 * Contributors: Luca Della Vedova, Teo Koon Peng
