@@ -2,6 +2,12 @@
 Changelog for package rmf_visualization_building_systems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Explicitly specify all qos depth (`#70 <https://github.com/open-rmf/rmf_visualization/pull/70>`_)
+* Fix deprecated QoS warnings (`#69 <https://github.com/open-rmf/rmf_visualization/pull/69>`_)
+* Contributors: Arjo Chakravarty, Teo Koon Peng, Yadunund
+
 2.2.1 (2023-08-28)
 ------------------
 
