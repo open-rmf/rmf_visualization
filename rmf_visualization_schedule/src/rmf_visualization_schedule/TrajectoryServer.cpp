@@ -309,9 +309,10 @@ const std::string TrajectoryServer::Implementation::parse_trajectories(
       j_traj["dimensions"] = element.description.profile().footprint()
         ->get_characteristic_length();
 
-      auto add_segment = [&](rmf_traffic::Time finish_time,
-          Eigen::Vector3d finish_position,
-          Eigen::Vector3d finish_velocity)
+      auto add_segment =
+        [&](rmf_traffic::Time finish_time,
+        Eigen::Vector3d finish_position,
+        Eigen::Vector3d finish_velocity)
         {
           auto j_seg = _j_seg;
           j_seg["x"] =
@@ -441,7 +442,8 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   }
 
   // Set up callbacks for negotiations
-  auto status_update_cb = [server_ptr](
+  auto status_update_cb =
+    [server_ptr](
     uint64_t conflict_version,
     rmf_traffic::schedule::Negotiation::Table::ViewerPtr table_view)
     {
@@ -473,7 +475,8 @@ std::shared_ptr<TrajectoryServer> TrajectoryServer::make(
   server_ptr->_pimpl->schedule_data_node->get_negotiation()->on_status_update(
     std::move(status_update_cb));
 
-  auto conclusion_cb = [server_ptr](
+  auto conclusion_cb =
+    [server_ptr](
     uint64_t conflict_version, bool resolved)
     {
       RCLCPP_DEBUG(

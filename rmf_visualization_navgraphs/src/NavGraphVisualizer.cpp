@@ -239,7 +239,7 @@ auto NavGraphVisualizer::FleetNavGraph::update_lane_states(
 
   auto update_marker =
     [&](const std::size_t id,
-      std::function<void(Marker::SharedPtr& marker)> updater)
+    std::function<void(Marker::SharedPtr& marker)> updater)
     {
       auto it = all_lane_markers.find(id);
       if (it == all_lane_markers.end())
