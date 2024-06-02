@@ -217,9 +217,10 @@ auto ScheduleDataNode::get_negotiation_trajectories(
   }
 
   rmf_traffic::RouteId route_id = 0;
-  const auto add_route = [&route_id, &table_view, &trajectory_elements]
-      (const rmf_traffic::Route& route,
-      rmf_traffic::schedule::ParticipantId id)
+  const auto add_route =
+    [&route_id, &table_view, &trajectory_elements]
+    (const rmf_traffic::Route& route,
+    rmf_traffic::schedule::ParticipantId id)
     {
       Element e {
         id,
