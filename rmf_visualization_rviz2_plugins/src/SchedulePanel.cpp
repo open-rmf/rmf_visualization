@@ -139,8 +139,8 @@ SchedulePanel::SchedulePanel(QWidget* parent)
     });
 
   _conclusion_sub = _node->create_subscription<NegotiationConclusion>(
-    "/rmf_traffic/negotiation_conclusion", rclcpp::SystemDefaultsQoS().keep_last(
-      10),
+    "/rmf_traffic/negotiation_conclusion",
+    rclcpp::SystemDefaultsQoS().keep_last(10),
     [&](const NegotiationConclusion::UniquePtr msg)
     {
       this->recieved_conclusion(*msg);
