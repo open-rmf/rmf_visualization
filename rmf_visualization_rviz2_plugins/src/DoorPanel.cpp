@@ -30,9 +30,11 @@ DoorPanel::DoorPanel(QWidget* parent)
 : rviz_common::Panel(parent),
   _requester_id(DoorPanelRequesterId)
 {
+  const auto default_qos =
+    rclcpp::SystemDefaultsQoS().durability_volatile().keep_last(100).reliable();
   _node = std::make_shared<rclcpp::Node>(_requester_id + "_node");
   _door_state_sub = _node->create_subscription<DoorState>(
-    DoorStateTopicName, 10, [&](DoorState::UniquePtr msg)
+    DoorStateTopicName, default_qos, [&](DoorState::UniquePtr msg)
     {
       door_state_callback(std::move(msg));
     });
