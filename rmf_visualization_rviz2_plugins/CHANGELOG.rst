@@ -2,8 +2,8 @@
 Changelog for package rmf_visualization_rviz2_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.1 (2024-06-06)
+------------------
 * Update QoS for panel publishers (`#74 <https://github.com/open-rmf/rmf_visualization/pull/74>`_)
 * Contributors: Luca Della Vedova
 
