@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_schedule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.3.1 (2024-06-06)
 ------------------
 
