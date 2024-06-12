@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_rviz2_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.4.0 (2024-06-12)
+------------------
+
 2.3.1 (2024-06-06)
 ------------------
 * Update QoS for panel publishers (`#74 <https://github.com/open-rmf/rmf_visualization/pull/74>`_)
