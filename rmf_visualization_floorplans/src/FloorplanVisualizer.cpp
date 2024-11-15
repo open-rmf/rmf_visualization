@@ -100,7 +100,7 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
         Eigen::Quaternionf q = Eigen::AngleAxisf(
           M_PI,
           Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(
-          image.yaw, Eigen::Vector3f::UnitZ());
+          image.yaw, -Eigen::Vector3f::UnitZ());
         grid.info.origin.orientation.x = q.x();
         grid.info.origin.orientation.y = q.y();
         grid.info.origin.orientation.z = q.z();
