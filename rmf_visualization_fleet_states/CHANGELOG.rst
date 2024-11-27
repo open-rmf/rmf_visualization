@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_fleet_states
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.4.0 (2024-06-12)
 ------------------
 
