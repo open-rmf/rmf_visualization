@@ -2,6 +2,11 @@
 Changelog for package rmf_visualization_floorplan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.4.1 (2024-11-27)
+------------------
+* Use left-handed rotation for floorplan image (`#77 <https://github.com/open-rmf/rmf_visualization/issues/77>`_)
+* Contributors: Grey
+
 2.4.0 (2024-06-12)
 ------------------
 
