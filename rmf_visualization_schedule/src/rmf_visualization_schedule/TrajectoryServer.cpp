@@ -118,8 +118,6 @@ auto TrajectoryServer::Implementation::on_message(
     return;
   }
 
-  bool ok = parse_request(hdl, msg, response);
-
   // validate jwt only if public key is given (when running with dashboard)
   std::string public_key;
   std::string token;
@@ -137,14 +135,18 @@ auto TrajectoryServer::Implementation::on_message(
     }
     catch (std::exception& e)
     {
-      is_verified = false;
       std::string err_excp = e.what();
       send_error_message(hdl, msg, err_response, server, err_excp);
       std::cerr << "Error: " << e.what() << std::endl;
+      server->close(hdl, websocketpp::close::status::normal,
+        "invalid auth token");
+      return;
     }
   }
 
-  if (ok && is_verified)
+  bool ok = parse_request(hdl, msg, response);
+
+  if (ok)
   {
     RCLCPP_DEBUG(schedule_data_node->get_logger(),
       "Response: %s", response.c_str());
