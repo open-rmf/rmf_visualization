@@ -138,6 +138,8 @@ auto TrajectoryServer::Implementation::on_message(
       std::string err_excp = e.what();
       send_error_message(hdl, msg, err_response, server, err_excp);
       std::cerr << "Error: " << e.what() << std::endl;
+      server->close(hdl, websocketpp::close::status::normal,
+        "invalid auth token");
       return;
     }
   }
