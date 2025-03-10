@@ -120,18 +120,25 @@ auto TrajectoryServer::Implementation::on_message(
 
   // validate jwt only if public key is given (when running with dashboard)
   std::string public_key;
+  std::string jwt_decode_algorithm = "HS256";
   std::string token;
   bool is_verified = true;
   if (std::getenv("JWT_PUBLIC_KEY"))
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
+    if (std::getenv("JWT_DECODE_ALGORITHM"))
+    {
+      jwt_decode_algorithm = std::getenv("JWT_DECODE_ALGORITHM");
+    }
+
     RCLCPP_INFO(schedule_data_node->get_logger(), "%s", public_key.c_str());
     try
     {
       token = Json::parse(msg->get_payload())["token"];
+      RCLCPP_INFO(schedule_data_node->get_logger(), "%s", token.c_str());
       auto decoded = jwt::decode(
         token,
-        jwt::params::algorithms({"HS256"}),
+        jwt::params::algorithms({jwt_decode_algorithm}),
         jwt::params::secret(public_key));
     }
     catch (std::exception& e)
