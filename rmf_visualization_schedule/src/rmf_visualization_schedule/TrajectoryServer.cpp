@@ -125,12 +125,13 @@ auto TrajectoryServer::Implementation::on_message(
   if (std::getenv("JWT_PUBLIC_KEY"))
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
+    RCLCPP_INFO(schedule_data_node->get_logger(), "%s", public_key.c_str());
     try
     {
       token = Json::parse(msg->get_payload())["token"];
       auto decoded = jwt::decode(
         token,
-        jwt::params::algorithms({"RS256"}),
+        jwt::params::algorithms({"HS256"}),
         jwt::params::secret(public_key));
     }
     catch (std::exception& e)
