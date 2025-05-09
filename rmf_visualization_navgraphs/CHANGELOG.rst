@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_navgraphs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.4.1 (2024-11-27)
 ------------------
 
