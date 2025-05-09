@@ -2,8 +2,8 @@
 Changelog for package rmf_visualization_schedule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.4.2 (2025-05-09)
+------------------
 * fix auth bypass (`#79 <https://github.com/open-rmf/rmf_visualization/issues/79>`_)
 * Contributors: Teo Koon Peng
 
