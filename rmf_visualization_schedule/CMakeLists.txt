@@ -86,10 +86,6 @@ target_link_libraries(schedule_visualizer
     rmf_visualization_schedule
 )
 
-target_link_libraries(schedule_visualizer
-
-)
-
 target_compile_features(schedule_visualizer INTERFACE cxx_std_17)
 
 rclcpp_components_register_node(schedule_visualizer
