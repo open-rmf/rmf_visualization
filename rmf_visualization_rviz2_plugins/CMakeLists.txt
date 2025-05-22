@@ -56,20 +56,16 @@ add_library(${PROJECT_NAME} SHARED
   src/NegotiationModel.cpp
 )
 
-ament_target_dependencies(${PROJECT_NAME}
-  PUBLIC
-    rclcpp
-    rmf_door_msgs
-    rmf_lift_msgs
-    rmf_visualization_msgs
-    rmf_traffic_ros2
-    rviz_common
-    rviz_rendering
-    rviz_default_plugins
-)
-
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
+    rclcpp::rclcpp
+    ${rmf_door_msgs_TARGETS}
+    ${rmf_lift_msgs_TARGETS}
+    ${rmf_visualization_msgs_TARGETS}
+    rmf_traffic_ros2::rmf_traffic_ros2
+    rviz_common::rviz_common
+    rviz_rendering::rviz_rendering
+    rviz_default_plugins::rviz_default_plugins
     ${QT5_LIBRARIES}
     ${Qt5Widgets_LIBRARIES}
 )
