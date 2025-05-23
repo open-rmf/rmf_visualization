@@ -22,14 +22,14 @@ endforeach()
 #===============================================================================
 add_library(fleetstates_visualizer SHARED src/FleetStatesVisualizer.cpp)
 
-ament_target_dependencies(fleetstates_visualizer
+target_link_libraries(fleetstates_visualizer
   PUBLIC
-    rclcpp
-    rclcpp_components
-    rmf_fleet_msgs
-    rmf_visualization_msgs
-    visualization_msgs
-    geometry_msgs
+    rclcpp::rclcpp
+    rclcpp_components::component
+    ${rmf_fleet_msgs_TARGETS}
+    ${rmf_visualization_msgs_TARGETS}
+    ${visualization_msgs_TARGETS}
+    ${geometry_msgs_TARGETS}
 )
 
 target_include_directories(fleetstates_visualizer

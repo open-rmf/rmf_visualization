@@ -26,16 +26,16 @@ endforeach()
 #===============================================================================
 add_library(navgraph_visualizer SHARED src/NavGraphVisualizer.cpp)
 
-ament_target_dependencies(navgraph_visualizer
+target_link_libraries(navgraph_visualizer
   PUBLIC
-    rclcpp
-    rclcpp_components
-    rmf_fleet_msgs
-    rmf_building_map_msgs
-    rmf_visualization_msgs
-    visualization_msgs
-    geometry_msgs
-    rmf_traffic_ros2
+    rclcpp::rclcpp
+    rclcpp_components::component
+    ${rmf_fleet_msgs_TARGETS}
+    ${rmf_building_map_msgs_TARGETS}
+    ${rmf_visualization_msgs_TARGETS}
+    ${visualization_msgs_TARGETS}
+    ${geometry_msgs_TARGETS}
+    ${rmf_traffic_ros2_TARGETS}
 )
 
 target_include_directories(navgraph_visualizer

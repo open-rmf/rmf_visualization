@@ -25,18 +25,17 @@ endforeach()
 #===============================================================================
 add_library(floorplan_visualizer SHARED src/FloorplanVisualizer.cpp)
 
-ament_target_dependencies(floorplan_visualizer
+target_link_libraries(floorplan_visualizer
   PUBLIC
-    rclcpp
-    Eigen3
-    rclcpp_components
-    OpenCV
-    rmf_building_map_msgs
-    rmf_visualization_msgs
-    nav_msgs
-    geometry_msgs
+    rclcpp::rclcpp
+    Eigen3::Eigen
+    rclcpp_components::component
+    opencv_core
+    ${rmf_building_map_msgs_TARGETS}
+    ${rmf_visualization_msgs_TARGETS}
+    ${nav_msgs_TARGETS}
+    ${geometry_msgs_TARGETS}
 )
-
 
 target_include_directories(floorplan_visualizer
   PRIVATE
