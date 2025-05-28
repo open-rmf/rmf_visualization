@@ -31,6 +31,7 @@ target_link_libraries(floorplan_visualizer
     Eigen3::Eigen
     rclcpp_components::component
     opencv_core
+    opencv_imgcodecs
     ${rmf_building_map_msgs_TARGETS}
     ${rmf_visualization_msgs_TARGETS}
     ${nav_msgs_TARGETS}
