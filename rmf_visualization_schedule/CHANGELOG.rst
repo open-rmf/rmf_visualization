@@ -2,6 +2,14 @@
 Changelog for package rmf_visualization_schedule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.5.0 (2025-06-09)
+------------------
+* Replace ament_target_dependencies with target_link_libraries (`#82 <https://github.com/open-rmf/rmf_visualization/issues/82>`_)
+  * Replace ament_target_dependencies with target_link_libraries
+  * review feddback
+  ---------
+* Contributors: Alejandro Hernández Cordero
+
 2.4.2 (2025-05-09)
 ------------------
 * fix auth bypass (`#79 <https://github.com/open-rmf/rmf_visualization/issues/79>`_)
