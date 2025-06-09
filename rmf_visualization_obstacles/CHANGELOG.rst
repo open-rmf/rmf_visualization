@@ -2,6 +2,14 @@
 Changelog for package rmf_visualization_obstacles
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Replace ament_target_dependencies with target_link_libraries (`#82 <https://github.com/open-rmf/rmf_visualization/issues/82>`_)
+  * Replace ament_target_dependencies with target_link_libraries
+  * review feddback
+  ---------
+* Contributors: Alejandro Hernández Cordero
+
 2.4.2 (2025-05-09)
 ------------------
 
