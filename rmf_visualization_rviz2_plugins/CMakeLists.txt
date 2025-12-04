@@ -31,7 +31,6 @@ find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
 find_package(rmf_traffic_ros2 REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Widgets Test)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_uncrustify REQUIRED)
@@ -66,16 +65,12 @@ target_link_libraries(${PROJECT_NAME}
     rviz_common::rviz_common
     rviz_rendering::rviz_rendering
     rviz_default_plugins::rviz_default_plugins
-    ${QT5_LIBRARIES}
-    ${Qt5Widgets_LIBRARIES}
 )
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    ${Qt5Widgets_INCLUDE_DIRS}
-    ${QT5_INCLUDE_DIRS}
 )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -88,10 +83,8 @@ ament_export_include_directories(include)
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 ament_export_dependencies(
-  Qt5
   rviz_common
   rclcpp
-  Qt5Widgets
 )
 
 install(
