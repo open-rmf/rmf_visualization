@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_floorplan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.5.1 (2026-01-13)
+------------------
+
 2.5.0 (2025-06-09)
 ------------------
 * Link all needed opencv libraries (`#83 <https://github.com/open-rmf/rmf_visualization/issues/83>`_)

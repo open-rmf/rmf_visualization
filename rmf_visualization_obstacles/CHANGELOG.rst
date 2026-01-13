@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_obstacles
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.5.1 (2026-01-13)
+------------------
+
 2.5.0 (2025-06-09)
 ------------------
 * Replace ament_target_dependencies with target_link_libraries (`#82 <https://github.com/open-rmf/rmf_visualization/issues/82>`_)
