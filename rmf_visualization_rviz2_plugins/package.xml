@@ -22,10 +22,6 @@
   <depend>resource_retriever</depend>
 
   <build_depend>eigen</build_depend>
-  <build_depend>qtbase5-dev</build_depend>
-  <exec_depend>libqt5-core</exec_depend>
-  <exec_depend>libqt5-gui</exec_depend>
-  <exec_depend>libqt5-widgets</exec_depend>
 
   <test_depend>ament_cmake_uncrustify</test_depend>
   <test_depend>rmf_utils</test_depend>
