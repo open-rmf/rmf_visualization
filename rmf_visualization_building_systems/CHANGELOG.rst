@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_building_systems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.5.0 (2025-06-09)
 ------------------
 

@@ -2,6 +2,11 @@
 Changelog for package rmf_visualization_rviz2_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove explicit Qt dependency from rviz plugins (`#88 <https://github.com/open-rmf/rmf_visualization/issues/88>`_)
+* Contributors: Luca Della Vedova
+
 2.5.0 (2025-06-09)
 ------------------
 * Replace ament_target_dependencies with target_link_libraries (`#82 <https://github.com/open-rmf/rmf_visualization/issues/82>`_)
