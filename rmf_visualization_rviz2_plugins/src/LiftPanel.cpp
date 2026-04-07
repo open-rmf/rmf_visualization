@@ -377,7 +377,7 @@ void LiftPanel::lift_state_callback(LiftState::UniquePtr msg)
 void LiftPanel::display_state(const LiftState& msg)
 {
   std::string floors_str = "";
-  for (const auto f : msg.available_floors)
+  for (const auto& f : msg.available_floors)
     floors_str += f + ", ";
 
   std::string available_modes_str = "";

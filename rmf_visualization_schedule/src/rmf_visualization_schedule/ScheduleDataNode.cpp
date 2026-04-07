@@ -74,7 +74,7 @@ std::shared_ptr<ScheduleDataNode> ScheduleDataNode::make(
 {
   const auto start_time = std::chrono::steady_clock::now();
   std::shared_ptr<ScheduleDataNode> schedule_data(
-    new ScheduleDataNode(std::move(node_name), options));
+    new ScheduleDataNode(node_name, options));
 
   // Creating a mirror manager that queries over all
   // Spacetime in the database schedule
