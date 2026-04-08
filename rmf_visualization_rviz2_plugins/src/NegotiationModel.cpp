@@ -63,6 +63,7 @@ uint64_t NegotiationModel::get_negotiation_id(std::size_t n)
     }
     _current_row++;
   }
+  return 0;
 }
 
 QString NegotiationModel::render_participants(uint64_t conflict_version)

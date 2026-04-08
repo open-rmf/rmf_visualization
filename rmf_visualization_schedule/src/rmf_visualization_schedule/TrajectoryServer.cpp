@@ -121,7 +121,6 @@ auto TrajectoryServer::Implementation::on_message(
   // validate jwt only if public key is given (when running with dashboard)
   std::string public_key;
   std::string token;
-  bool is_verified = true;
   if (std::getenv("JWT_PUBLIC_KEY"))
   {
     public_key = std::getenv("JWT_PUBLIC_KEY");
