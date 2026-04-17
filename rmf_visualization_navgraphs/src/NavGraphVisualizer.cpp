@@ -51,6 +51,7 @@ NavGraphVisualizer::FleetNavGraph::FleetNavGraph(
   lane_states = nullptr;
   lane_markers = {};
   all_lane_markers = {};
+  zone_markers = {};
   currently_closed_lanes = {};
   currently_speed_limited_lanes = {};
 }
@@ -89,6 +90,23 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
         .z(z);
     };
 
+  // Optional: pre-reserve if you roughly know total vertices
+  std::size_t total_vertices = 0;
+  for (const auto& zone : navgraph.zones)
+  {
+    total_vertices += zone.vertices.size();
+  }
+  zone_vertex_set.reserve(total_vertices);
+
+  // Fill the set directly
+  for (const auto& zone : navgraph.zones)
+  {
+    for (const auto& vertex : zone.vertices)
+    {
+      zone_vertex_set.insert(vertex.name);
+    }
+  }
+
   for (std::size_t i = 0; i < navgraph.edges.size(); ++i)
   {
     const auto& edge = navgraph.edges[i];
@@ -119,6 +137,15 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     marker->scale.x = lane.properties().speed_limit().has_value() ?
       lane_width * 0.5 : lane_width;
     marker->color = *color;
+
+    // Don't add lanes from zones
+    if (zone_vertex_set.count(*entry_wp.name()) > 0 ||
+      zone_vertex_set.count(*exit_wp.name()) > 0)
+    {
+      marker->scale.x = lane.properties().speed_limit().has_value() ?
+        lane_width * 0.5 : lane_width * 0.75;
+    }
+
     marker->points.push_back(make_point(entry_wp.get_location(), -0.01));
     marker->points.push_back(make_point(exit_wp.get_location(), -0.01));
     auto& marker_map = lane_markers[map_name];
@@ -173,23 +200,149 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
       return marker;
     };
 
+  auto make_empty_zone_waypoint_marker =
+    [=](const std::string& map_name) -> Marker
+    {
+      Marker marker;
+      marker.header.stamp = now;
+      marker.header.frame_id = "map";
+      marker.ns = fleet_name + "/zone_waypoints/" + map_name;
+      marker.id = 1;
+      marker.action = marker.MODIFY;
+      marker.type = marker.SPHERE_LIST;
+      marker.scale.x = waypoint_width / 2.0;
+      marker.scale.y = waypoint_width / 2.0;
+      marker.scale.z = 1.0;
+      marker.pose.orientation.w = 1.0;
+      // This will be filled inside the loop below
+      marker.points = {};
+      marker.color = *color;
+      marker.color.a = 1.0;
+      return marker;
+    };
+
+  auto make_empty_zone_marker =
+    [=]() -> MarkerArray
+    {
+      MarkerArray marker_array;
+      return marker_array;
+    };
+
   for (std::size_t i = 0; i < navgraph.vertices.size(); ++i)
   {
     const auto& wp = traffic_graph->get_waypoint(i);
     const auto& map_name = wp.get_map_name();
     const auto& loc = wp.get_location();
-    if (text_markers.find(map_name) == text_markers.end())
+    const auto* name = wp.name();
+
+    // Ensure containers exist (single lookup)
+    auto [it_text, _] = text_markers.try_emplace(map_name);
+    auto [it_wp, _2] = waypoint_markers.try_emplace(
+      map_name, make_empty_waypoint_marker(map_name));
+    auto [it_zone_wp, _3] = zone_waypoint_markers.try_emplace(
+      map_name, make_empty_zone_waypoint_marker(map_name));
+
+    auto& text_vec = it_text->second;
+    auto& wp_marker = it_wp->second;
+    auto& zone_wp_marker = it_zone_wp->second;
+
+    if (name)
     {
-      text_markers.insert({map_name, {}});
-      waypoint_markers.insert({map_name, make_empty_waypoint_marker(map_name)});
+      const std::string& s = *name;
+      std::string display_name = s;
+
+      const bool is_zone = zone_vertex_set.count(s);
+
+      if (is_zone)
+      {
+        zone_wp_marker.points.push_back(make_point(loc, 0.0));
+
+        size_t pos = s.find("#p");
+
+        if (pos != std::string::npos)
+        {
+          size_t start = pos + 2; // skip "#p"
+
+          // skip digits after p
+          while (start < s.size() && isdigit(s[start]))
+          {
+            start++;
+          }
+
+          // expect '#'
+          if (start < s.size() && s[start] == '#')
+          {
+            start++; // move past '#'
+            display_name = s.substr(start);
+          }
+        }
+      }
+      else
+      {
+        wp_marker.points.push_back(make_point(loc, 0.0));
+      }
+
+      text_vec.push_back(
+        make_text_marker(i, loc, display_name, map_name));
+
+    }
+    else
+    {
+      wp_marker.points.push_back(make_point(loc, 0.0));
+    }
+  }
+
+  for (std::size_t i = 0; i < navgraph.zones.size(); ++i)
+  {
+    const auto& zone = navgraph.zones[i];
+
+    if (zone_markers.find(zone.level) == zone_markers.end())
+    {
+      zone_markers[zone.level] = make_empty_zone_marker();
     }
 
-    if (wp.name() != nullptr)
-    {
-      text_markers[map_name].push_back(
-        make_text_marker(i, loc, *wp.name(), map_name));
-    }
-    waypoint_markers[map_name].points.push_back(make_point(loc, 0.0));
+    auto& zm = zone_markers[zone.level];
+
+    Marker marker;
+    marker.header.stamp = now;
+    marker.header.frame_id = "map";
+    marker.ns = fleet_name + "/zones/" + zone.name;
+    marker.id = i;
+    marker.action = marker.MODIFY;
+    marker.type = marker.CUBE;
+    marker.pose.orientation.w = std::cos(zone.yaw / 2);
+    marker.pose.orientation.z = std::sin(zone.yaw / 2);
+    marker.color = *color;
+    marker.color.a = 0.5;
+    marker.scale.x = zone.length;
+    marker.scale.y = zone.width;
+    marker.scale.z = 0.2;
+    marker.pose.position.x = zone.center_x;
+    marker.pose.position.y = zone.center_y;
+    marker.pose.position.z = 0.2;
+
+    zm.markers.push_back(marker);
+
+    // Add zone name text marker
+    Marker zone_name_marker;
+    zone_name_marker.header.stamp = now;
+    zone_name_marker.header.frame_id = "map";
+    zone_name_marker.ns = fleet_name + "/zone_names/" + zone.name;
+    zone_name_marker.id = i;
+    zone_name_marker.action = zone_name_marker.MODIFY;
+    zone_name_marker.type = zone_name_marker.TEXT_VIEW_FACING;
+    zone_name_marker.text = zone.name;
+    zone_name_marker.pose.position.x = zone.center_x;
+    zone_name_marker.pose.position.y = zone.center_y;
+    zone_name_marker.pose.position.z = 0.5;
+    zone_name_marker.pose.orientation.w = 1.0;
+    zone_name_marker.scale.z = text_size;
+    zone_name_marker.color.r = 0.0;
+    zone_name_marker.color.g = 0.0;
+    zone_name_marker.color.b = 0.0;
+    zone_name_marker.color.a = 1.0;
+
+    zm.markers.push_back(zone_name_marker);
   }
 
   // In case the NavGraph msg was received after LanesStates, we update the lane markers
@@ -348,10 +501,33 @@ void NavGraphVisualizer::FleetNavGraph::fill_with_markers(
       auto wp_marker = waypoint_markers.at(map_name);
       wp_marker.action = wp_marker.DELETEALL;
       marker_array.markers.push_back(std::move(wp_marker));
+
+      auto zone_wp_marker = zone_waypoint_markers.at(map_name);
+      zone_wp_marker.action = zone_wp_marker.DELETEALL;
+      marker_array.markers.push_back(std::move(zone_wp_marker));
+
+      if (zone_markers.find(map_name) != zone_markers.end())
+      {
+        auto zone_marker_clone = zone_markers.at(map_name);
+        for (auto& zone_marker : zone_marker_clone.markers)
+        {
+          zone_marker.action = zone_marker.DELETEALL;
+          marker_array.markers.push_back(std::move(zone_marker));
+        }
+      }
     }
     else
     {
       marker_array.markers.push_back(waypoint_markers[map_name]);
+      marker_array.markers.push_back(zone_waypoint_markers[map_name]);
+      if (zone_markers.find(map_name) != zone_markers.end())
+      {
+        auto zone_marker_clone = zone_markers.at(map_name);
+        for (auto& zone_marker : zone_marker_clone.markers)
+        {
+          marker_array.markers.push_back(zone_marker);
+        }
+      }
     }
 
     for (const auto& marker : text_markers.at(map_name))
