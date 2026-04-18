@@ -67,10 +67,17 @@ private:
     // This map is purely for easy lookup when modifying lane markers
     LaneMarkers all_lane_markers;
 
+    // vector to store vertice name for zones
+    std::unordered_set<std::string> zone_vertex_set;
+
     // Map level name to Marker for waypoint names
     std::unordered_map<std::string, std::vector<Marker>> text_markers;
     // Map level name to marker for waypoints
     std::unordered_map<std::string, Marker> waypoint_markers;
+    // Map level name to marker for waypoints in zones
+    std::unordered_map<std::string, Marker> zone_waypoint_markers;
+    // Map level name to markers for zones
+    std::unordered_map<std::string, MarkerArray> zone_markers;
     // We store a weak pointer of the node for logging
     std::weak_ptr<rclcpp::Node> node;
     // Color for this fleet
