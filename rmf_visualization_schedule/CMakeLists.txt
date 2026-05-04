@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.5)
 project(rmf_visualization_schedule)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
-# Websocketpp is not compatible with C++ > 17
-set(CMAKE_CXX_STANDARD 17)
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -27,13 +29,6 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rmf_visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Threads)
-
-# Override the CXX version that could be transitively pulled by
-# targets that depend on ament_cmake_ros_core
-if(TARGET ament_cmake_ros_core::ament_ros_cxx_standard)
-  set_target_properties(ament_cmake_ros_core::ament_ros_cxx_standard PROPERTIES
-    INTERFACE_COMPILE_FEATURES "cxx_std_17")
-endif()
 
 if(BUILD_TESTING)
   find_package(ament_cmake_uncrustify REQUIRED)
