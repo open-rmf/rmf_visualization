@@ -62,7 +62,7 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
   _map_sub = this->create_subscription<BuildingMap>(
     "/map",
     transient_qos,
-    [=](BuildingMap::ConstSharedPtr msg)
+    [this](BuildingMap::ConstSharedPtr msg)
     {
       if (msg->levels.empty())
         return;
@@ -126,12 +126,12 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
   _param_sub = this->create_subscription<RvizParam>(
     "rmf_visualization/parameters",
     rclcpp::SystemDefaultsQoS().keep_last(10),
-    [=](RvizParam::ConstSharedPtr msg)
+    [this](RvizParam::ConstSharedPtr msg)
     {
-      if (msg->map_name.empty() || msg->map_name == _current_level)
+      if (msg->map_name.empty() || msg->map_name == this->_current_level)
         return;
 
-      _current_level = msg->map_name;
+      this->_current_level = msg->map_name;
       publish_grid();
     });
 
