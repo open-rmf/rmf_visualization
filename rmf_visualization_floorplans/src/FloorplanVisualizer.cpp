@@ -62,7 +62,7 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
   _map_sub = this->create_subscription<BuildingMap>(
     "/map",
     transient_qos,
-    [=](BuildingMap::ConstSharedPtr msg)
+    [this](BuildingMap::ConstSharedPtr msg)
     {
       if (msg->levels.empty())
         return;
@@ -74,7 +74,8 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
           continue;
 
         cv::Mat cv_img = cv::imdecode(
-          cv::Mat(level.images[0].data), cv::IMREAD_GRAYSCALE);
+          cv::Mat(static_cast<std::vector<uint8_t>>(level.images[0].data)),
+          cv::IMREAD_GRAYSCALE);
         auto it = level.images.begin();
         ++it;
         // We blend all the other images into the first image
@@ -84,7 +85,8 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
         for (; it != level.images.end(); ++it)
         {
           cv::Mat next_img = cv::imdecode(
-            cv::Mat(it->data), cv::IMREAD_GRAYSCALE);
+            cv::Mat(static_cast<std::vector<uint8_t>>(it->data)),
+            cv::IMREAD_GRAYSCALE);
           cv::addWeighted(cv_img, 0.7, next_img, 0.3, 0.0, cv_img);
         }
         const auto& image = level.images[0];
@@ -124,12 +126,12 @@ FloorplanVisualizer::FloorplanVisualizer(const rclcpp::NodeOptions& options)
   _param_sub = this->create_subscription<RvizParam>(
     "rmf_visualization/parameters",
     rclcpp::SystemDefaultsQoS().keep_last(10),
-    [=](RvizParam::ConstSharedPtr msg)
+    [this](RvizParam::ConstSharedPtr msg)
     {
-      if (msg->map_name.empty() || msg->map_name == _current_level)
+      if (msg->map_name.empty() || msg->map_name == this->_current_level)
         return;
 
-      _current_level = msg->map_name;
+      this->_current_level = msg->map_name;
       publish_grid();
     });
 
