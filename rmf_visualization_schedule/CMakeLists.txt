@@ -30,7 +30,8 @@ find_package(rmf_visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Threads)
 
-if(BUILD_TESTING)
+option(STYLE_TEST "Run uncrustify to evaluate the code style")
+if(BUILD_TESTING AND STYLE_TEST)
   find_package(ament_cmake_uncrustify REQUIRED)
   find_package(rmf_utils REQUIRED)
   find_file(uncrustify_config_file
