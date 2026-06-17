@@ -4,7 +4,7 @@ package_name = 'rmf_visualization_building_systems'
 
 setup(
     name=package_name,
-    version='2.5.1',
+    version='2.6.0',
     packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
