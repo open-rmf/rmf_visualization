@@ -2,6 +2,12 @@
 Changelog for package rmf_visualization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.6.0 (2026-06-17)
+------------------
+* Fix nummber typo in visualization.launch.xml (`#93 <https://github.com/open-rmf/rmf_visualization/issues/93>`_)
+  Co-authored-by: Lots-ninety-nine <261080291+Lots-ninety-nine@users.noreply.github.com>
+* Contributors: Mosiwon
+
 2.5.1 (2026-01-13)
 ------------------
 

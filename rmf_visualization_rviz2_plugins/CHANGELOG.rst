@@ -2,6 +2,16 @@
 Changelog for package rmf_visualization_rviz2_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.6.0 (2026-06-17)
+------------------
+* Use default CI matrix (`#94 <https://github.com/open-rmf/rmf_visualization/issues/94>`_)
+  Co-authored-by: Michael X. Grey <mxgrey@intrinsic.ai>
+* Resolve warnings (`#90 <https://github.com/open-rmf/rmf_visualization/issues/90>`_)
+  * resolve compilation warnings
+  * missing return
+  ---------
+* Contributors: Aaron Chong, Luca Della Vedova
+
 2.5.1 (2026-01-13)
 ------------------
 * Remove explicit Qt dependency from rviz plugins (`#88 <https://github.com/open-rmf/rmf_visualization/issues/88>`_)

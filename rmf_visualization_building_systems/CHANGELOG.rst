@@ -2,6 +2,12 @@
 Changelog for package rmf_visualization_building_systems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.6.0 (2026-06-17)
+------------------
+* Use default CI matrix (`#94 <https://github.com/open-rmf/rmf_visualization/issues/94>`_)
+  Co-authored-by: Michael X. Grey <mxgrey@intrinsic.ai>
+* Contributors: Luca Della Vedova
+
 2.5.1 (2026-01-13)
 ------------------
 
