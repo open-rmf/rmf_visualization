@@ -314,8 +314,8 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     marker.pose.orientation.z = std::sin(zone.yaw / 2);
     marker.color = *color;
     marker.color.a = 0.5;
-    marker.scale.x = zone.length;
-    marker.scale.y = zone.width;
+    marker.scale.x = zone.width;
+    marker.scale.y = zone.length;
     marker.scale.z = 0.2;
     marker.pose.position.x = zone.center_x;
     marker.pose.position.y = zone.center_y;
