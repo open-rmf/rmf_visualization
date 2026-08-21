@@ -239,25 +239,11 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
       {
         zone_wp_marker.points.push_back(make_point(loc, 0.0));
 
-        size_t pos = s.find("#p");
-
-        if (pos != std::string::npos)
-        {
-          size_t start = pos + 2; // skip "#p"
-
-          // skip digits after p
-          while (start < s.size() && isdigit(s[start]))
-          {
-            start++;
-          }
-
-          // expect '#'
-          if (start < s.size() && s[start] == '#')
-          {
-            start++; // move past '#'
-            display_name = s.substr(start);
-          }
-        }
+        // zone waypoints are named {zone}#{group}#p{priority}#{name}, and only
+        // the trailing name is worth displaying
+        const auto delim = s.rfind('#');
+        if (delim != std::string::npos)
+          display_name = s.substr(delim + 1);
       }
       else
       {
