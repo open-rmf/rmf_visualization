@@ -67,9 +67,6 @@ private:
     // This map is purely for easy lookup when modifying lane markers
     LaneMarkers all_lane_markers;
 
-    // vector to store vertice name for zones
-    std::unordered_set<std::string> zone_vertex_set;
-
     // Map level name to Marker for waypoint names
     std::unordered_map<std::string, std::vector<Marker>> text_markers;
     // Map level name to marker for waypoints

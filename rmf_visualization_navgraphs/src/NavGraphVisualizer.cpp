@@ -90,23 +90,6 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
         .z(z);
     };
 
-  // Optional: pre-reserve if you roughly know total vertices
-  std::size_t total_vertices = 0;
-  for (const auto& zone : navgraph.zones)
-  {
-    total_vertices += zone.vertices.size();
-  }
-  zone_vertex_set.reserve(total_vertices);
-
-  // Fill the set directly
-  for (const auto& zone : navgraph.zones)
-  {
-    for (const auto& vertex : zone.vertices)
-    {
-      zone_vertex_set.insert(vertex.name);
-    }
-  }
-
   for (std::size_t i = 0; i < navgraph.edges.size(); ++i)
   {
     const auto& edge = navgraph.edges[i];
@@ -139,8 +122,7 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     marker->color = *color;
 
     // Don't add lanes from zones
-    if (zone_vertex_set.count(*entry_wp.name()) > 0 ||
-      zone_vertex_set.count(*exit_wp.name()) > 0)
+    if (entry_wp.in_zone() || exit_wp.in_zone())
     {
       marker->scale.x = lane.properties().speed_limit().has_value() ?
         lane_width * 0.5 : lane_width * 0.75;
@@ -251,7 +233,7 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
       const std::string& s = *name;
       std::string display_name = s;
 
-      const bool is_zone = zone_vertex_set.count(s);
+      const bool is_zone = wp.in_zone() != nullptr;
 
       if (is_zone)
       {
