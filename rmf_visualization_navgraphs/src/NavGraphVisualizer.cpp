@@ -228,30 +228,16 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     auto& wp_marker = it_wp->second;
     auto& zone_wp_marker = it_zone_wp->second;
 
-    if (name)
+    if (wp.name() != nullptr)
     {
-      const std::string& s = *name;
-      std::string display_name = s;
-
       const bool is_zone = wp.in_zone() != nullptr;
-
       if (is_zone)
-      {
         zone_wp_marker.points.push_back(make_point(loc, 0.0));
-
-        // zone waypoints are named {zone}#{group}#p{priority}#{name}, and only
-        // the trailing name is worth displaying
-        const auto delim = s.rfind('#');
-        if (delim != std::string::npos)
-          display_name = s.substr(delim + 1);
-      }
       else
-      {
         wp_marker.points.push_back(make_point(loc, 0.0));
-      }
 
       text_vec.push_back(
-        make_text_marker(i, loc, display_name, map_name));
+        make_text_marker(i, loc, *wp.name(), map_name));
 
     }
     else
@@ -284,10 +270,10 @@ void NavGraphVisualizer::FleetNavGraph::initialize_markers(
     marker.color.a = 0.5;
     marker.scale.x = zone.width;
     marker.scale.y = zone.length;
-    marker.scale.z = 0.2;
+    marker.scale.z = 0.1;
     marker.pose.position.x = zone.center_x;
     marker.pose.position.y = zone.center_y;
-    marker.pose.position.z = 0.2;
+    marker.pose.position.z = -0.5;
 
     zm.markers.push_back(marker);
 
