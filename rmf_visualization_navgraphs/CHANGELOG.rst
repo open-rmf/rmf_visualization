@@ -2,6 +2,9 @@
 Changelog for package rmf_visualization_navgraphs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.6.0 (2026-06-17)
 ------------------
 * Use default CI matrix (`#94 <https://github.com/open-rmf/rmf_visualization/issues/94>`_)
