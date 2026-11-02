@@ -71,6 +71,10 @@ private:
     std::unordered_map<std::string, std::vector<Marker>> text_markers;
     // Map level name to marker for waypoints
     std::unordered_map<std::string, Marker> waypoint_markers;
+    // Map level name to marker for waypoints in zones
+    std::unordered_map<std::string, Marker> zone_waypoint_markers;
+    // Map level name to markers for zones
+    std::unordered_map<std::string, MarkerArray> zone_markers;
     // We store a weak pointer of the node for logging
     std::weak_ptr<rclcpp::Node> node;
     // Color for this fleet
