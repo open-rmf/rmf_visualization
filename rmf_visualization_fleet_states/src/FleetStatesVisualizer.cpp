@@ -16,12 +16,13 @@
  *
  */
 
-
 #include "FleetStatesVisualizer.hpp"
 
 #include <rmf_fleet_msgs/msg/robot_state.hpp>
 
 #include <rclcpp_components/register_node_macro.hpp>
+
+#include <cmath>
 
 //==============================================================================
 FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
