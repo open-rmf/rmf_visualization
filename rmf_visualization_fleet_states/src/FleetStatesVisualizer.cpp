@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2022 Open Source Robotics Foundation
  *
@@ -47,13 +48,13 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
   _param_sub = this->create_subscription<RvizParam>(
     "rmf_visualization/parameters",
     rclcpp::SystemDefaultsQoS(),
-    [=](RvizParam::ConstSharedPtr msg)
+    [this](RvizParam::ConstSharedPtr msg)
     {
-      if (msg->map_name.empty() || msg->map_name == _current_level)
+      if (msg->map_name.empty() || msg->map_name == this->_current_level)
         return;
 
-      _current_level = msg->map_name;
-      publish_markers();
+      this->_current_level = msg->map_name;
+      this->publish_markers();
     });
 
   // Match QoS used in rmf_fleet_adapter
@@ -61,7 +62,7 @@ FleetStatesVisualizer::FleetStatesVisualizer(const rclcpp::NodeOptions& options)
   _fleet_sub = this->create_subscription<FleetState>(
     "/fleet_states",
     qos,
-    [=](FleetState::ConstSharedPtr msg)
+    [this](FleetState::ConstSharedPtr msg)
     {
       using RobotState = rmf_fleet_msgs::msg::RobotState;
       using Location = rmf_fleet_msgs::msg::Location;
