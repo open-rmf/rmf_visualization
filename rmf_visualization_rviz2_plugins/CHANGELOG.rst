@@ -2,8 +2,8 @@
 Changelog for package rmf_visualization_rviz2_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.0 (2026-11-13)
+------------------
 * bump cmake versions (`#97 <https://github.com/open-rmf/rmf_visualization/issues/97>`_)
 * Contributors: Aaron Chong
 

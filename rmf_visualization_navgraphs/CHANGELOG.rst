@@ -2,8 +2,8 @@
 Changelog for package rmf_visualization_navgraphs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.0 (2026-11-13)
+------------------
 * Add zone visualisation for GoToZone feature (`#91 <https://github.com/open-rmf/rmf_visualization/issues/91>`_)
   Co-authored-by: Tey Leong Teck <leong_teck_tey@cgh.com.sg>
   Co-authored-by: Loke Ji Xian <loke_ji_xian@cgh.com.sg>
