@@ -2,6 +2,11 @@
 Changelog for package rmf_visualization_schedule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.8.0 (2026-11-13)
+------------------
+* bump cmake versions (`#97 <https://github.com/open-rmf/rmf_visualization/issues/97>`_)
+* Contributors: Aaron Chong
+
 2.7.0 (2026-09-26)
 ------------------
 

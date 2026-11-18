@@ -2,6 +2,14 @@
 Changelog for package rmf_visualization_fleet_states
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.8.0 (2026-11-13)
+------------------
+* Fix compilation issues on rolling (`#98 <https://github.com/open-rmf/rmf_visualization/issues/98>`_)
+  Fixes compilation issues seen in https://github.com/open-rmf/rmf_demos/actions/runs/42748173455/job/129605199339#step:11:18453
+  ---------
+* bump cmake versions (`#97 <https://github.com/open-rmf/rmf_visualization/issues/97>`_)
+* Contributors: Aaron Chong
+
 2.7.0 (2026-09-26)
 ------------------
 
