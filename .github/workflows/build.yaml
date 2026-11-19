@@ -11,7 +11,7 @@ on:
       repos_branch_override:
         description: 'Branch of open-rmf/rmf for rmf.repos (auto = match ros_distribution)'
         type: string
-        default: 'main'
+        default: 'auto'
 
 jobs:
   build_and_test:
@@ -28,5 +28,6 @@ jobs:
         rmf_visualization_obstacles
         rmf_visualization_rviz2_plugins
         rmf_visualization_schedule
+      dist-matrix: '[{"ros_distribution": "jazzy"}]'
       ros-distribution: ${{ inputs.ros_distribution || '' }}
-      repos-branch-override: ${{ inputs.repos_branch_override || 'main' }}
+      repos-branch-override: ${{ inputs.repos_branch_override || 'auto' }}
